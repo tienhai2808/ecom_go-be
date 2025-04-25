@@ -1,16 +1,29 @@
 package auth
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
+	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"math"
+	mrand "math/rand"
 	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	"golang.org/x/crypto/argon2"
 )
 
-func hashPassword(password string) (string, error) {
+func GenerateOtp(length int) string {
+	min := int(math.Pow10(length))
+	max := 9 * min  
+	otp := min + mrand.Intn(max)
+	return fmt.Sprintf("%d", otp)
+}
+
+func HashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
 	if err != nil {
@@ -31,7 +44,7 @@ func hashPassword(password string) (string, error) {
 	return encoded, nil
 }
 
-func verifyPassword(storedPassword, inputPassword string) (bool, error) {
+func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
 
 	parts := strings.Split(storedPassword, ".")
 	if len(parts) != 2 {
@@ -55,4 +68,15 @@ func verifyPassword(storedPassword, inputPassword string) (bool, error) {
 	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, keyLength)
 
 	return subtle.ConstantTimeCompare(storedHash, inputHash) == 1, nil
+}
+
+func GenerateToken(userID string, userRole string, ttl time.Duration, secret string) (string, error) {
+	claims := jwt.MapClaims{
+		"user_id": userID,
+		"role":    userRole,
+		"exp":     time.Now().Add(ttl).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }

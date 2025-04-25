@@ -12,18 +12,18 @@ import (
 // Hàm kết nối với MySQL sử dụng thông tin cấu hình
 func ConnectToDatabase() (*gorm.DB, error) {
 	// Lấy cấu hình database
-	config, err := config.LoadDatabaseConfig()
+	cfg, err := config.LoadDatabaseConfig()
 	if err != nil {
 		return nil, err
 	}
 
 	// Tạo chuỗi kết nối MySQL
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		config.Database.User,
-		config.Database.Password,
-		config.Database.Host,
-		config.Database.Port,
-		config.Database.Name,
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.Name,
 	)
 
 	// Kết nối tới MySQL

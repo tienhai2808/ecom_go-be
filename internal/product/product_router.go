@@ -1,10 +1,12 @@
 package product
 
 import (
+	"e-commerce/internal/common"
+
 	"github.com/gin-gonic/gin"
 )
 
-func ProductRouter(r *gin.RouterGroup) {
+func ProductRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 	productGroup := r.Group("/products") 
 	{
 		productGroup.GET("/all", func(c *gin.Context) {

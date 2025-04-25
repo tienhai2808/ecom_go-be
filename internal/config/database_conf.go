@@ -20,14 +20,12 @@ type DatabaseConfig struct {
 func LoadDatabaseConfig() (*DatabaseConfig, error) {
 	var config DatabaseConfig
 
-	// Đọc file cấu hình
 	file, err := os.Open("configs/database.yml")
 	if err != nil {
 		return nil, fmt.Errorf("❤️ could not open database.yml: %v", err)
 	}
 	defer file.Close()
 
-	// Parse YAML file
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(&config)
 	if err != nil {
