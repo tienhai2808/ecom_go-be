@@ -52,8 +52,8 @@ func (h *Handler) Signup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"statusCode":        http.StatusOK,
+	c.JSON(http.StatusCreated, gin.H{
+		"statusCode":        http.StatusCreated,
 		"registrationToken": token,
 		"message":           "Vui lòng kiểm tra email để lấy mã OTP",
 	})

@@ -41,7 +41,7 @@ type VerifyForgotPasswordRequest struct {
 
 type ResetPasswordRequest struct {
 	ResetPasswordToken string `json:"reset_password_token" binding:"required,uuid4"`
-	NewPassword        string `json:"password" binding:"required,min=6"`
+	NewPassword        string `json:"new_password" binding:"required,min=6"`
 }
 
 type UserResponse struct {
