@@ -11,13 +11,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Handler handles auth HTTP requests
 type Handler struct {
 	service Service
 	ctx     *common.AppContext
 }
 
-// NewHandler creates a new auth handler
 func NewHandler(service Service, ctx *common.AppContext) *Handler {
 	return &Handler{
 		service: service,
@@ -116,7 +114,7 @@ func (h *Handler) Signin(c *gin.Context) {
 	user, accessToken, refreshToken, err := h.service.Signin(req)
 	if err != nil {
 		switch err {
-		case ErrUsernameNotFound, ErrIncorrectPassword:
+		case ErrUserNotFound, ErrIncorrectPassword:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"statusCode": http.StatusBadRequest,
 				"error":      err.Error(),
@@ -150,6 +148,43 @@ func (h *Handler) Signout(c *gin.Context) {
 	})
 }
 
+func (h *Handler) ForgotPassword(c *gin.Context) {
+	var req ForgotPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	token, err := h.service.ForgotPassword(req)
+	if err != nil {
+		switch err {
+		case ErrUserNotFound:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể đăng ký tài khoản",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode":        http.StatusOK,
+		"forgotPasswordToken": token,
+		"message":           "Vui lòng kiểm tra email để lấy mã OTP",
+	})
+}
+
 func (h *Handler) GetMe(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -164,12 +199,14 @@ func (h *Handler) GetMe(c *gin.Context) {
 
 	user, err := h.service.GetMe(userID)
 	if err != nil {
-		if err.Error() == "người dùng không tồn tại" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
+		switch err {
+		case ErrUserNotFound:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
 				"error":      err.Error(),
 			})
-		} else {
+		default:
+			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể lấy thông tin người dùng",

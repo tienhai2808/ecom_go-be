@@ -19,10 +19,12 @@ type Repository interface {
 	StoreRegistrationData(token string, data RegistrationData, ttl time.Duration) error
 	GetRegistrationData(token string) (*RegistrationData, error)
 	UpdateRegistrationAttempts(token string, data RegistrationData, ttl time.Duration) error
-	DeleteRegistrationData(token string) error
+	DeleteAuthData(name, token string) error
 	CreateUser(userData *user.User) error
 	GetUserByUsername(username string) (*user.User, error)
 	GetUserByID(id string) (*user.User, error)
+	CheckUserExistsByEmail(email string) (bool, error)
+	StoreForgotPasswordData(token string, data ForgotPasswordData, ttl time.Duration) error
 }
 
 type repository struct {
@@ -79,7 +81,7 @@ func (r *repository) GetRegistrationData(token string) (*RegistrationData, error
 
 	regDataJSON, err := r.redis.Get(ctxB, redisKey).Result()
 	if err == redis.Nil {
-		return nil, errors.New("token đã hết hạn hoặc không tồn tại")
+		return nil, ErrTokenExpired
 	}
 	if err != nil {
 		return nil, fmt.Errorf("không thể lấy dữ liệu từ Redis: %v", err)
@@ -104,8 +106,8 @@ func (r *repository) UpdateRegistrationAttempts(token string, data RegistrationD
 	return r.redis.Set(ctxB, redisKey, regDataJSON, ttl).Err()
 }
 
-func (r *repository) DeleteRegistrationData(token string) error {
-	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
+func (r *repository) DeleteAuthData(name, token string) error {
+	redisKey := fmt.Sprintf("%s:%s:%s", r.cfg.App.Name, name, token)
 	ctxB := context.Background()
 	return r.redis.Del(ctxB, redisKey).Err()
 }
@@ -119,7 +121,7 @@ func (r *repository) GetUserByUsername(username string) (*user.User, error) {
 	err := r.db.Preload("Profile").Where("username = ?", username).First(&u).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("người dùng không tồn tại")
+			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("không thể truy vấn người dùng: %v", err)
 	}
@@ -131,9 +133,35 @@ func (r *repository) GetUserByID(id string) (*user.User, error) {
 	err := r.db.Preload("Profile").Where("id = ?", id).First(&u).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("người dùng không tồn tại")
+			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("không thể truy vấn người dùng: %v", err)
 	}
 	return &u, nil
+}
+
+func (r *repository) CheckUserExistsByEmail(email string) (bool, error) {
+	var existingUser user.User
+	
+	err := r.db.Where("email = ?", email).First(&existingUser).Error
+	if err == nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func (r *repository) StoreForgotPasswordData(token string, data ForgotPasswordData, ttl time.Duration) error {
+	regDataJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %v", err)
+	}
+
+	ctxB := context.Background()
+	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.cfg.App.Name, token)
+	err = r.redis.Set(ctxB, redisKey, regDataJSON, ttl).Err()
+	if err != nil {
+		return fmt.Errorf("không thể lưu dữ liệu vào Redis: %v", err) 
+	}
+	
+	return nil
 }

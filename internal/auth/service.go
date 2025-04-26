@@ -10,21 +10,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service defines the auth service interface
 type Service interface {
 	Signup(req SignupRequest) (string, error)
 	VerifySignup(req VerifySignupRequest) (*user.User, string, string, error)
 	Signin(req SigninRequest) (*user.User, string, string, error)
 	GetMe(userID string) (*user.User, error)
+	ForgotPassword(req ForgotPasswordRequest) (string, error)
 }
 
-// service implements Service interface
 type service struct {
 	repo Repository
 	cfg  *config.AppConfig
 }
 
-// NewService creates a new auth service
 func NewService(ctx *common.AppContext) Service {
 	return &service{
 		repo: NewRepository(ctx),
@@ -32,9 +30,7 @@ func NewService(ctx *common.AppContext) Service {
 	}
 }
 
-// Signup handles user registration
 func (s *service) Signup(req SignupRequest) (string, error) {
-	// Check if user exists
 	exists, field, err := s.repo.CheckUserExists(req.Username, req.Email)
 	if err != nil {
 		return "", err
@@ -47,70 +43,59 @@ func (s *service) Signup(req SignupRequest) (string, error) {
 		return "", ErrEmailExists
 	}
 
-	// Generate OTP and registration token
 	otp := GenerateOtp(5)
 	registrationToken := uuid.NewString()
-	
-	// Hash password
+
 	hashedPassword, err := HashPassword(req.Password)
 	if err != nil {
 		return "", err
 	}
 
-	// Prepare registration data
 	regData := RegistrationData{
 		Email:    req.Email,
 		Username: req.Username,
 		Password: hashedPassword,
-		OTP:      otp,
+		Otp:      otp,
 		Attempts: 0,
 	}
 
-	// Store registration data
 	err = s.repo.StoreRegistrationData(registrationToken, regData, 3*time.Minute)
 	if err != nil {
 		return "", err
 	}
 
-	// Send email with OTP
 	emailSender := common.NewSMTPSender(s.cfg)
 	emailContent := fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp)
 	err = emailSender.SendEmail(req.Email, "Mã xác nhận Đăng ký tài khoản", emailContent)
 	if err != nil {
-		s.repo.DeleteRegistrationData(registrationToken)
+		s.repo.DeleteAuthData("signup", registrationToken)
 		return "", fmt.Errorf("không thể gửi Email: %v", err)
 	}
 
 	return registrationToken, nil
 }
 
-// VerifySignup verifies user registration
 func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, string, error) {
-	// Get registration data
 	regData, err := s.repo.GetRegistrationData(req.RegistrationToken)
 	if err != nil {
 		return nil, "", "", ErrTokenExpired
 	}
 
-	// Check attempts
 	if regData.Attempts >= 3 {
-		s.repo.DeleteRegistrationData(req.RegistrationToken)
+		s.repo.DeleteAuthData("signup", req.RegistrationToken)
 		return nil, "", "", ErrTooManyAttempts
 	}
 
-	// Increment attempts
 	regData.Attempts++
 	err = s.repo.UpdateRegistrationAttempts(req.RegistrationToken, *regData, 3*time.Minute)
 	if err != nil {
 		return nil, "", "", err
 	}
 
-	// Verify OTP
-	if regData.OTP != req.Otp {
+	if regData.Otp != req.Otp {
 		return nil, "", "", ErrInvalidOTP
 	}
 
-	// Check if user exists again (for race conditions)
 	exists, field, err := s.repo.CheckUserExists(regData.Username, regData.Email)
 	if err != nil {
 		return nil, "", "", err
@@ -123,7 +108,6 @@ func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, str
 		return nil, "", "", ErrEmailExists
 	}
 
-	// Create new user
 	newUser := &user.User{
 		ID:       uuid.NewString(),
 		Username: regData.Username,
@@ -138,7 +122,6 @@ func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, str
 		return nil, "", "", fmt.Errorf("không thể tạo người dùng: %v", err)
 	}
 
-	// Generate tokens
 	accessToken, err := GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.cfg.App.JWTAccessSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("không thể tạo access_token: %v", err)
@@ -149,18 +132,16 @@ func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, str
 		return nil, "", "", fmt.Errorf("không thể tạo refresh_token: %v", err)
 	}
 
-	// Clean up registration data
-	s.repo.DeleteRegistrationData(req.RegistrationToken)
+	s.repo.DeleteAuthData("signup", req.RegistrationToken)
 
 	return newUser, accessToken, refreshToken, nil
 }
 
-// Signin handles user login
 func (s *service) Signin(req SigninRequest) (*user.User, string, string, error) {
 	// Get user by username
 	user, err := s.repo.GetUserByUsername(req.Username)
 	if err != nil {
-		return nil, "", "", ErrUsernameNotFound
+		return nil, "", "", ErrUserNotFound
 	}
 
 	// Verify password
@@ -183,7 +164,40 @@ func (s *service) Signin(req SigninRequest) (*user.User, string, string, error) 
 	return user, accessToken, refreshToken, nil
 }
 
-// GetMe retrieves user information
+func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
+	exists, err := s.repo.CheckUserExistsByEmail(req.Email)
+	if err != nil {
+		return "", err
+	}
+
+	if exists {
+		return "", ErrUserNotFound
+	}
+
+	otp := GenerateOtp(5)
+	forgotPasswordToken := uuid.NewString()
+
+	forgData := ForgotPasswordData{
+		Email: req.Email,
+		Otp: otp,
+	}
+
+	err = s.repo.StoreForgotPasswordData(forgotPasswordToken,  forgData, 3*time.Minute)
+	if err != nil {
+		return "", err
+	}
+
+	emailSender := common.NewSMTPSender(s.cfg)
+	emailContent := fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp)
+	err = emailSender.SendEmail(req.Email, "Mã xác nhận Quên mật khẩu", emailContent)
+	if err != nil {
+		s.repo.DeleteAuthData("forgot-password", forgotPasswordToken)
+		return "", fmt.Errorf("không thể gửi Email: %v", err)
+	}
+
+	return forgotPasswordToken, nil
+}
+
 func (s *service) GetMe(userID string) (*user.User, error) {
 	return s.repo.GetUserByID(userID)
 }
