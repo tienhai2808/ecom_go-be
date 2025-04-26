@@ -44,15 +44,7 @@ type ResetPasswordRequest struct {
 	NewPassword        string `json:"new_password" binding:"required,min=6"`
 }
 
-type UserResponse struct {
-	ID       string      `json:"id"`
-	Username string      `json:"username"`
-	Email    string      `json:"email"`
-	Role     string      `json:"role"`
-	Profile  interface{} `json:"profile,omitempty"`
-}
-
-type TokenResponse struct {
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }

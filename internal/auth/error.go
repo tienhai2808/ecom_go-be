@@ -11,4 +11,5 @@ var (
 	ErrTooManyAttempts   = errors.New("vượt quá số lần thử OTP")
 	ErrUserNotFound      = errors.New("người dùng không tồn tại")
 	ErrIncorrectPassword = errors.New("mật khẩu không chính xác")
+	ErrUnAuth            = errors.New("không có quyền truy cập")
 )

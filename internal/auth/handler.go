@@ -264,7 +264,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"statusCode": http.StatusUnauthorized,
-			"error":      "Không tìm thấy thông tin người dùng",
+			"error":      ErrUnAuth,
 		})
 		return
 	}
@@ -350,5 +350,62 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"statusCode": http.StatusOK,
 		"message":    "Token đã được làm mới",
+	})
+}
+
+func (h *Handler) ChangePassword(c *gin.Context) {
+	var req ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	currentUserIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+	currentUserID, _ := currentUserIDVal.(string)
+
+	userID := c.Param("user_id")
+	if currentUserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return 
+	}
+
+	user, accessToken, refreshToken, err := h.service.ChangePassword(userID, req)
+	if err != nil {
+		switch err {
+		case ErrUserNotFound, ErrIncorrectPassword:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể lấy thông tin người dùng",
+			})
+		}
+		return
+	}
+
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
+	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"user":       user,
 	})
 }

@@ -13,13 +13,14 @@ func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/signup", handler.Signup)
-		authGroup.POST("/verify-signup", handler.VerifySignup)
+		authGroup.POST("/signup/verify-email", handler.VerifySignup)
 		authGroup.POST("/signin", handler.Signin)
 		authGroup.POST("/signout", RequireAuth(ctx), handler.Signout)
 		authGroup.POST("/forgot-password", handler.ForgotPassword)
-		authGroup.POST("/verify-forgot-password", handler.VerifyForgotPassword)
+		authGroup.POST("/forgot-password/verify-email", handler.VerifyForgotPassword)
 		authGroup.POST("/reset-password", handler.ResetPassword)
 		authGroup.GET("/me", RequireAuth(ctx), handler.GetMe)
+		authGroup.PATCH("/change-password/:user_id", RequireAuth(ctx), handler.ChangePassword)
 		authGroup.GET("/refresh-token", handler.RefreshToken)
 	}
-} 
+}

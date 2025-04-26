@@ -18,6 +18,7 @@ type Service interface {
 	ForgotPassword(req ForgotPasswordRequest) (string, error)
 	VerifyForgotPassword(req VerifyForgotPasswordRequest) (string, error)
 	ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error)
+	ChangePassword(userID string, req ChangePasswordRequest) (*user.User, string, string, error)
 }
 
 type service struct {
@@ -37,7 +38,7 @@ func (s *service) Signup(req SignupRequest) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	if exists {
 		if field == "username" {
 			return "", ErrUsernameExists
@@ -102,7 +103,7 @@ func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, str
 	if err != nil {
 		return nil, "", "", err
 	}
-	
+
 	if exists {
 		if field == "username" {
 			return nil, "", "", ErrUsernameExists
@@ -177,12 +178,12 @@ func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
 	forgotPasswordToken := uuid.NewString()
 
 	forgData := ForgotPasswordData{
-		Email: req.Email,
-		Otp: otp,
+		Email:    req.Email,
+		Otp:      otp,
 		Attempts: 0,
 	}
 
-	err = s.repo.StoreForgotPasswordData(forgotPasswordToken,  forgData, 3*time.Minute)
+	err = s.repo.StoreForgotPasswordData(forgotPasswordToken, forgData, 3*time.Minute)
 	if err != nil {
 		return "", err
 	}
@@ -221,7 +222,7 @@ func (s *service) VerifyForgotPassword(req VerifyForgotPasswordRequest) (string,
 
 	resetPasswordToken := uuid.NewString()
 
-	err = s.repo.StoreResetPasswordData(resetPasswordToken,  forgData.Email, 3*time.Minute)
+	err = s.repo.StoreResetPasswordData(resetPasswordToken, forgData.Email, 3*time.Minute)
 	if err != nil {
 		return "", err
 	}
@@ -268,4 +269,37 @@ func (s *service) ResetPassword(req ResetPasswordRequest) (*user.User, string, s
 
 func (s *service) GetMe(userID string) (*user.User, error) {
 	return s.repo.GetUserByID(userID)
+}
+
+func (s *service) ChangePassword(userID string, req ChangePasswordRequest) (*user.User, string, string, error) {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return nil, "", "", ErrUserNotFound
+	}
+
+	isCorrectPassword, err := VerifyPassword(user.Password, req.OldPassword)
+	if err != nil || !isCorrectPassword {
+		return nil, "", "", ErrIncorrectPassword
+	}
+
+	hashedPassword, err := HashPassword(req.NewPassword)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể mã hóa mật khẩu: %v", err)
+	}
+
+	if err := s.repo.UpdateUserPassword(userID, hashedPassword); err != nil {
+		return nil, "", "", fmt.Errorf("không thể cập nhật mật khẩu: %v", err)
+	}
+
+	accessToken, err := GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTAccessSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể tạo access_token: %v", err)
+	}
+
+	refreshToken, err := GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.cfg.App.JWTRefreshSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể tạo refresh_token: %v", err)
+	}
+
+	return user, accessToken, refreshToken, nil
 }
