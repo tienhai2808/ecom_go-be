@@ -264,7 +264,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"statusCode": http.StatusUnauthorized,
-			"error":      ErrUnAuth,
+			"error":      "không có quyền truy cập",
 		})
 		return
 	}
