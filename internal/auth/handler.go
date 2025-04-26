@@ -25,7 +25,6 @@ func NewHandler(service Service, ctx *common.AppContext) *Handler {
 	}
 }
 
-// Signup handles user registration
 func (h *Handler) Signup(c *gin.Context) {
 	var req SignupRequest
 
@@ -63,7 +62,6 @@ func (h *Handler) Signup(c *gin.Context) {
 	})
 }
 
-// VerifySignup verifies user registration
 func (h *Handler) VerifySignup(c *gin.Context) {
 	var req VerifySignupRequest
 
@@ -102,7 +100,7 @@ func (h *Handler) VerifySignup(c *gin.Context) {
 		"user":       user,
 	})
 }
-// Signin handles user login
+
 func (h *Handler) Signin(c *gin.Context) {
 	var req SigninRequest
 
@@ -142,7 +140,16 @@ func (h *Handler) Signin(c *gin.Context) {
 	})
 }
 
-// GetMe retrieves authenticated user information
+func (h *Handler) Signout(c *gin.Context) {
+	c.SetCookie("access_token", "", -1, "/", "", false, true)
+	c.SetCookie("refresh_token", "", -1, "/ecom-go/auth/refresh-token", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"message": "Đăng xuất thành công",
+	})
+}
+
 func (h *Handler) GetMe(c *gin.Context) {
 	userIDVal, exists := c.Get("user_id")
 	if !exists {
@@ -177,13 +184,12 @@ func (h *Handler) GetMe(c *gin.Context) {
 	})
 }
 
-// RefreshToken handles token refresh
 func (h *Handler) RefreshToken(c *gin.Context) {
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil || refreshToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"statusCode": http.StatusUnauthorized,
-			"error":      "Không có refresh_token",
+			"error":      "Không có refresh token",
 		})
 		return
 	}

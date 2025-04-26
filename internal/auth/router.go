@@ -15,6 +15,7 @@ func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 		authGroup.POST("/signup", handler.Signup)
 		authGroup.POST("/verify-signup", handler.VerifySignup)
 		authGroup.POST("/signin", handler.Signin)
+		authGroup.POST("/signout", RequireAuth(ctx), handler.Signout)
 		authGroup.GET("/me", RequireAuth(ctx), handler.GetMe)
 		authGroup.GET("/refresh-token", handler.RefreshToken)
 	}
