@@ -16,6 +16,8 @@ type Service interface {
 	Signin(req SigninRequest) (*user.User, string, string, error)
 	GetMe(userID string) (*user.User, error)
 	ForgotPassword(req ForgotPasswordRequest) (string, error)
+	VerifyForgotPassword(req VerifyForgotPasswordRequest) (string, error)
+	ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error)
 }
 
 type service struct {
@@ -138,19 +140,16 @@ func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, str
 }
 
 func (s *service) Signin(req SigninRequest) (*user.User, string, string, error) {
-	// Get user by username
 	user, err := s.repo.GetUserByUsername(req.Username)
 	if err != nil {
 		return nil, "", "", ErrUserNotFound
 	}
 
-	// Verify password
 	isCorrectPassword, err := VerifyPassword(user.Password, req.Password)
 	if err != nil || !isCorrectPassword {
 		return nil, "", "", ErrIncorrectPassword
 	}
 
-	// Generate tokens
 	accessToken, err := GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTAccessSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("không thể tạo access_token: %v", err)
@@ -180,6 +179,7 @@ func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
 	forgData := ForgotPasswordData{
 		Email: req.Email,
 		Otp: otp,
+		Attempts: 0,
 	}
 
 	err = s.repo.StoreForgotPasswordData(forgotPasswordToken,  forgData, 3*time.Minute)
@@ -196,6 +196,74 @@ func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
 	}
 
 	return forgotPasswordToken, nil
+}
+
+func (s *service) VerifyForgotPassword(req VerifyForgotPasswordRequest) (string, error) {
+	forgData, err := s.repo.GetForgotPasswordData(req.ForgotPasswordToken)
+	if err != nil {
+		return "", ErrTokenExpired
+	}
+
+	if forgData.Attempts >= 3 {
+		s.repo.DeleteAuthData("forgot-password", req.ForgotPasswordToken)
+		return "", ErrTooManyAttempts
+	}
+
+	forgData.Attempts++
+	err = s.repo.UpdateForgotPasswordAttempts(req.ForgotPasswordToken, *forgData, 3*time.Minute)
+	if err != nil {
+		return "", err
+	}
+
+	if forgData.Otp != req.Otp {
+		return "", ErrInvalidOTP
+	}
+
+	resetPasswordToken := uuid.NewString()
+
+	err = s.repo.StoreResetPasswordData(resetPasswordToken,  forgData.Email, 3*time.Minute)
+	if err != nil {
+		return "", err
+	}
+
+	s.repo.DeleteAuthData("forgot-password", req.ForgotPasswordToken)
+
+	return resetPasswordToken, nil
+}
+
+func (s *service) ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error) {
+	email, err := s.repo.GetResetPasswordData(req.ResetPasswordToken)
+	if err != nil {
+		return nil, "", "", ErrTokenExpired
+	}
+
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return nil, "", "", ErrUserNotFound
+	}
+
+	hashedPassword, err := HashPassword(req.NewPassword)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể mã hóa mật khẩu: %v", err)
+	}
+
+	if err := s.repo.UpdateUserPassword(user.ID, hashedPassword); err != nil {
+		return nil, "", "", fmt.Errorf("không thể cập nhật mật khẩu: %v", err)
+	}
+
+	accessToken, err := GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTAccessSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể tạo access_token: %v", err)
+	}
+
+	refreshToken, err := GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.cfg.App.JWTRefreshSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("không thể tạo refresh_token: %v", err)
+	}
+
+	s.repo.DeleteAuthData("reset-password", req.ResetPasswordToken)
+
+	return user, accessToken, refreshToken, nil
 }
 
 func (s *service) GetMe(userID string) (*user.User, error) {

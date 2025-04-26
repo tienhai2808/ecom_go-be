@@ -29,8 +29,19 @@ type ForgotPasswordRequest struct {
 }
 
 type ForgotPasswordData struct {
-	Email string `json:"email"`
-	Otp   string `json:"otp"`
+	Email    string `json:"email"`
+	Otp      string `json:"otp"`
+	Attempts int    `json:"attempts"`
+}
+
+type VerifyForgotPasswordRequest struct {
+	ForgotPasswordToken string `json:"forgot_password_token" binding:"required,uuid4"`
+	Otp                 string `json:"otp" binding:"required,len=6,numeric"`
+}
+
+type ResetPasswordRequest struct {
+	ResetPasswordToken string `json:"reset_password_token" binding:"required,uuid4"`
+	NewPassword        string `json:"password" binding:"required,min=6"`
 }
 
 type UserResponse struct {

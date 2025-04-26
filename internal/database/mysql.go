@@ -9,15 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Hàm kết nối với MySQL sử dụng thông tin cấu hình
 func ConnectToDatabase() (*gorm.DB, error) {
-	// Lấy cấu hình database
 	cfg, err := config.LoadAppConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	// Tạo chuỗi kết nối MySQL
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.Database.User,
 		cfg.Database.Password,
@@ -26,7 +23,6 @@ func ConnectToDatabase() (*gorm.DB, error) {
 		cfg.Database.Name,
 	)
 
-	// Kết nối tới MySQL
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("❤️ failed to connect to database: %v", err)

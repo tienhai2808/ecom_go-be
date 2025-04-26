@@ -1,4 +1,3 @@
-// Continuation of the Handler implementation:
 package auth
 
 import (
@@ -144,7 +143,7 @@ func (h *Handler) Signout(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"statusCode": http.StatusOK,
-		"message": "Đăng xuất thành công",
+		"message":    "Đăng xuất thành công",
 	})
 }
 
@@ -179,9 +178,84 @@ func (h *Handler) ForgotPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"statusCode":        http.StatusOK,
+		"statusCode":          http.StatusOK,
 		"forgotPasswordToken": token,
-		"message":           "Vui lòng kiểm tra email để lấy mã OTP",
+		"message":             "Vui lòng kiểm tra email để lấy mã OTP",
+	})
+}
+
+func (h *Handler) VerifyForgotPassword(c *gin.Context) {
+	var req VerifyForgotPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	token, err := h.service.VerifyForgotPassword(req)
+	if err != nil {
+		switch err {
+		case ErrInvalidOTP, ErrTooManyAttempts, ErrTokenExpired:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể xác thực quên mật khẩu",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode":         http.StatusOK,
+		"resetPasswordToken": token,
+	})
+}
+
+func (h *Handler) ResetPassword(c *gin.Context) {
+	var req ResetPasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	user, accessToken, refreshToken, err := h.service.ResetPassword(req)
+	if err != nil {
+		switch err {
+		case ErrUserNotFound, ErrTokenExpired:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở SigninService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể đăng nhập",
+			})
+		}
+		return
+	}
+
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
+	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"user":       user,
 	})
 }
 
