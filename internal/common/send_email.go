@@ -2,7 +2,7 @@ package common
 
 import (
 	"bytes"
-	"e-commerce/internal/config"
+	"backend/internal/config"
 	"fmt"
 	"html/template"
 	"net/smtp"
@@ -22,7 +22,7 @@ type SMTPSender struct {
 }
 
 func NewSMTPSender(cfg *config.AppConfig) EmailSender {
-	auth := smtp.PlainAuth("", cfg.App.SmtpUser, cfg.App.SmtpPass, cfg.App.SmtpHost)
+	auth := smtp.PlainAuth("", cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.Host)
 
 	tmpl, err := template.New("email").Parse(emailTemplate)
 	if err != nil {
@@ -31,9 +31,9 @@ func NewSMTPSender(cfg *config.AppConfig) EmailSender {
 
 	return &SMTPSender{
 		auth:     auth,
-		host:     cfg.App.SmtpHost,
-		port:     cfg.App.SmtpPort,
-		from:     cfg.App.SmtpUser,
+		host:     cfg.SMTP.Host,
+		port:     cfg.SMTP.Port,
+		from:     cfg.SMTP.User,
 		appName:  cfg.App.Name,
 		template: tmpl,
 	}

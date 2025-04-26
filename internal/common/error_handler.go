@@ -1,18 +1,49 @@
 package common
 
 import (
-	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/go-playground/validator/v10"
 )
 
-func HandleValidationError(err error) []string {
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
-		var translated []string
-		for _, fe := range ve {
-			translated = append(translated, fe.Translate(Translator))
+type ValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+func HandleValidationError(err error) []ValidationError {
+	var validationErrors []ValidationError
+
+	if validationErrs, ok := err.(validator.ValidationErrors); ok {
+		for _, e := range validationErrs {
+			var message string
+
+			switch e.Tag() {
+			case "required":
+				message = fmt.Sprintf("%s là bắt buộc", e.Field())
+			case "email":
+				message = fmt.Sprintf("%s không phải là email hợp lệ", e.Field())
+			case "min":
+				message = fmt.Sprintf("%s phải có ít nhất %s ký tự", e.Field(), e.Param())
+			case "max":
+				message = fmt.Sprintf("%s không được vượt quá %s ký tự", e.Field(), e.Param())
+			case "len":
+				message = fmt.Sprintf("%s phải có chính xác %s ký tự", e.Field(), e.Param())
+			case "numeric":
+				message = fmt.Sprintf("%s phải là số", e.Field())
+			case "uuid4":
+				message = fmt.Sprintf("%s phải là UUID phiên bản 4 hợp lệ", e.Field())
+			default:
+				message = fmt.Sprintf("%s không hợp lệ", e.Field())
+			}
+
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   strings.ToLower(e.Field()),
+				Message: message,
+			})
 		}
-		return translated
 	}
-	return []string{"Dữ liệu không hợp lệ"}
+
+	return validationErrors
 }

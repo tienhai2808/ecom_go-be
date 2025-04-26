@@ -4,7 +4,6 @@ import (
 	"crypto/subtle"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"math"
 	mrand "math/rand"
@@ -30,7 +29,7 @@ func HashPassword(password string) (string, error) {
 		return "", nil
 	}
 
-	timeCost := uint32(1)
+	timeCost := uint32(3)
 	memory := uint32(64 * 1024)
 	threads := uint8(4)
 	keyLength := uint32(32)
@@ -39,33 +38,35 @@ func HashPassword(password string) (string, error) {
 
 	encodedSalt := base64.RawStdEncoding.EncodeToString(salt)
 	encodedHash := base64.RawStdEncoding.EncodeToString(hash)
-	encoded := encodedSalt + "." + encodedHash
+	encoded := fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s", memory, timeCost, threads, encodedSalt, encodedHash)
 
 	return encoded, nil
 }
 
 func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
-
-	parts := strings.Split(storedPassword, ".")
-	if len(parts) != 2 {
-		return false, errors.New("invalid stored password format")
+	parts := strings.Split(storedPassword, "$")
+	if len(parts) != 6 || parts[1] != "argon2id" {
+		return false, fmt.Errorf("mật khẩu đã lưu không đúng định dạng")
 	}
 
-	salt, err := base64.RawStdEncoding.DecodeString(parts[0])
+	var memory, timeCost uint32
+	var threads uint8
+
+	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &timeCost, &threads)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("lỗi khi đọc tham số: %v", err)
 	}
-	storedHash, err := base64.RawStdEncoding.DecodeString(parts[1])
+
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
+	if err != nil || len(salt) != 16 {
+		return false, fmt.Errorf("lỗi khi giải mã salt: %v", err)
+	}
+	storedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("lỗi khi giải mã hash: %v", err)
 	}
 
-	timeCost := uint32(1)
-	memory := uint32(64 * 1024)
-	threads := uint8(4)
-	keyLength := uint32(32)
-
-	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, keyLength)
+	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, uint32(len(storedHash)))
 
 	return subtle.ConstantTimeCompare(storedHash, inputHash) == 1, nil
 }

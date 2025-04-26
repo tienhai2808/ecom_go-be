@@ -2,7 +2,7 @@ package common
 
 
 import (
-	"e-commerce/internal/config"
+	"backend/internal/config"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"

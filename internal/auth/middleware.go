@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"e-commerce/internal/common"
+	"backend/internal/common"
 	"fmt"
 	"net/http"
 

@@ -1,8 +1,8 @@
 package database
 
 import (
-	"e-commerce/internal/config"
-	"e-commerce/internal/user"
+	"backend/internal/config"
+	"backend/internal/user"
 	"fmt"
 
 	"gorm.io/driver/mysql"
@@ -12,7 +12,7 @@ import (
 // Hàm kết nối với MySQL sử dụng thông tin cấu hình
 func ConnectToDatabase() (*gorm.DB, error) {
 	// Lấy cấu hình database
-	cfg, err := config.LoadDatabaseConfig()
+	cfg, err := config.LoadAppConfig()
 	if err != nil {
 		return nil, err
 	}

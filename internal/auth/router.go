@@ -1,0 +1,21 @@
+package auth
+
+import (
+	"backend/internal/common"
+
+	"github.com/gin-gonic/gin"
+)
+
+func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
+	authService := NewService(ctx)
+	handler := NewHandler(authService, ctx)
+
+	authGroup := r.Group("/auth")
+	{
+		authGroup.POST("/signup", handler.Signup)
+		authGroup.POST("/verify-signup", handler.VerifySignup)
+		authGroup.POST("/signin", handler.Signin)
+		authGroup.GET("/me", RequireAuth(ctx), handler.GetMe)
+		authGroup.GET("/refresh-token", handler.RefreshToken)
+	}
+} 

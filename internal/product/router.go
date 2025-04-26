@@ -1,7 +1,7 @@
 package product
 
 import (
-	"e-commerce/internal/common"
+	"backend/internal/common"
 
 	"github.com/gin-gonic/gin"
 )

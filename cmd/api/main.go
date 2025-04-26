@@ -1,13 +1,13 @@
 package main
 
 import (
-	"e-commerce/internal/auth"
-	"e-commerce/internal/cache"
-	"e-commerce/internal/common"
-	"e-commerce/internal/config"
-	"e-commerce/internal/database"
-	"e-commerce/internal/product"
-	"e-commerce/internal/user"
+	"backend/internal/auth"
+	"backend/internal/cache"
+	"backend/internal/common"
+	"backend/internal/config"
+	"backend/internal/database"
+	"backend/internal/product"
+	"backend/internal/user"
 	"fmt"
 	"log"
 
@@ -15,9 +15,6 @@ import (
 )
 
 func main() {
-	if err := common.InitValidator(); err != nil {
-		log.Fatal("Failed to init validator:", err)
-	}
 	r := gin.Default()
 
 	appConfig, err := config.LoadAppConfig(); 
