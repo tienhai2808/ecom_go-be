@@ -205,7 +205,7 @@ func (h *Handler) VerifyForgotPassword(c *gin.Context) {
 				"error":      err.Error(),
 			})
 		default:
-			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			fmt.Printf("Lỗi ở VerifyForgotPasswordService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể xác thực quên mật khẩu",
@@ -241,7 +241,7 @@ func (h *Handler) ResetPassword(c *gin.Context) {
 				"error":      err.Error(),
 			})
 		default:
-			fmt.Printf("Lỗi ở SigninService: %v\n", err)
+			fmt.Printf("Lỗi ở ResetPasswordService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể đăng nhập",
@@ -280,7 +280,7 @@ func (h *Handler) GetMe(c *gin.Context) {
 				"error":      err.Error(),
 			})
 		default:
-			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			fmt.Printf("Lỗi ở GetMeService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể lấy thông tin người dùng",
@@ -392,7 +392,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 				"error":      err.Error(),
 			})
 		default:
-			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
+			fmt.Printf("Lỗi ở ChangePasswordService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể lấy thông tin người dùng",

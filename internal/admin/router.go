@@ -8,8 +8,10 @@ import (
 )
 
 func AdminRouter(r *gin.RouterGroup, ctx *common.AppContext) {
+	adminService := NewService(ctx)
+	handler := NewHandler(adminService, ctx)
 	adminGroup := r.Group("/admin", auth.RequireAuth(ctx), RequireAdmin())
 	{
-		adminGroup.GET("/users", )
+		adminGroup.GET("/users", handler.GetAllUsers)
 	} 
 }

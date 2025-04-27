@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/admin"
 	"backend/internal/auth"
 	"backend/internal/cache"
 	"backend/internal/common"
@@ -51,6 +52,7 @@ func main() {
 	api := r.Group(appConfig.App.ApiPrefix)
 	{
 		auth.AuthRouter(api, appCtx)
+		admin.AdminRouter(api, appCtx)
 		user.UserRouter(api, appCtx)
 		product.ProductRouter(api, appCtx)
 	}
