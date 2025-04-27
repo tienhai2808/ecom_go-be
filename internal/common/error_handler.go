@@ -34,6 +34,8 @@ func HandleValidationError(err error) []ValidationError {
 				message = fmt.Sprintf("%s phải là số", e.Field())
 			case "uuid4":
 				message = fmt.Sprintf("%s phải là UUID phiên bản 4 hợp lệ", e.Field())
+			case "oneof":
+				message = fmt.Sprintf("%s phải có giá trị là: %s", e.Field(), e.Param())
 			default:
 				message = fmt.Sprintf("%s không hợp lệ", e.Field())
 			}

@@ -9,6 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
+var allModels = []interface{}{
+	&user.User{},
+	&user.Profile{},
+}
+
 func ConnectToDatabase() (*gorm.DB, error) {
 	cfg, err := config.LoadAppConfig()
 	if err != nil {
@@ -37,7 +42,7 @@ func ConnectToDatabase() (*gorm.DB, error) {
 }
 
 func RunAutoMigrations(db *gorm.DB) error {
-	err := db.AutoMigrate(&user.User{}, &user.Profile{})
+	err := db.AutoMigrate(allModels...)
 	if err != nil {
 		return fmt.Errorf("❤️ failed to migrate: %v", err)
 	}

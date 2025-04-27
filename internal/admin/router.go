@@ -10,8 +10,9 @@ import (
 func AdminRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 	adminService := NewService(ctx)
 	handler := NewHandler(adminService, ctx)
-	adminGroup := r.Group("/admin", auth.RequireAuth(ctx), RequireAdmin())
+	adminGroup := r.Group("/admin", auth.RequireAuth(ctx), RequireMultiRoles([]string{"admin"}))
 	{
 		adminGroup.GET("/users", handler.GetAllUsers)
+		adminGroup.POST("/users", handler.CreateUser)
 	} 
 }
