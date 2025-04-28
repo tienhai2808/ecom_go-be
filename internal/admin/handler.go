@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"backend/internal/auth"
 	"backend/internal/common"
 	"fmt"
 	"net/http"
@@ -48,12 +49,21 @@ func (h *Handler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.CreateUser(req); err != nil {
-		fmt.Printf("Lỗi ở CreateUsersService: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"statusCode": http.StatusInternalServerError, 
-			"error": "lỗi tạo mới người dùng",
-		})
+	err := h.service.CreateUser(req); 
+	if err != nil {
+		switch err {
+		case auth.ErrUsernameExists, auth.ErrEmailExists:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở SignupService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể đăng ký tài khoản",
+			})
+		}
 		return
 	}
 
