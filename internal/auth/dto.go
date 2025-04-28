@@ -1,5 +1,10 @@
 package auth
 
+import (
+	"backend/internal/user"
+	"time"
+)
+
 type SignupRequest struct {
 	Username string `json:"username" binding:"required,min=3"`
 	Email    string `json:"email" binding:"required,email"`
@@ -47,4 +52,12 @@ type ResetPasswordRequest struct {
 type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password" binding:"required,min=6"`
 	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+type UpdateInfoRequest struct {
+	FirstName   *string          `json:"first_name,omitempty"`
+	LastName    *string          `json:"last_name,omitempty"`
+	Gender      *user.UserGender `json:"gender,omitempty"`
+	DOB         *time.Time       `json:"dob,omitempty"`
+	PhoneNumber *string          `json:"phone_number,omitempty"`
 }

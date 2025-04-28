@@ -31,6 +31,7 @@ type Repository interface {
 	StoreForgotPasswordData(token string, data ForgotPasswordData, ttl time.Duration) error
 	StoreResetPasswordData(token string, email string, ttl time.Duration) error
 	UpdateUserPassword(userID string, hashedPassword string) error
+	UpdateUserInfo(user *user.User, updateData map[string]interface{}) error
 }
 
 type repository struct {
@@ -165,6 +166,13 @@ func (r *repository) UpdateUserPassword(userID string, hashedPassword string) er
 	}
 	if result.RowsAffected == 0 {
 		return ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *repository) UpdateUserInfo(user *user.User, updateData map[string]interface{}) error {
+	if err := r.db.Model(&user.Profile).Updates(updateData).Error; err != nil {
+		return err
 	}
 	return nil
 }

@@ -19,6 +19,7 @@ type Service interface {
 	VerifyForgotPassword(req VerifyForgotPasswordRequest) (string, error)
 	ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error)
 	ChangePassword(userID string, req ChangePasswordRequest) (*user.User, string, string, error)
+	UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error)
 }
 
 type service struct {
@@ -302,4 +303,36 @@ func (s *service) ChangePassword(userID string, req ChangePasswordRequest) (*use
 	}
 
 	return user, accessToken, refreshToken, nil
+}
+
+func (s *service) UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error) {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	updateData := map[string]interface{}{}
+	if req.FirstName != nil {
+		updateData["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil {
+		updateData["last_name"] = *req.LastName
+	}
+	if req.Gender != nil {
+		updateData["gender"] = *req.Gender
+	}
+	if req.DOB != nil {
+		updateData["dob"] = *req.DOB
+	}
+	if req.PhoneNumber != nil {
+		updateData["phone_number"] = *req.PhoneNumber
+	}
+
+	if len(updateData) > 0 {
+		if err := s.repo.UpdateUserInfo(user, updateData); err != nil {
+			return nil, err
+		}
+	}
+
+	return user, nil
 }

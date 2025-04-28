@@ -380,7 +380,7 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 			"statusCode": http.StatusUnauthorized,
 			"error":      "không có quyền truy cập",
 		})
-		return 
+		return
 	}
 
 	user, accessToken, refreshToken, err := h.service.ChangePassword(userID, req)
@@ -408,4 +408,58 @@ func (h *Handler) ChangePassword(c *gin.Context) {
 		"statusCode": http.StatusOK,
 		"user":       user,
 	})
+}
+
+func (h *Handler) UpdateUserInfo(c *gin.Context) {
+	var req UpdateInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+	userID := c.Param("user_id")
+	currentUserIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+
+	currentUserID, _ := currentUserIDVal.(string)
+	if currentUserID != userID {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+
+	updatedUser, err := h.service.UpdateInfo(userID, &req)
+	if err != nil {
+		switch err {
+		case ErrUserNotFound:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở ChangePasswordService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể lấy thông tin người dùng",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"user":       updatedUser,
+	})
+
 }

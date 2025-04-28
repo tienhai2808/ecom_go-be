@@ -20,7 +20,8 @@ func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 		authGroup.POST("/forgot-password/verify-email", handler.VerifyForgotPassword)
 		authGroup.POST("/reset-password", handler.ResetPassword)
 		authGroup.GET("/me", RequireAuth(ctx), handler.GetMe)
-		authGroup.PATCH("/change-password/:user_id", RequireAuth(ctx), handler.ChangePassword)
+		authGroup.PATCH("/update-info/:user_id", RequireAuth(ctx), handler.UpdateUserInfo)
+		authGroup.PUT("/change-password/:user_id", RequireAuth(ctx), handler.ChangePassword)
 		authGroup.GET("/refresh-token", handler.RefreshToken)
 	}
 }
