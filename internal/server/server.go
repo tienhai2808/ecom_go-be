@@ -47,6 +47,8 @@ func NewApplication() *Application {
 		log.Fatalf("❤️ Could not set trusted proxies: %v", err)
 	}
 
+	config.SetupCORS(r)
+
 	application := &Application{
 		AppCtx: appCtx,
 		Router: r,
