@@ -106,3 +106,42 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		"message":    "Cập nhật thông tin người dùng thành công",
 	})
 }
+
+func (h *Handler) DeleteUsers(c *gin.Context) {
+	var req DeleteUsersRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	currentUserIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+	currentUserID, _ := currentUserIDVal.(string)
+
+	rowsAffected, err := h.service.DeleteUsers(currentUserID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+			"statusCode": http.StatusInternalServerError,
+		})
+		return
+	}
+
+	message := fmt.Sprintf("Xóa thành công %d người dùng", rowsAffected)
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"message": message,
+	})
+}

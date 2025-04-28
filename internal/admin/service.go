@@ -14,6 +14,7 @@ type Service interface {
 	GetAllUsers() ([]user.User, error)
 	CreateUser(req CreateUserRequest) error
 	UpdateUser(userID string, req *UpdateUserRequest) error
+	DeleteUsers(currentUserID string, req DeleteUsersRequest) (int64, error)
 }
 
 type service struct {
@@ -145,4 +146,29 @@ func (s *service) UpdateUser(userID string, req *UpdateUserRequest) error {
 	}
 
 	return nil 
+}
+
+func (s *service) DeleteUsers(currentUserID string, req DeleteUsersRequest) (int64, error) {
+	userIDs := req.UserIds
+	if len(userIDs) == 0 {
+		return 0, fmt.Errorf("không có user_id trong yêu cầu")
+	}
+
+	filteredUserIDs := []string{}
+	for _, id := range userIDs {
+		if id != currentUserID {
+			filteredUserIDs = append(filteredUserIDs, id)
+		}
+	}
+
+	
+	if len(filteredUserIDs) == 0 {
+		return 0, fmt.Errorf("không thể xóa tài khoản đang đăng nhập")
+	}
+
+	rowsAffected, err := s.repo.DeleteUSers(filteredUserIDs); 
+	if err != nil {
+		return 0, err
+	}
+	return rowsAffected, nil
 }

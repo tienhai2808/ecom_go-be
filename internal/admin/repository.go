@@ -11,6 +11,7 @@ import (
 
 type Repository interface {
 	GetUsers() ([]user.User, error)
+	DeleteUSers(userIDs []string) (int64, error)
 }
 
 type repository struct {
@@ -30,9 +31,16 @@ func NewRepository(ctx *common.AppContext) Repository {
 func (r *repository) GetUsers() ([]user.User, error) {
 	var users []user.User
 
-	err := r.db.Preload("Profile").Find(&users).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *repository) DeleteUSers(userIDs []string) (int64, error) {
+	result := r.db.Where("id IN ?", userIDs).Delete(&user.User{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
 }
