@@ -14,5 +14,6 @@ func AdminRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 	{
 		adminGroup.GET("/users", handler.GetAllUsers)
 		adminGroup.POST("/users", handler.CreateUser)
+		adminGroup.PATCH("/users/:user_id", handler.UpdateUser)
 	} 
 }

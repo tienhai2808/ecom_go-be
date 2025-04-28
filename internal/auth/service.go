@@ -171,7 +171,7 @@ func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
 		return "", err
 	}
 
-	if exists {
+	if !exists {
 		return "", ErrUserNotFound
 	}
 
@@ -329,10 +329,15 @@ func (s *service) UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User,
 	}
 
 	if len(updateData) > 0 {
-		if err := s.repo.UpdateUserInfo(user, updateData); err != nil {
-			return nil, err
+		if err := s.repo.UpdateUserProfile(user, updateData); err != nil {
+			return nil, ErrUpdateFailed
 		}
 	}
 
-	return user, nil
+	updatedUser, err := s.repo.GetUserByID(user.ID)
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	return updatedUser, nil
 }

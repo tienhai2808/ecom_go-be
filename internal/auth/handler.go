@@ -442,7 +442,7 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 	updatedUser, err := h.service.UpdateInfo(userID, &req)
 	if err != nil {
 		switch err {
-		case ErrUserNotFound:
+		case ErrUserNotFound, ErrUpdateFailed:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"statusCode": http.StatusBadRequest,
 				"error":      err.Error(),
@@ -451,7 +451,7 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 			fmt.Printf("Lỗi ở ChangePasswordService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
-				"error":      "Không thể lấy thông tin người dùng",
+				"error":      "Không thể cập nhật thông tin người dùng",
 			})
 		}
 		return

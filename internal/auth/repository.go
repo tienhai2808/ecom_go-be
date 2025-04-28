@@ -28,9 +28,11 @@ type Repository interface {
 	GetUserByID(id string) (*user.User, error)
 	GetUserByEmail(email string) (*user.User, error)
 	CheckUserExistsByEmail(email string) (bool, error)
+	CheckUserExistsByUsername(username string) (bool, error)
 	StoreForgotPasswordData(token string, data ForgotPasswordData, ttl time.Duration) error
 	StoreResetPasswordData(token string, email string, ttl time.Duration) error
 	UpdateUserPassword(userID string, hashedPassword string) error
+	UpdateUserProfile(user *user.User, updateData map[string]interface{}) error
 	UpdateUserInfo(user *user.User, updateData map[string]interface{}) error
 }
 
@@ -64,6 +66,19 @@ func (r *repository) CheckUserExists(username, email string) (bool, string, erro
 	}
 
 	return false, "", nil
+}
+
+func (r *repository) CheckUserExistsByUsername(username string) (bool, error) {
+	var existingUser user.User
+
+	err := r.db.Where("username = ?", username).First(&existingUser).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *repository) StoreRegistrationData(token string, data RegistrationData, ttl time.Duration) error {
@@ -170,8 +185,15 @@ func (r *repository) UpdateUserPassword(userID string, hashedPassword string) er
 	return nil
 }
 
-func (r *repository) UpdateUserInfo(user *user.User, updateData map[string]interface{}) error {
+func (r *repository) UpdateUserProfile(user *user.User, updateData map[string]interface{}) error {
 	if err := r.db.Model(&user.Profile).Updates(updateData).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repository) UpdateUserInfo(user *user.User, updateData map[string]interface{}) error {
+	if err := r.db.Model(&user).Updates(updateData).Error; err != nil {
 		return err
 	}
 	return nil
@@ -181,7 +203,10 @@ func (r *repository) CheckUserExistsByEmail(email string) (bool, error) {
 	var existingUser user.User
 
 	err := r.db.Where("email = ?", email).First(&existingUser).Error
-	if err == nil {
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
 		return false, err
 	}
 	return true, nil

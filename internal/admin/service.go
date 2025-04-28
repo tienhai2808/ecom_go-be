@@ -13,6 +13,7 @@ import (
 type Service interface {
 	GetAllUsers() ([]user.User, error)
 	CreateUser(req CreateUserRequest) error
+	UpdateUser(userID string, req *UpdateUserRequest) error
 }
 
 type service struct {
@@ -72,4 +73,76 @@ func (s *service) CreateUser(req CreateUserRequest) error {
 	}
 
 	return nil
+}
+
+func (s *service) UpdateUser(userID string, req *UpdateUserRequest) error {
+	user, err := s.authRepo.GetUserByID(userID)
+	if err != nil {
+		return auth.ErrUserNotFound
+	}
+
+	if req.Email != nil && *req.Email != user.Email {
+		exists, err := s.authRepo.CheckUserExistsByEmail(*req.Email) 
+		if err != nil {
+			return err
+		}
+		if exists {
+			return auth.ErrEmailExists
+		}
+	}
+
+	if req.Username != nil && *req.Username != user.Username {
+		exists, err := s.authRepo.CheckUserExistsByUsername(*req.Username)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return auth.ErrUsernameExists
+		}
+	}
+
+	updateUserData := map[string]interface{}{}
+	if req.Username != nil {
+		updateUserData["username"] = *req.Username
+	}
+	if req.Email != nil {
+		updateUserData["email"] = *req.Email
+	}
+	if req.Password != nil {
+		updateUserData["password"] = *req.Password
+	}
+	if req.Role != nil {
+		updateUserData["role"] = *req.Role
+	}
+
+	updateProfileData := map[string]interface{}{}
+	if req.FirstName != nil {
+		updateProfileData["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil {
+		updateProfileData["last_name"] = *req.LastName
+	}
+	if req.PhoneNumber != nil {
+		updateProfileData["phone_number"] = *req.PhoneNumber
+	}
+	if req.DOB != nil {
+		updateProfileData["dob"] = *req.DOB
+	}
+	if req.Gender != nil {
+		updateProfileData["gender"] = *req.Gender
+	}
+
+	if len(updateUserData) > 0 {
+		if err := s.authRepo.UpdateUserInfo(user, updateUserData); err != nil {
+			return auth.ErrUpdateFailed
+		}
+	}
+
+	if len(updateProfileData) > 0 {
+		if err := s.authRepo.UpdateUserProfile(user, updateProfileData); err != nil {
+			return auth.ErrUpdateFailed
+		}
+	}
+
+	return nil 
 }

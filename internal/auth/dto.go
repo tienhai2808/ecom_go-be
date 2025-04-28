@@ -57,7 +57,7 @@ type ChangePasswordRequest struct {
 type UpdateInfoRequest struct {
 	FirstName   *string          `json:"first_name,omitempty"`
 	LastName    *string          `json:"last_name,omitempty"`
-	Gender      *user.UserGender `json:"gender,omitempty"`
+	Gender      *user.UserGender `json:"gender" binding:"omitempty,oneof=other male female"`
 	DOB         *time.Time       `json:"dob,omitempty"`
-	PhoneNumber *string          `json:"phone_number,omitempty"`
+	PhoneNumber *string          `json:"phone_number" binding:"omitempty,len=10"`
 }

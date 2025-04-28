@@ -12,4 +12,5 @@ var (
 	ErrUserNotFound      = errors.New("người dùng không tồn tại")
 	ErrIncorrectPassword = errors.New("mật khẩu không chính xác")
 	ErrUnAuth            = errors.New("không có quyền truy cập")
+	ErrUpdateFailed      = errors.New("cập nhật thông tin người dùng thất bại")
 )
