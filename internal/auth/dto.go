@@ -61,3 +61,9 @@ type UpdateInfoRequest struct {
 	DOB         *time.Time       `json:"dob,omitempty"`
 	PhoneNumber *string          `json:"phone_number" binding:"omitempty,len=10"`
 }
+
+type EmailMessage struct {
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+}

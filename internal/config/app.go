@@ -30,6 +30,13 @@ type AppConfig struct {
 		Port int    `yaml:"port"`
 	} `yaml:"redis"`
 
+	RabbitMQ struct {
+		Host string `yaml:"host"`
+		Port int `yaml:"port"`
+		User string `yaml:"user"`
+		Pass string `yaml:"pass"`
+	} `yaml:"rabbitmq"`
+
 	SMTP struct {
 		Host string `yaml:"host"`
 		Port string `yaml:"port"`
