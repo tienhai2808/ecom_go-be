@@ -18,14 +18,13 @@ type EmailMessage struct {
 }
 
 func ConsumeMessages(ch *amqp091.Channel, queueName string) (<-chan amqp091.Delivery, error) {
-	// Ensure the queue exists
 	_, err := ch.QueueDeclare(
-		queueName, // name
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		queueName, 
+		true,      
+		false,     
+		false,     
+		false,     
+		nil,       
 	)
 	if err != nil {
 		return nil, fmt.Errorf("không thể khai báo queue %s: %v", queueName, err)
@@ -33,12 +32,12 @@ func ConsumeMessages(ch *amqp091.Channel, queueName string) (<-chan amqp091.Deli
 
 	msgs, err := ch.Consume(
 		queueName,
-		"",    // consumer
-		false, // auto-ack (set to false to manually acknowledge)
-		false, // exclusive
-		false, // no-local
-		false, // no-wait
-		nil,   // args
+		"",   
+		false, 
+		false, 
+		false, 
+		false, 
+		nil,   
 	)
 	if err != nil {
 		return nil, fmt.Errorf("không thể consume từ queue %s: %v", queueName, err)
@@ -49,14 +48,13 @@ func ConsumeMessages(ch *amqp091.Channel, queueName string) (<-chan amqp091.Deli
 func StartEmailConsumer(ch *amqp091.Channel, emailSender common.EmailSender) {
 	queueName := "email_queue"
 
-	// Ensure the queue exists
 	_, err := ch.QueueDeclare(
-		queueName, // name
-		true,      // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		queueName, 
+		true,      
+		false,     
+		false,     
+		false,     
+		nil,       
 	)
 	if err != nil {
 		log.Fatalf("❤️ Không thể khai báo queue %s: %v", queueName, err)
@@ -76,24 +74,20 @@ func StartEmailConsumer(ch *amqp091.Channel, emailSender common.EmailSender) {
 			var emailMsg EmailMessage
 			if err := json.Unmarshal(msg.Body, &emailMsg); err != nil {
 				log.Printf("❤️ Lỗi parse email message: %v", err)
-				// Give some time before requeueing to avoid rapid requeuing of malformed messages
 				time.Sleep(1 * time.Second)
-				msg.Nack(false, true) // Nack and requeue
+				msg.Nack(false, true) 
 				continue
 			}
 
-			// Validate email message fields
 			if emailMsg.To == "" || emailMsg.Subject == "" {
 				log.Printf("❤️ Email message thiếu thông tin cần thiết: To=%s, Subject=%s",
 					emailMsg.To, emailMsg.Subject)
-				// This is likely a permanent error, don't requeue
 				msg.Nack(false, false)
 				continue
 			}
 
 			log.Printf("📧 Gửi email đến: %s, chủ đề: %s", emailMsg.To, emailMsg.Subject)
 
-			// Retry mechanism for sending emails
 			maxRetries := 3
 			var sendErr error
 
@@ -111,7 +105,6 @@ func StartEmailConsumer(ch *amqp091.Channel, emailSender common.EmailSender) {
 
 			if sendErr != nil {
 				log.Printf("❤️ Đã thử %d lần nhưng không thể gửi email: %v", maxRetries, sendErr)
-				// Nack the message and requeue it to try again later
 				msg.Nack(false, true)
 				continue
 			}

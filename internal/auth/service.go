@@ -93,14 +93,6 @@ func (s *service) Signup(req SignupRequest) (string, error) {
 	return registrationToken, nil
 }
 
-// emailSender := common.NewSMTPSender(s.cfg)
-// emailContent := fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp)
-// err = emailSender.SendEmail(req.Email, "Mã xác nhận Đăng ký tài khoản", emailContent)
-// if err != nil {
-// 	s.repo.DeleteAuthData("signup", registrationToken)
-// 	return "", fmt.Errorf("không thể gửi Email: %v", err)
-// }
-
 func (s *service) VerifySignup(req VerifySignupRequest) (*user.User, string, string, error) {
 	regData, err := s.repo.GetRegistrationData(req.RegistrationToken)
 	if err != nil {
@@ -211,12 +203,22 @@ func (s *service) ForgotPassword(req ForgotPasswordRequest) (string, error) {
 		return "", err
 	}
 
-	emailSender := common.NewSMTPSender(s.cfg)
-	emailContent := fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp)
-	err = emailSender.SendEmail(req.Email, "Mã xác nhận Quên mật khẩu", emailContent)
+	emailMsg := EmailMessage{
+		To:      req.Email,
+		Subject: "Mã xác nhận Quên mật khẩu",
+		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
+	}
+
+	body, err := json.Marshal(emailMsg)
 	if err != nil {
 		s.repo.DeleteAuthData("forgot-password", forgotPasswordToken)
-		return "", fmt.Errorf("không thể gửi Email: %v", err)
+		return "", fmt.Errorf("lỗi khi marshal email message: %v", err)
+	}
+
+	err = mq.PublishMessage(s.ctx.RabbitChan, "", "email_queue", body)
+	if err != nil {
+		s.repo.DeleteAuthData("forgot-password", forgotPasswordToken)
+		return "", fmt.Errorf("không thể publish message: %v", err)
 	}
 
 	return forgotPasswordToken, nil

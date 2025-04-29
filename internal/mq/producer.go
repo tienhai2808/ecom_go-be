@@ -10,12 +10,12 @@ import (
 
 func PublishMessage(ch *amqp091.Channel, exchange, routingKey string, body []byte) error {
 	_, err := ch.QueueDeclare(
-		routingKey, // name
-		true,       // durable
-		false,      // delete when unused
-		false,      // exclusive
-		false,      // no-wait
-		nil,        // arguments
+		routingKey, 
+		true,       
+		false,      
+		false,      
+		false,      
+		nil,        
 	)
 	if err != nil {
 		return fmt.Errorf("không thể khai báo queue %s: %v", routingKey, err)
@@ -26,10 +26,10 @@ func PublishMessage(ch *amqp091.Channel, exchange, routingKey string, body []byt
 
 	return ch.PublishWithContext(
 		ctx,
-		exchange,  // exchange
-		routingKey, // routing key
-		false,     // mandatory
-		false,     // immediate
+		exchange,  
+		routingKey, 
+		false,     
+		false,     
 		amqp091.Publishing{
 			ContentType:  "application/json",
 			DeliveryMode: amqp091.Persistent, 
