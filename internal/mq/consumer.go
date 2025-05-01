@@ -1,4 +1,3 @@
-// In mq/consumer.go
 package mq
 
 import (

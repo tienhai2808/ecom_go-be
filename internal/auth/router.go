@@ -12,6 +12,7 @@ func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 
 	authGroup := r.Group("/auth")
 	{
+		authGroup.POST("/test", handler.Test);
 		authGroup.POST("/signup", handler.Signup)
 		authGroup.POST("/signup/verify-email", handler.VerifySignup)
 		authGroup.POST("/signin", handler.Signin)

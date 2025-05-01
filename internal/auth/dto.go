@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type TestRequest struct {
+	Request string `json:"request"`
+}
+
 type SignupRequest struct {
 	Username string `json:"username" binding:"required,min=3"`
 	Email    string `json:"email" binding:"required,email"`

@@ -22,6 +22,23 @@ func NewHandler(service Service, ctx *common.AppContext) *Handler {
 	}
 }
 
+func (h *Handler) Test(c *gin.Context) {
+	var req TestRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     err.Error(),
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+	fmt.Printf(`Nội dung request gửi đến: %s`, req.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"message":    "Hello world",
+	})
+}
+
 func (h *Handler) Signup(c *gin.Context) {
 	var req SignupRequest
 
