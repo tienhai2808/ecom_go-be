@@ -503,7 +503,8 @@ func (h *Handler) AddAddress(c *gin.Context) {
 	}
 
 	userID, _ := userIDVal.(string)
-	if err := h.service.AddAddress(userID, req); err != nil {
+	address, err := h.service.AddAddress(userID, req)
+	if err != nil {
 		switch err {
 		case ErrUserNotFound:
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -511,7 +512,7 @@ func (h *Handler) AddAddress(c *gin.Context) {
 				"error":      err.Error(),
 			})
 		default:
-			fmt.Printf("Lỗi ở SignupService: %v\n", err)
+			fmt.Printf("Lỗi ở AddAddressService: %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"statusCode": http.StatusInternalServerError,
 				"error":      "Không thể thêm địa chỉ",
@@ -522,6 +523,55 @@ func (h *Handler) AddAddress(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"statusCode": http.StatusOK,
-		"message":    "Thêm địa chỉ thành công",
+		"address":    address,
+	})
+}
+
+func (h *Handler) UpdateAddress(c *gin.Context) {
+	var req UpdateAddressRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	addressID := c.Param("address_id")
+
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+
+	userID, _ := userIDVal.(string)
+
+	updatedAddress, err := h.service.UpdateAddress(userID, addressID, req)
+	if err != nil {
+		switch err {
+		case ErrUnAuth, ErrAddressNotFound, ErrUpdateFailed:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở UpdateAddressService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể cập nhật địa chỉ",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"address":    updatedAddress,
 	})
 }

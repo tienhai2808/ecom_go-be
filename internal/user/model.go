@@ -31,8 +31,10 @@ type Address struct {
 	District string `gorm:"type:varchar(255);not null" json:"district"`
 	Province string `gorm:"type:varchar(255);not null" json:"province"`
 	IsDefault bool `gorm:"type:boolean;default:true" json:"is_default"`
+	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"-"`
+	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"-"`
 
-	UserID string `gorm:"type:char(36);not null"`
+	UserID string `gorm:"type:char(36);not null" json:"-"`
 }
 
 type Profile struct {
@@ -58,5 +60,5 @@ type User struct {
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"-"`
 
 	Profile Profile `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"profile"`
-	Address []Address `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"address"`
+	Address []Address `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"-"`
 }

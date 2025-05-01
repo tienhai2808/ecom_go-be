@@ -36,6 +36,8 @@ type Repository interface {
 	UpdateUserInfo(user *user.User, updateData map[string]interface{}) error
 	CreateAddress(addressData *user.Address) error
 	UnsetDefaultAddress(userID string) error
+	GetAddressByID(id string) (*user.Address, error)
+	UpdateAddress(user *user.Address, updateData map[string]interface{}) error
 }
 
 type repository struct {
@@ -142,8 +144,7 @@ func (r *repository) CreateUser(userData *user.User) error {
 
 func (r *repository) GetUserByUsername(username string) (*user.User, error) {
 	var u user.User
-	err := r.db.Preload("Profile").Where("username = ?", username).First(&u).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").Where("username = ?", username).First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -154,8 +155,7 @@ func (r *repository) GetUserByUsername(username string) (*user.User, error) {
 
 func (r *repository) GetUserByID(id string) (*user.User, error) {
 	var u user.User
-	err := r.db.Preload("Profile").Where("id = ?", id).First(&u).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").Where("id = ?", id).First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -166,8 +166,7 @@ func (r *repository) GetUserByID(id string) (*user.User, error) {
 
 func (r *repository) GetUserByEmail(email string) (*user.User, error) {
 	var u user.User
-	err := r.db.Preload("Profile").Where("email = ?", email).First(&u).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").Where("email = ?", email).First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
 		}
@@ -295,4 +294,22 @@ func (r *repository) UnsetDefaultAddress(userID string) error {
 	return r.db.Model(&user.Address{}).
 		Where("user_id = ? AND is_default = ?", userID, true).
 		Update("is_default", false).Error
+}
+
+func (r *repository) GetAddressByID(id string) (*user.Address, error) {
+	var a user.Address
+	if err := r.db.Where("id = ?", id).First(&a).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrAddressNotFound
+		}
+		return nil, fmt.Errorf("không thể truy vấn địa chỉ: %v", err)
+	}
+	return &a, nil
+}
+
+func (r *repository) UpdateAddress(address *user.Address, updateData map[string]interface{}) error {
+	if err := r.db.Model(&address).Updates(updateData).Error; err != nil {
+		return err
+	}
+	return nil
 }

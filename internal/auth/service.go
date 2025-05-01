@@ -22,7 +22,8 @@ type Service interface {
 	ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error)
 	ChangePassword(userID string, req ChangePasswordRequest) (*user.User, string, string, error)
 	UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error)
-	AddAddress(userID string, req AddAddressRequest) error
+	AddAddress(userID string, req AddAddressRequest) (*user.Address, error)
+	UpdateAddress(userID, addressID string, req UpdateAddressRequest) (*user.Address, error)
 }
 
 type service struct {
@@ -367,16 +368,15 @@ func (s *service) UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User,
 	return updatedUser, nil
 }
 
-func (s *service) AddAddress(userID string, req AddAddressRequest) error {
+func (s *service) AddAddress(userID string, req AddAddressRequest) (*user.Address, error) {
 	_, err := s.repo.GetUserByID(userID)
 	if err != nil {
-		return ErrUserNotFound
+		return nil, ErrUserNotFound
 	}
 
-	if req.IsDefault {
-		if err := s.repo.UnsetDefaultAddress(userID); err != nil {
-			return fmt.Errorf("không thể bỏ đặt mặc định: %v", err)
-		}
+	if err := s.repo.UnsetDefaultAddress(userID); err != nil {
+		fmt.Print(err)
+		return nil, fmt.Errorf("không thể bỏ đặt mặc định: %v", err)
 	}
 
 	newAddress := &user.Address{
@@ -387,12 +387,61 @@ func (s *service) AddAddress(userID string, req AddAddressRequest) error {
 		Commune:     req.Commune,
 		District:    req.District,
 		Province:    req.Province,
-		IsDefault:   req.IsDefault,
 		Address:     req.Address,
 		UserID:      userID,
 	}
 	if err := s.repo.CreateAddress(newAddress); err != nil {
-		return fmt.Errorf("không thể tạo địa chỉ: %v", err)
+		return nil, fmt.Errorf("không thể tạo địa chỉ: %v", err)
 	}
-	return nil
+	return newAddress, nil
+}
+
+func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressRequest) (*user.Address, error) {
+	address, err := s.repo.GetAddressByID(addressID)
+	if err != nil {
+		return nil, ErrAddressNotFound
+	}
+
+	if address.UserID != userID {
+		return nil, ErrUnAuth
+	}
+
+	updateData := map[string]interface{}{}
+	if req.FirstName != nil {
+		updateData["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil {
+		updateData["last_name"] = *req.LastName
+	}
+	if req.PhoneNumber != nil {
+		updateData["phone_number"] = *req.PhoneNumber
+	}
+	if req.Address != nil {
+		updateData["address"] = *req.Address
+	}
+	if req.Commune != nil {
+		updateData["commune"] = *req.Commune
+	}
+	if req.District != nil {
+		updateData["district"] = *req.District
+	}
+	if req.Province != nil {
+		updateData["province"] = *req.Province
+	}
+	if req.IsDefault != nil {
+		updateData["is_default"] = *req.IsDefault
+	}
+
+	if len(updateData) > 0 {
+		if err := s.repo.UpdateAddress(address, updateData); err != nil {
+			return nil, ErrUpdateFailed
+		}
+	}
+
+	updatedAddress, err := s.repo.GetAddressByID(address.ID)
+	if err != nil {
+		return nil, ErrAddressNotFound
+	}
+
+	return updatedAddress, nil
 }
