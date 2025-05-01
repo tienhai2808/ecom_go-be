@@ -24,5 +24,6 @@ func AuthRouter(r *gin.RouterGroup, ctx *common.AppContext) {
 		authGroup.PATCH("/update-info/:user_id", RequireAuth(ctx), handler.UpdateUserInfo)
 		authGroup.PUT("/change-password/:user_id", RequireAuth(ctx), handler.ChangePassword)
 		authGroup.GET("/refresh-token", handler.RefreshToken)
+		authGroup.POST("/add-address", RequireAuth(ctx), handler.AddAddress)
 	}
 }

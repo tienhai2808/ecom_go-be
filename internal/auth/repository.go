@@ -34,6 +34,8 @@ type Repository interface {
 	UpdateUserPassword(userID string, hashedPassword string) error
 	UpdateUserProfile(user *user.User, updateData map[string]interface{}) error
 	UpdateUserInfo(user *user.User, updateData map[string]interface{}) error
+	CreateAddress(addressData *user.Address) error
+	UnsetDefaultAddress(userID string) error
 }
 
 type repository struct {
@@ -283,4 +285,14 @@ func (r *repository) GetResetPasswordData(token string) (string, error) {
 	}
 
 	return email, nil
+}
+
+func (r *repository) CreateAddress(addressData *user.Address) error {
+	return r.db.Create(addressData).Error
+}
+
+func (r *repository) UnsetDefaultAddress(userID string) error {
+	return r.db.Model(&user.Address{}).
+		Where("user_id = ? AND is_default = ?", userID, true).
+		Update("is_default", false).Error
 }

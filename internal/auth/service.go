@@ -22,6 +22,7 @@ type Service interface {
 	ResetPassword(req ResetPasswordRequest) (*user.User, string, string, error)
 	ChangePassword(userID string, req ChangePasswordRequest) (*user.User, string, string, error)
 	UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error)
+	AddAddress(userID string, req AddAddressRequest) error
 }
 
 type service struct {
@@ -364,4 +365,34 @@ func (s *service) UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User,
 	}
 
 	return updatedUser, nil
+}
+
+func (s *service) AddAddress(userID string, req AddAddressRequest) error {
+	_, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	if req.IsDefault {
+		if err := s.repo.UnsetDefaultAddress(userID); err != nil {
+			return fmt.Errorf("không thể bỏ đặt mặc định: %v", err)
+		}
+	}
+
+	newAddress := &user.Address{
+		ID:          uuid.NewString(),
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		PhoneNumber: req.PhoneNumber,
+		Commune:     req.Commune,
+		District:    req.District,
+		Province:    req.Province,
+		IsDefault:   req.IsDefault,
+		Address:     req.Address,
+		UserID:      userID,
+	}
+	if err := s.repo.CreateAddress(newAddress); err != nil {
+		return fmt.Errorf("không thể tạo địa chỉ: %v", err)
+	}
+	return nil
 }

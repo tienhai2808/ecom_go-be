@@ -12,6 +12,7 @@ import (
 var allModels = []interface{}{
 	&user.User{},
 	&user.Profile{},
+	&user.Address{},
 }
 
 func ConnectToDatabase() (*gorm.DB, error) {

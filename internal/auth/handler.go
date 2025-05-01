@@ -480,3 +480,48 @@ func (h *Handler) UpdateUserInfo(c *gin.Context) {
 	})
 
 }
+
+func (h *Handler) AddAddress(c *gin.Context) {
+	var req AddAddressRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"errors":     translated,
+			"statusCode": http.StatusBadRequest,
+		})
+		return
+	}
+
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+
+	userID, _ := userIDVal.(string)
+	if err := h.service.AddAddress(userID, req); err != nil {
+		switch err {
+		case ErrUserNotFound:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"statusCode": http.StatusBadRequest,
+				"error":      err.Error(),
+			})
+		default:
+			fmt.Printf("Lỗi ở SignupService: %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"statusCode": http.StatusInternalServerError,
+				"error":      "Không thể thêm địa chỉ",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"message":    "Thêm địa chỉ thành công",
+	})
+}
