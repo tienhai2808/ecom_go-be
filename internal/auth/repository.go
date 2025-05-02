@@ -38,6 +38,9 @@ type Repository interface {
 	UnsetDefaultAddress(userID string) error
 	GetAddressByID(id string) (*user.Address, error)
 	UpdateAddress(user *user.Address, updateData map[string]interface{}) error
+	CheckDefaultAddressExists(userID string) (bool, error)
+	SetLatestDefaultAddress(userID, addressID string) error
+	CountAddress(userID string) (int64, error)
 }
 
 type repository struct {
@@ -310,6 +313,41 @@ func (r *repository) GetAddressByID(id string) (*user.Address, error) {
 func (r *repository) UpdateAddress(address *user.Address, updateData map[string]interface{}) error {
 	if err := r.db.Model(&address).Updates(updateData).Error; err != nil {
 		return err
+	}
+	return nil
+}
+
+func (r *repository) CheckDefaultAddressExists(userID string) (bool, error) {
+	var count int64
+
+	if err := r.db.Model(&user.Address{}).Where("user_id = ? AND is_default = true", userID).Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (r *repository) CountAddress(userID string) (int64, error) {
+	var count int64
+
+	if err := r.db.Model(&user.Address{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("lỗi đếm số lượng địa chỉ: %v", err)
+	}
+	return count, nil
+}
+
+func (r *repository) SetLatestDefaultAddress(userID, addressID string) error {
+	var latestAddress user.Address
+
+	if err := r.db.Where("user_id = ? AND id != ?", userID, addressID).Order("created_at DESC").First(&latestAddress).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("lỗi truy vấn địa chỉ gần nhất: %v", err)
+	}
+	if err := r.db.Model(&user.Address{}).
+		Where("id = ?", latestAddress.ID).
+		Update("is_default", true).Error; err != nil {
+		return fmt.Errorf("lỗi cập nhật địa chỉ mặc định: %v", err)
 	}
 	return nil
 }

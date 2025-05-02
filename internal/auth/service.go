@@ -374,9 +374,17 @@ func (s *service) AddAddress(userID string, req AddAddressRequest) (*user.Addres
 		return nil, ErrUserNotFound
 	}
 
-	if err := s.repo.UnsetDefaultAddress(userID); err != nil {
-		fmt.Print(err)
-		return nil, fmt.Errorf("không thể bỏ đặt mặc định: %v", err)
+	exists, err := s.repo.CheckDefaultAddressExists(userID)
+	if err != nil {
+		return nil, fmt.Errorf("lỗi kiểm tra địa chỉ mặc định: %v", err)
+	}
+	if exists && req.IsDefault {
+		if err := s.repo.UnsetDefaultAddress(userID); err != nil {
+			return nil, fmt.Errorf("lỗi cập nhật địa chỉ mặc định cũ: %v", err)
+		}
+	}
+	if !exists && !req.IsDefault {
+		req.IsDefault = true
 	}
 
 	newAddress := &user.Address{
@@ -388,6 +396,7 @@ func (s *service) AddAddress(userID string, req AddAddressRequest) (*user.Addres
 		District:    req.District,
 		Province:    req.Province,
 		Address:     req.Address,
+		IsDefault:   req.IsDefault,
 		UserID:      userID,
 	}
 	if err := s.repo.CreateAddress(newAddress); err != nil {
@@ -428,8 +437,25 @@ func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressReque
 	if req.Province != nil {
 		updateData["province"] = *req.Province
 	}
-	if req.IsDefault != nil {
-		updateData["is_default"] = *req.IsDefault
+	if req.IsDefault != nil && *req.IsDefault != address.IsDefault {
+		if *req.IsDefault {
+			if err := s.repo.UnsetDefaultAddress(userID); err != nil {
+				return nil, fmt.Errorf("lỗi cập nhật địa chỉ mặc định cũ: %v", err)
+			}
+		} else {
+			countAddress, err := s.repo.CountAddress(userID)
+			if err != nil {
+				return nil, fmt.Errorf("lỗi đếm địa chỉ: %v", err)
+			}
+			if countAddress > 1 {
+				if err := s.repo.SetLatestDefaultAddress(userID, addressID); err != nil {
+					return nil, fmt.Errorf("lỗi xét lại địa chỉ mặc định: %v", err)
+				}
+			} else {
+				*req.IsDefault = true
+			}
+			updateData["is_default"] = *req.IsDefault
+		}
 	}
 
 	if len(updateData) > 0 {

@@ -30,7 +30,7 @@ type Address struct {
 	Commune string `gorm:"type:varchar(255);not null" json:"commune"`
 	District string `gorm:"type:varchar(255);not null" json:"district"`
 	Province string `gorm:"type:varchar(255);not null" json:"province"`
-	IsDefault bool `gorm:"type:boolean;default:true" json:"is_default"`
+	IsDefault bool `gorm:"type:boolean;not null" json:"is_default"`
 	CreatedAt   time.Time  `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   time.Time  `gorm:"autoUpdateTime" json:"-"`
 
