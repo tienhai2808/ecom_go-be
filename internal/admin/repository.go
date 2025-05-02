@@ -4,13 +4,14 @@ import (
 	"backend/internal/common"
 	"backend/internal/config"
 	"backend/internal/user"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type Repository interface {
-	GetUsers() ([]user.User, error)
+	GetAllUsers() ([]user.User, error)
 	DeleteUSers(userIDs []string) (int64, error)
 }
 
@@ -28,11 +29,11 @@ func NewRepository(ctx *common.AppContext) Repository {
 	}
 }
 
-func (r *repository) GetUsers() ([]user.User, error) {
+func (r *repository) GetAllUsers() ([]user.User, error) {
 	var users []user.User
 
 	if err := r.db.Preload("Profile").Find(&users).Error; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("lỗi lấy tất cả người dùng: %v", err)
 	}
 	return users, nil
 }

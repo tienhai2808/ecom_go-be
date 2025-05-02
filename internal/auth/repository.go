@@ -41,6 +41,7 @@ type Repository interface {
 	CheckDefaultAddressExists(userID string) (bool, error)
 	SetLatestDefaultAddress(userID, addressID string) error
 	CountAddress(userID string) (int64, error)
+	GetAddressesByUserID(userID string) ([]user.Address, error)
 }
 
 type repository struct {
@@ -350,4 +351,12 @@ func (r *repository) SetLatestDefaultAddress(userID, addressID string) error {
 		return fmt.Errorf("lỗi cập nhật địa chỉ mặc định: %v", err)
 	}
 	return nil
+}
+
+func (r *repository) GetAddressesByUserID(userID string) ([]user.Address, error) {
+	var addresses []user.Address
+	if err := r.db.Where("user_id = ?", userID).Find(&addresses).Order("is_default DESC").Error; err != nil {
+		return nil, fmt.Errorf("lỗi lấy địa chỉ người dùng: %v", err)
+	}
+	return addresses, nil
 }

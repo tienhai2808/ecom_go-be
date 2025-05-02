@@ -575,3 +575,31 @@ func (h *Handler) UpdateAddress(c *gin.Context) {
 		"address":    updatedAddress,
 	})
 }
+
+func (h *Handler) GetAddresses(c *gin.Context) {
+	userIDVal, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"statusCode": http.StatusUnauthorized,
+			"error":      "không có quyền truy cập",
+		})
+		return
+	}
+
+	userID, _ := userIDVal.(string)
+	
+	addresses, err := h.service.GetAddresses(userID)
+	if err != nil {
+		fmt.Printf("Lỗi ở GetAddressesService: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"statusCode": http.StatusInternalServerError,
+			"error":      "lỗi lấy dữ liệu địa chỉ người dùng",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"statusCode": http.StatusOK,
+		"addresses": addresses,
+	})
+}

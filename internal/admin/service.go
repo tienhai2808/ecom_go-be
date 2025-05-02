@@ -32,7 +32,7 @@ func NewService(ctx *common.AppContext) Service {
 }
 
 func (s *service) GetAllUsers() ([]user.User, error) {
-	return s.repo.GetUsers()
+	return s.repo.GetAllUsers()
 }
 
 func (s *service) CreateUser(req CreateUserRequest) error {

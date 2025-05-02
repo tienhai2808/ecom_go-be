@@ -24,6 +24,7 @@ type Service interface {
 	UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error)
 	AddAddress(userID string, req AddAddressRequest) (*user.Address, error)
 	UpdateAddress(userID, addressID string, req UpdateAddressRequest) (*user.Address, error)
+	GetAddresses(userID string) ([]user.Address, error)
 }
 
 type service struct {
@@ -338,19 +339,19 @@ func (s *service) UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User,
 	}
 
 	updateData := map[string]interface{}{}
-	if req.FirstName != nil {
+	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
 		updateData["first_name"] = *req.FirstName
 	}
-	if req.LastName != nil {
+	if req.LastName != nil && *req.LastName != user.Profile.LastName {
 		updateData["last_name"] = *req.LastName
 	}
-	if req.Gender != nil {
+	if req.Gender != nil && *req.Gender != user.Profile.Gender {
 		updateData["gender"] = *req.Gender
 	}
-	if req.DOB != nil {
+	if req.DOB != nil && *req.DOB != user.Profile.DOB {
 		updateData["dob"] = *req.DOB
 	}
-	if req.PhoneNumber != nil {
+	if req.PhoneNumber != nil && *req.PhoneNumber != user.Profile.PhoneNumber {
 		updateData["phone_number"] = *req.PhoneNumber
 	}
 
@@ -416,25 +417,25 @@ func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressReque
 	}
 
 	updateData := map[string]interface{}{}
-	if req.FirstName != nil {
+	if req.FirstName != nil && *req.FirstName != address.FirstName {
 		updateData["first_name"] = *req.FirstName
 	}
-	if req.LastName != nil {
+	if req.LastName != nil && *req.LastName != address.LastName {
 		updateData["last_name"] = *req.LastName
 	}
-	if req.PhoneNumber != nil {
+	if req.PhoneNumber != nil && *req.PhoneNumber != address.PhoneNumber{
 		updateData["phone_number"] = *req.PhoneNumber
 	}
-	if req.Address != nil {
+	if req.Address != nil && *req.Address != address.Address {
 		updateData["address"] = *req.Address
 	}
-	if req.Commune != nil {
+	if req.Commune != nil && *req.Commune != address.Commune {
 		updateData["commune"] = *req.Commune
 	}
-	if req.District != nil {
+	if req.District != nil && *req.District != address.District {
 		updateData["district"] = *req.District
 	}
-	if req.Province != nil {
+	if req.Province != nil && *req.Province != address.Province {
 		updateData["province"] = *req.Province
 	}
 	if req.IsDefault != nil && *req.IsDefault != address.IsDefault {
@@ -470,4 +471,8 @@ func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressReque
 	}
 
 	return updatedAddress, nil
+}
+
+func (s *service) GetAddresses(userID string) ([]user.Address, error) {
+	return s.repo.GetAddressesByUserID(userID)
 }
