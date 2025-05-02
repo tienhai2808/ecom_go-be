@@ -22,7 +22,7 @@ const (
 )
 
 type Address struct {
-	ID string `gorm:"type:char(36);primaryKey" json:"-"`
+	ID string `gorm:"type:char(36);primaryKey" json:"id"`
 	FirstName string     `gorm:"type:varchar(255);nullable" json:"first_name"`
 	LastName    string     `gorm:"type:varchar(255);nullable" json:"last_name"`
 	PhoneNumber string     `gorm:"type:varchar(20);not null" json:"phone_number"`

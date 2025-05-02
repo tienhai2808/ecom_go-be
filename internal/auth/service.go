@@ -25,6 +25,7 @@ type Service interface {
 	AddAddress(userID string, req AddAddressRequest) (*user.Address, error)
 	UpdateAddress(userID, addressID string, req UpdateAddressRequest) (*user.Address, error)
 	GetAddresses(userID string) ([]user.Address, error)
+	DeleteAddress(addressID, userID string) error
 }
 
 type service struct {
@@ -475,4 +476,21 @@ func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressReque
 
 func (s *service) GetAddresses(userID string) ([]user.Address, error) {
 	return s.repo.GetAddressesByUserID(userID)
+}
+
+func (s *service) DeleteAddress(addressID, userID string) error {
+	address, err := s.repo.GetAddressByID(addressID)
+	if err != nil {
+		return ErrAddressNotFound
+	}
+
+	if address.UserID != userID {
+		return ErrUnAuth
+	}
+
+	if err := s.repo.DeleteAddressByID(addressID); err != nil {
+		return fmt.Errorf("lỗi xóa địa chỉ người dùng: %v", err)
+	}
+	
+	return nil
 }
