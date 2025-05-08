@@ -24,7 +24,7 @@ type Service interface {
 	UpdateInfo(userID string, req *UpdateInfoRequest) (*user.User, error)
 	AddAddress(userID string, req AddAddressRequest) (*user.Address, error)
 	UpdateAddress(userID, addressID string, req UpdateAddressRequest) (*user.Address, error)
-	GetAddresses(userID string) ([]user.Address, error)
+	GetAddresses(userID string) ([]*user.Address, error)
 	DeleteAddress(addressID, userID string) error
 }
 
@@ -474,7 +474,7 @@ func (s *service) UpdateAddress(userID, addressID string, req UpdateAddressReque
 	return updatedAddress, nil
 }
 
-func (s *service) GetAddresses(userID string) ([]user.Address, error) {
+func (s *service) GetAddresses(userID string) ([]*user.Address, error) {
 	return s.repo.GetAddressesByUserID(userID)
 }
 

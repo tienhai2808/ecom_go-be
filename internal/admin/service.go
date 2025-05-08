@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	GetAllUsers() ([]user.User, error)
+	GetAllUsers() ([]*user.User, error)
 	CreateUser(req CreateUserRequest) error
 	UpdateUser(userID string, req *UpdateUserRequest) error
 	DeleteUsers(currentUserID string, req DeleteUsersRequest) (int64, error)
@@ -31,7 +31,7 @@ func NewService(ctx *common.AppContext) Service {
 	}
 }
 
-func (s *service) GetAllUsers() ([]user.User, error) {
+func (s *service) GetAllUsers() ([]*user.User, error) {
 	return s.repo.GetAllUsers()
 }
 

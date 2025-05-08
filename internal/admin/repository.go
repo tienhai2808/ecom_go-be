@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	GetAllUsers() ([]user.User, error)
+	GetAllUsers() ([]*user.User, error)
 	DeleteUSers(userIDs []string) (int64, error)
 }
 
@@ -29,8 +29,8 @@ func NewRepository(ctx *common.AppContext) Repository {
 	}
 }
 
-func (r *repository) GetAllUsers() ([]user.User, error) {
-	var users []user.User
+func (r *repository) GetAllUsers() ([]*user.User, error) {
+	var users []*user.User
 
 	if err := r.db.Preload("Profile").Find(&users).Error; err != nil {
 		return nil, fmt.Errorf("lỗi lấy tất cả người dùng: %v", err)
