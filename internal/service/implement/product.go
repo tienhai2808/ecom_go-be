@@ -4,6 +4,7 @@ import (
 	"backend/internal/model"
 	"backend/internal/repository"
 	"backend/internal/service"
+	"fmt"
 )
 
 type productServiceImpl struct {
@@ -17,5 +18,10 @@ func NewProductService(productRepo repository.ProductRepository) service.Product
 }
 
 func (s *productServiceImpl) GetAllProducts() ([]*model.Product, error) {
-	return s.productRepo.GetAllProducts()
+	products, err := s.productRepo.GetAllProducts()
+	if err != nil {
+		return nil, fmt.Errorf("lấy tất cả sản phẩm thất bại: %w", err)
+	}
+
+	return products, nil
 }

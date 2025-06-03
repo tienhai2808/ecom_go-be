@@ -2,7 +2,7 @@ package database
 
 import (
 	"backend/internal/config"
-	"backend/internal/user"
+	"backend/internal/model"
 	"fmt"
 
 	"gorm.io/driver/mysql"
@@ -10,9 +10,10 @@ import (
 )
 
 var allModels = []interface{}{
-	&user.User{},
-	&user.Profile{},
-	&user.Address{},
+	&model.User{},
+	&model.Profile{},
+	&model.Address{},
+	&model.Product{},
 }
 
 func ConnectToDatabase(cfg *config.AppConfig) (*gorm.DB, error) {

@@ -1,8 +1,8 @@
-package auth
+package utils
 
 import (
-	"crypto/subtle"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 	"math"
@@ -11,13 +11,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-
 	"golang.org/x/crypto/argon2"
 )
 
 func GenerateOtp(length int) string {
 	min := int(math.Pow10(length))
-	max := 9 * min  
+	max := 9 * min
 	otp := min + mrand.Intn(max)
 	return fmt.Sprintf("%d", otp)
 }

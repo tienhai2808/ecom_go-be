@@ -17,11 +17,12 @@ func NewProductRepository(db *gorm.DB) repository.ProductRepository {
 	}
 }
 
-
 func (r *productRepositoryImpl) GetAllProducts() ([]*model.Product, error) {
 	var products []*model.Product
+
 	if err := r.db.Find(&products).Error; err != nil {
 		return nil, err
 	}
+
 	return products, nil
 }

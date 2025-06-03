@@ -1,100 +1,105 @@
 package server
 
 import (
-	"backend/internal/admin"
-	"backend/internal/auth"
 	"backend/internal/cache"
-	"backend/internal/common"
 	"backend/internal/config"
+	"backend/internal/container"
 	"backend/internal/database"
 	"backend/internal/mq"
+	"backend/internal/router"
 	"backend/internal/smtp"
-	"backend/internal/user"
 	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rabbitmq/amqp091-go"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
 
 type Application struct {
-	AppCtx *common.AppContext
-	Router *gin.Engine
+	Config     *config.AppConfig
+	DB         *gorm.DB
+	Redis      *redis.Client
+	RabbitConn *amqp091.Connection
+	RabbitChan *amqp091.Channel
+	Container  *container.Container
+	Router     *gin.Engine
 }
 
 func NewApplication() *Application {
-	appConfig, err := config.LoadAppConfig()
+	cfg, err := config.LoadAppConfig()
 	if err != nil {
 		log.Fatalf("❤️ Lỗi khi load cấu hình app: %v", err)
 	}
 
-	db, err := database.ConnectToDatabase(appConfig)
+	db, err := database.ConnectToDatabase(cfg)
 	if err != nil {
 		log.Fatalf("❤️ Lỗi kết nối tới database: %v", err)
 	}
 
-	redisClient, err := cache.ConnectToRedis(appConfig)
+	redisClient, err := cache.ConnectToRedis(cfg)
 	if err != nil {
 		log.Fatalf("❤️ Lỗi kết nối tới redis: %v", err)
 	}
 
-	rabbitConn, rabbitChan, err := mq.ConnectToRabbitMQ(appConfig)
+	rabbitConn, rabbitChan, err := mq.ConnectToRabbitMQ(cfg)
 	if err != nil {
 		log.Fatalf("❤️ Lỗi kết nối tới rabbitmq: %v", err)
 	}
 
-	appCtx := &common.AppContext{
+	emailSender := smtp.NewSMTPSender(cfg)
+	mq.StartEmailConsumer(rabbitChan, emailSender)
+
+	con, err := container.NewContainer(db, redisClient, cfg, rabbitChan)
+	if err != nil {
+		log.Fatalf("❤️ Lỗi tạo container: %v", err)
+	}
+
+	router := gin.Default()
+	if err := router.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
+		log.Fatalf("❤️ Could not set trusted proxies: %v", err)
+	}
+
+	config.SetupCORS(router)
+
+	app := &Application{
+		Config:     cfg,
 		DB:         db,
 		Redis:      redisClient,
 		RabbitConn: rabbitConn,
 		RabbitChan: rabbitChan,
-		Config:     appConfig,
+		Container:  con,
+		Router:     router,
 	}
 
-	emailSender := smtp.NewSMTPSender(appConfig)
-	mq.StartEmailConsumer(rabbitChan, emailSender)
+	app.initRoutes()
 
-	r := gin.Default()
-	if err := r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
-		log.Fatalf("❤️ Could not set trusted proxies: %v", err)
-	}
-
-	config.SetupCORS(r)
-
-	application := &Application{
-		AppCtx: appCtx,
-		Router: r,
-	}
-
-	application.initRoutes()
-
-	return application
+	return app
 }
 
 func (app *Application) initRoutes() {
-	api := app.Router.Group(app.AppCtx.Config.App.ApiPrefix)
-	{
-		auth.AuthRouter(api, app.AppCtx)
-		admin.AdminRouter(api, app.AppCtx)
-		user.UserRouter(api, app.AppCtx)
-	}
+	api := app.Router.Group(app.Config.App.ApiPrefix)
+	router.NewAuthRouter(api, app.Container.AuthModule.AuthHandler)
+	router.NewProductRouter(api, app.Container.ProductModule.ProductHandler)
 }
 
 func (app *Application) Run() {
 	fmt.Println("💚 Kết nối MySQL thành công")
 	fmt.Println("💚 Kết nối Redis thành công")
 	fmt.Println("💚 Kết nối RabbitMQ thành công")
-	addr := app.AppCtx.Config.App.Host + ":" + app.AppCtx.Config.App.Port
+	addr := app.Config.App.Host + ":" + app.Config.App.Port
 	if err := app.Router.Run(addr); err != nil {
 		log.Fatalf("❤️ Không thể khởi động server: %v", err)
 	}
 }
 
 func (app *Application) Close() {
-	if sqlDB, err := app.AppCtx.DB.DB(); err == nil {
+	if sqlDB, err := app.DB.DB(); err == nil {
 		sqlDB.Close()
 	}
-	if app.AppCtx.Redis != nil {
-		app.AppCtx.Redis.Close()
+	if app.Redis != nil {
+		app.Redis.Close()
 	}
-	mq.CloseRabbitMQ(app.AppCtx.RabbitConn, app.AppCtx.RabbitChan)
+	mq.CloseRabbitMQ(app.RabbitConn, app.RabbitChan)
 }
