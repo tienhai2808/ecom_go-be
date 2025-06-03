@@ -7,6 +7,6 @@ var (
 	ErrUsernameExists    = errors.New("username đã tồn tại")
 	ErrTooManyAttempts   = errors.New("vượt quá số lần thử OTP")
 	ErrInvalidOTP        = errors.New("OTP không hợp lệ")
-	ErrUserNotFound      = errors.New("không tìm thấy người dùng")
+	ErrUserNotFound      = errors.New("người dùng không tồn tại")
 	ErrIncorrectPassword = errors.New("mật khẩu không chính xác")
 )

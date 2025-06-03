@@ -148,17 +148,17 @@ func (s *authServiceImpl) VerifySignup(req request.VerifySignupRequest) (*model.
 	}
 
 	if err := s.userRepository.CreateUser(newUser); err != nil {
-		return nil, "", "", fmt.Errorf("không thể tạo người dùng: %w", err)
+		return nil, "", "", fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
 	accessToken, err := utils.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("không thể tạo access_token: %w", err)
+		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
 	refreshToken, err := utils.GenerateToken(newUser.ID, string(newUser.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("không thể tạo refresh_token: %w", err)
+		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
 	if err = s.authRepository.DeleteAuthData("signup", req.RegistrationToken); err != nil {
@@ -171,7 +171,11 @@ func (s *authServiceImpl) VerifySignup(req request.VerifySignupRequest) (*model.
 func (s *authServiceImpl) Signin(req request.SigninRequest) (*model.User, string, string, error) {
 	user, err := s.userRepository.GetUserByUsername(req.Username)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("đăng nhập thất bại: %w", err)
+		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if user == nil {
+		return nil, "", "", errors.ErrUserNotFound
 	}
 
 	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.Password)
@@ -181,13 +185,26 @@ func (s *authServiceImpl) Signin(req request.SigninRequest) (*model.User, string
 
 	accessToken, err := utils.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("không thể tạo access_token: %w", err)
+		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
 	refreshToken, err := utils.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("không thể tạo refresh_token: %w", err)
+		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
 	return user, accessToken, refreshToken, nil
+}
+
+func (s *authServiceImpl) GetMe(userID string) (*model.User, error) {
+	user, err := s.userRepository.GetUserByID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if user == nil {
+		return nil, errors.ErrUserNotFound
+	}
+
+	return user, nil
 }

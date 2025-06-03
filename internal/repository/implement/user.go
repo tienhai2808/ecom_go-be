@@ -1,7 +1,6 @@
 package implement
 
 import (
-	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/repository"
 
@@ -61,7 +60,21 @@ func (r *userRepositoryImpl) GetUserByUsername(username string) (*model.User, er
 	err := r.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, customErr.ErrUserNotFound
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepositoryImpl) GetUserByID(userID string) (*model.User, error) {
+	var user model.User
+
+	err := r.db.Where("id = ?", userID).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
 		}
 		return nil, err
 	}

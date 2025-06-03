@@ -7,4 +7,5 @@ type UserRepository interface {
 	CheckUserExistsByUsername(username string) (bool, error)
 	CreateUser(user *model.User) error
 	GetUserByUsername(username string) (*model.User, error)
+	GetUserByID(userID string) (*model.User, error)
 }
