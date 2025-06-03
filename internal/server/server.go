@@ -8,7 +8,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/database"
 	"backend/internal/mq"
-	"backend/internal/product"
+	"backend/internal/smtp"
 	"backend/internal/user"
 	"fmt"
 	"log"
@@ -27,12 +27,12 @@ func NewApplication() *Application {
 		log.Fatalf("❤️ Lỗi khi load cấu hình app: %v", err)
 	}
 
-	db, err := database.ConnectToDatabase()
+	db, err := database.ConnectToDatabase(appConfig)
 	if err != nil {
 		log.Fatalf("❤️ Lỗi kết nối tới database: %v", err)
 	}
 
-	redisClient, err := cache.ConnectToRedis()
+	redisClient, err := cache.ConnectToRedis(appConfig)
 	if err != nil {
 		log.Fatalf("❤️ Lỗi kết nối tới redis: %v", err)
 	}
@@ -43,14 +43,14 @@ func NewApplication() *Application {
 	}
 
 	appCtx := &common.AppContext{
-		DB:     db,
-		Redis:  redisClient,
+		DB:         db,
+		Redis:      redisClient,
 		RabbitConn: rabbitConn,
 		RabbitChan: rabbitChan,
-		Config: appConfig,
+		Config:     appConfig,
 	}
 
-	emailSender := common.NewSMTPSender(appConfig)
+	emailSender := smtp.NewSMTPSender(appConfig)
 	mq.StartEmailConsumer(rabbitChan, emailSender)
 
 	r := gin.Default()
@@ -76,7 +76,6 @@ func (app *Application) initRoutes() {
 		auth.AuthRouter(api, app.AppCtx)
 		admin.AdminRouter(api, app.AppCtx)
 		user.UserRouter(api, app.AppCtx)
-		product.ProductRouter(api, app.AppCtx)
 	}
 }
 

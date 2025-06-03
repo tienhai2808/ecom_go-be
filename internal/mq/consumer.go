@@ -1,7 +1,7 @@
 package mq
 
 import (
-	"backend/internal/common"
+	"backend/internal/smtp"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -44,7 +44,7 @@ func ConsumeMessages(ch *amqp091.Channel, queueName string) (<-chan amqp091.Deli
 	return msgs, nil
 }
 
-func StartEmailConsumer(ch *amqp091.Channel, emailSender common.EmailSender) {
+func StartEmailConsumer(ch *amqp091.Channel, emailSender smtp.EmailSender) {
 	queueName := "email_queue"
 
 	_, err := ch.QueueDeclare(

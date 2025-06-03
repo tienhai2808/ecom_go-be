@@ -15,12 +15,7 @@ var allModels = []interface{}{
 	&user.Address{},
 }
 
-func ConnectToDatabase() (*gorm.DB, error) {
-	cfg, err := config.LoadAppConfig()
-	if err != nil {
-		return nil, err
-	}
-
+func ConnectToDatabase(cfg *config.AppConfig) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		cfg.Database.User,
 		cfg.Database.Password,

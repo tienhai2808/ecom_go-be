@@ -13,12 +13,7 @@ var (
 	Ctx = context.Background()
 )
 
-func ConnectToRedis() (*redis.Client, error) {
-	cfg, err := config.LoadAppConfig()
-	if err != nil {
-		return nil, fmt.Errorf("❤️ lỗi load config redis: %v", err)
-	}
-
+func ConnectToRedis(cfg *config.AppConfig) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
 	})
