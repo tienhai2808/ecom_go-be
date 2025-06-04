@@ -25,7 +25,7 @@ func HashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	timeCost := uint32(3)

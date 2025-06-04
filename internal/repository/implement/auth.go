@@ -3,7 +3,6 @@ package implement
 import (
 	"backend/internal/config"
 	"backend/internal/dto"
-	"backend/internal/errors"
 	"backend/internal/repository"
 	"context"
 	"encoding/json"
@@ -25,13 +24,12 @@ func NewAuthRepository(redis *redis.Client, config *config.AppConfig) repository
 	}
 }
 
-func (r *authRepositoryImpl) AddRegistrationData(token string, data dto.RegistrationData, ttl time.Duration) error {
+func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token string, data dto.RegistrationData, ttl time.Duration) error {
 	regData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
 	}
 
-	ctx := context.Background()
 	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
 
 	if err := r.redis.Set(ctx, redisKey, regData, ttl).Err(); err != nil {
@@ -41,9 +39,8 @@ func (r *authRepositoryImpl) AddRegistrationData(token string, data dto.Registra
 	return nil
 }
 
-func (r *authRepositoryImpl) DeleteAuthData(name, token string) error {
+func (r *authRepositoryImpl) DeleteAuthData(ctx context.Context, name, token string) error {
 	redisKey := fmt.Sprintf("%s:%s:%s", r.config.App.Name, name, token)
-	ctx := context.Background()
 
 	if err := r.redis.Del(ctx, redisKey).Err(); err != nil {
 		return err
@@ -52,32 +49,30 @@ func (r *authRepositoryImpl) DeleteAuthData(name, token string) error {
 	return nil
 }
 
-func (r *authRepositoryImpl) GetRegistrationData(token string) (*dto.RegistrationData, error) {
+func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token string) (*dto.RegistrationData, error) {
 	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
-	ctx := context.Background()
 
 	regDataJSON, err := r.redis.Get(ctx, redisKey).Result()
 	if err == redis.Nil {
-		return nil, errors.ErrKeyNotFound
+		return nil, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
 	}
 
 	var regData dto.RegistrationData
-	if err := json.Unmarshal([]byte(regDataJSON), &regData); err != nil {
-		return nil, fmt.Errorf("không thể giải mã dữ liệu đăng ký: %w", err)
+	if err = json.Unmarshal([]byte(regDataJSON), &regData); err != nil {
+		return nil, fmt.Errorf("giải mã dữ liệu đăng ký thất bại: %w", err)
 	}
 
 	return &regData, nil
 }
 
-func (r *authRepositoryImpl) UpdateRegistrationData(token string, data dto.RegistrationData, ttl time.Duration) error {
+func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token string, data dto.RegistrationData, ttl time.Duration) error {
 	regDataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
 	}
 
-	ctx := context.Background()
 	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
 	if err := r.redis.Set(ctx, redisKey, regDataJSON, ttl).Err(); err != nil {
 		return err
@@ -86,13 +81,12 @@ func (r *authRepositoryImpl) UpdateRegistrationData(token string, data dto.Regis
 	return nil
 }
 
-func (r *authRepositoryImpl) AddForgotPasswordData(token string, data dto.ForgotPasswordData, ttl time.Duration) error {
+func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token string, data dto.ForgotPasswordData, ttl time.Duration) error {
 	forgDataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %w", err)
 	}
 
-	ctx := context.Background()
 	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
 
 	if err = r.redis.Set(ctx, redisKey, forgDataJSON, ttl).Err(); err != nil {
@@ -100,4 +94,45 @@ func (r *authRepositoryImpl) AddForgotPasswordData(token string, data dto.Forgot
 	}
 
 	return nil
+}
+
+func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token string) (*dto.ForgotPasswordData, error) {
+	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
+
+	forgDataJSON, err := r.redis.Get(ctx, redisKey).Result()
+	if err == redis.Nil {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
+	}
+
+	var forgData dto.ForgotPasswordData
+	if err = json.Unmarshal([]byte(forgDataJSON), &forgData); err != nil {
+		return nil, fmt.Errorf("giải mã dữ liệu quên mật khẩu thất bại: %w", err)
+	}
+
+	return &forgData, nil
+}
+
+func (r *authRepositoryImpl) AddResetPasswordData(ctx context.Context, token, email string, ttl time.Duration) error {
+	redisKey := fmt.Sprintf("%s:reset-password:%s", r.config.App.Name, token)
+
+	if err := r.redis.Set(ctx, redisKey, email, ttl).Err(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *authRepositoryImpl) GetResetPasswordData(ctx context.Context, token string) (string, error) {
+	redisKey := fmt.Sprintf("%s:reset-password:%s", r.config.App.Name, token)
+
+	email, err := r.redis.Get(ctx, redisKey).Result()
+	if err == redis.Nil {
+		return "", nil
+	} else if err != nil {
+		return "", fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
+	}
+
+	return email, nil
 }

@@ -106,26 +106,6 @@ package auth
 // 	return nil
 // }
 
-// func (r *repository) GetRegistrationData(token string) (*RegistrationData, error) {
-// 	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
-// 	ctxB := context.Background()
-
-// 	regDataJSON, err := r.redis.Get(ctxB, redisKey).Result()
-// 	if err == redis.Nil {
-// 		return nil, ErrTokenExpired
-// 	}
-// 	if err != nil {
-// 		return nil, fmt.Errorf("không thể lấy dữ liệu từ Redis: %v", err)
-// 	}
-
-// 	var regData RegistrationData
-// 	if err := json.Unmarshal([]byte(regDataJSON), &regData); err != nil {
-// 		return nil, fmt.Errorf("không thể giải mã dữ liệu đăng ký: %v", err)
-// 	}
-
-// 	return &regData, nil
-// }
-
 // func (r *repository) UpdateRegistrationAttempts(token string, data RegistrationData, ttl time.Duration) error {
 // 	regDataJSON, err := json.Marshal(data)
 // 	if err != nil {

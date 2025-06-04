@@ -1,10 +1,12 @@
 package implement
 
 import (
+	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/repository"
-
+	"context"
 	"errors"
+
 	"gorm.io/gorm"
 )
 
@@ -18,10 +20,10 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByEmail(email string) (bool, error) {
+func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var existingUser model.User
 
-	err := r.db.Where("email = ?", email).First((&existingUser)).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First((&existingUser)).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -32,10 +34,10 @@ func (r *userRepositoryImpl) CheckUserExistsByEmail(email string) (bool, error) 
 	return true, nil
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByUsername(username string) (bool, error) {
+func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var existingUser model.User
 
-	err := r.db.Where("username = ?", username).First((&existingUser)).Error
+	err := r.db.WithContext(ctx).Where("username = ?", username).First((&existingUser)).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
@@ -46,18 +48,18 @@ func (r *userRepositoryImpl) CheckUserExistsByUsername(username string) (bool, e
 	return true, nil
 }
 
-func (r *userRepositoryImpl) CreateUser(user *model.User) error {
-	err := r.db.Create(user).Error
+func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) error {
+	err := r.db.WithContext(ctx).Create(user).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *userRepositoryImpl) GetUserByUsername(username string) (*model.User, error) {
+func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Where("username = ?", username).First(&user).Error
+	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -68,10 +70,10 @@ func (r *userRepositoryImpl) GetUserByUsername(username string) (*model.User, er
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetUserByID(userID string) (*model.User, error) {
+func (r *userRepositoryImpl) GetUserByID(ctx context.Context, userID string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Where("id = ?", userID).First(&user).Error
+	err := r.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -82,10 +84,10 @@ func (r *userRepositoryImpl) GetUserByID(userID string) (*model.User, error) {
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetUserByEmail(email string) (*model.User, error) {
+func (r *userRepositoryImpl) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -94,4 +96,17 @@ func (r *userRepositoryImpl) GetUserByEmail(email string) (*model.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (r *userRepositoryImpl) UpdateUserPassword(ctx context.Context, id, newPassword string) error {
+	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("password", newPassword)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return customErr.ErrUserNotFound
+	}
+
+	return nil
 }

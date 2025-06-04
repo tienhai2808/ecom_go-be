@@ -1,12 +1,16 @@
 package repository
 
-import "backend/internal/model"
+import (
+	"backend/internal/model"
+	"context"
+)
 
 type UserRepository interface {
-	CheckUserExistsByEmail(email string) (bool, error)
-	CheckUserExistsByUsername(username string) (bool, error)
-	CreateUser(user *model.User) error
-	GetUserByUsername(username string) (*model.User, error)
-	GetUserByID(userID string) (*model.User, error)
-	GetUserByEmail(email string) (*model.User, error)
+	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
+	CheckUserExistsByUsername(ctx context.Context, username string) (bool, error)
+	CreateUser(ctx context.Context, user *model.User) error
+	GetUserByUsername(ctx context.Context, username string) (*model.User, error)
+	GetUserByID(ctx context.Context, userID string) (*model.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+	UpdateUserPassword(ctx context.Context, id, newPassword string) error
 }

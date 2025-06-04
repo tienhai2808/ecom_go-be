@@ -18,5 +18,7 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig,authHandler han
 		auth.GET("/me", middleware.RequireAuth(config), authHandler.GetMe)
 		auth.GET("/refresh-token", authHandler.RefreshToken)
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
+		auth.POST("/forgot-password/verify", authHandler.VerifyForgotPassword)
+		auth.POST("/reset-password", authHandler.ResetPassword)
 	}
 }
