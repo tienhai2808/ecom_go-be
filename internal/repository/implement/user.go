@@ -59,7 +59,7 @@ func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) e
 func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
+	err := r.db.Preload("Profile").WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -73,7 +73,7 @@ func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username str
 func (r *userRepositoryImpl) GetUserByID(ctx context.Context, userID string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error
+	err := r.db.Preload("Profile").WithContext(ctx).Where("id = ?", userID).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -87,7 +87,7 @@ func (r *userRepositoryImpl) GetUserByID(ctx context.Context, userID string) (*m
 func (r *userRepositoryImpl) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	err := r.db.Preload("Profile").WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -98,7 +98,7 @@ func (r *userRepositoryImpl) GetUserByEmail(ctx context.Context, email string) (
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) UpdateUserPassword(ctx context.Context, id, newPassword string) error {
+func (r *userRepositoryImpl) UpdateUserPasswordByID(ctx context.Context, id, newPassword string) error {
 	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Update("password", newPassword)
 	if result.Error != nil {
 		return result.Error

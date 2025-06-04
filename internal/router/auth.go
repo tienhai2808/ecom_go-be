@@ -8,17 +8,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig,authHandler handler.AuthHandler) {
+func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, authHandler handler.AuthHandler) {
 	auth := rg.Group(("/auth"))
 	{
 		auth.POST("/signup", authHandler.Signup)
+
 		auth.POST("/signup/verify", authHandler.VerifySignup)
+
 		auth.POST("/signin", authHandler.Signin)
+
 		auth.POST("/signout", middleware.RequireAuth(config), authHandler.Signout)
+
 		auth.GET("/me", middleware.RequireAuth(config), authHandler.GetMe)
+
 		auth.GET("/refresh-token", authHandler.RefreshToken)
+
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
+
 		auth.POST("/forgot-password/verify", authHandler.VerifyForgotPassword)
+
 		auth.POST("/reset-password", authHandler.ResetPassword)
+
+		auth.PUT("/change-password/:user_id", middleware.RequireAuth(config), authHandler.ChangePassword)
+
+		auth.PATCH("/update-info/:user_id", middleware.RequireAuth(config), authHandler.UpdateUserProfile)
 	}
 }

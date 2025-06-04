@@ -25,7 +25,7 @@ func HashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("lỗi khi tạo salt băm mật khẩu: %w", err)
 	}
 
 	timeCost := uint32(3)
@@ -53,16 +53,16 @@ func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
 
 	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &timeCost, &threads)
 	if err != nil {
-		return false, fmt.Errorf("lỗi khi đọc tham số: %v", err)
+		return false, fmt.Errorf("lỗi khi đọc tham số: %w", err)
 	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil || len(salt) != 16 {
-		return false, fmt.Errorf("lỗi khi giải mã salt: %v", err)
+		return false, fmt.Errorf("lỗi khi giải mã salt: %w", err)
 	}
 	storedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return false, fmt.Errorf("lỗi khi giải mã hash: %v", err)
+		return false, fmt.Errorf("lỗi khi giải mã hash: %w", err)
 	}
 
 	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, uint32(len(storedHash)))

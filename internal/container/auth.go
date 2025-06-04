@@ -18,7 +18,8 @@ type AuthModule struct {
 func NewAuthContainer(redis *redis.Client, config *config.AppConfig, db *gorm.DB, rabbitChan *amqp091.Channel) *AuthModule {
 	authRepo := repository.NewAuthRepository(redis, config)
 	userRepo := repository.NewUserRepository(db)
-	authService := service.NewAuthService(userRepo, authRepo, rabbitChan, config)
+	profileRepo := repository.NewProfileRepository(db)
+	authService := service.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, config)
 	authHandler := handler.NewAuthHandler(authService, config)
 	return &AuthModule{
 		AuthHandler: *authHandler,

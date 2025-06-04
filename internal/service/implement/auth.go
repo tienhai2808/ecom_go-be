@@ -21,18 +21,20 @@ import (
 )
 
 type authServiceImpl struct {
-	userRepository repository.UserRepository
-	authRepository repository.AuthRepository
-	rabbitChan     *amqp091.Channel
-	config         *config.AppConfig
+	userRepository    repository.UserRepository
+	authRepository    repository.AuthRepository
+	profileRepository repository.ProfileRepository
+	rabbitChan        *amqp091.Channel
+	config            *config.AppConfig
 }
 
-func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, rabbitChan *amqp091.Channel, config *config.AppConfig) service.AuthService {
+func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, rabbitChan *amqp091.Channel, config *config.AppConfig) service.AuthService {
 	return &authServiceImpl{
-		userRepository: userRepository,
-		authRepository: authRepository,
-		rabbitChan:     rabbitChan,
-		config:         config,
+		userRepository:    userRepository,
+		authRepository:    authRepository,
+		profileRepository: profileRepository,
+		rabbitChan:        rabbitChan,
+		config:            config,
 	}
 }
 
@@ -263,7 +265,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 }
 
 func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.VerifyForgotPasswordRequest) (string, error) {
-	forgData, err := s.authRepository.GetForgotPasswordData(ctx,req.ForgotPasswordToken)
+	forgData, err := s.authRepository.GetForgotPasswordData(ctx, req.ForgotPasswordToken)
 	if err != nil {
 		return "", fmt.Errorf("lấy dữ liệu quên mật khẩu thất bại: %w", err)
 	}
@@ -320,7 +322,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.userRepository.UpdateUserPassword(ctx, user.ID, hashedPassword); err != nil {
+	if err = s.userRepository.UpdateUserPasswordByID(ctx, user.ID, hashedPassword); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return nil, "", "", err
 		}
@@ -342,4 +344,96 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 	}
 
 	return user, accessToken, refreshToken, nil
+}
+
+func (s *authServiceImpl) ChangePassword(ctx context.Context, id string, req request.ChangePasswordRequest) (*model.User, string, string, error) {
+	user, err := s.userRepository.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if user == nil {
+		return nil, "", "", customErr.ErrUserNotFound
+	}
+
+	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.OldPassword)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
+	}
+
+	if !isCorrectPassword {
+		return nil, "", "", customErr.ErrIncorrectPassword
+	}
+
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
+	}
+
+	if err = s.userRepository.UpdateUserPasswordByID(ctx, user.ID, hashedPassword); err != nil {
+		if errors.Is(err, customErr.ErrUserNotFound) {
+			return nil, "", "", err
+		}
+		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
+	}
+
+	accessToken, err := utils.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
+	}
+
+	refreshToken, err := utils.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
+	}
+
+	return user, accessToken, refreshToken, nil
+}
+
+func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, id string, req *request.UpdateProfileRequest) (*model.User, error) {
+	user, err := s.userRepository.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if user == nil {
+		return nil, customErr.ErrUserNotFound
+	}
+
+	updateData := map[string]interface{}{}
+	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
+		updateData["first_name"] = *req.FirstName
+	}
+	if req.LastName != nil && *req.LastName != user.Profile.LastName {
+		updateData["last_name"] = *req.LastName
+	}
+	if req.Gender != nil && *req.Gender != user.Profile.Gender {
+		updateData["gender"] = *req.Gender
+	}
+	if req.DOB != nil && *req.DOB != user.Profile.DOB {
+		updateData["dob"] = *req.DOB
+	}
+	if req.PhoneNumber != nil && *req.PhoneNumber != user.Profile.PhoneNumber {
+		updateData["phone_number"] = *req.PhoneNumber
+	}
+
+	if len(updateData) > 0 {
+		if err := s.profileRepository.UpdateProfileByUserID(ctx, user.ID, updateData); err != nil {
+			if errors.Is(err, customErr.ErrUserProfileNotFound) {
+				return nil, customErr.ErrUserProfileNotFound
+			}
+			return nil, fmt.Errorf("cập nhật thông tin người dùng thất bại: %w", err)
+		}
+	}
+
+	updatedUser, err := s.userRepository.GetUserByID(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if updatedUser == nil {
+		return nil, customErr.ErrUserNotFound
+	}
+
+	return updatedUser, nil
 }

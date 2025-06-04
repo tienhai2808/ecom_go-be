@@ -29,7 +29,6 @@ func NewAuthHandler(authService service.AuthService, config *config.AppConfig) *
 
 func (h *AuthHandler) Signup(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.SignupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -59,7 +58,6 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 
 func (h *AuthHandler) VerifySignup(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.VerifySignupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -92,7 +90,6 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 
 func (h *AuthHandler) Signin(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.SigninRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -207,7 +204,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.ForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -227,6 +223,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy lại mật khẩu", nil)
 		}
+		return
 	}
 
 	utils.JSON(c, http.StatusOK, "Vui lòng kiểm tra email để lấy mã OTP", gin.H{
@@ -236,7 +233,6 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.VerifyForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -253,8 +249,10 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 		case errors.ErrInvalidOTP, errors.ErrKeyNotFound, errors.ErrTooManyAttempts:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
+			fmt.Printf("Lỗi ở VerifyForgotPasswordService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể xác thực quên mật khẩu", nil)
 		}
+		return
 	}
 
 	utils.JSON(c, http.StatusOK, "Xác thực quên mật khẩu thành công", gin.H{
@@ -264,7 +262,6 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	ctx := c.Request.Context()
-
 	var req request.ResetPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -281,11 +278,11 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		switch err {
 		case errors.ErrUserNotFound, errors.ErrKeyNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
-			return
 		default:
+			fmt.Printf("Lỗi ở ResetPasswordService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể làm mới mật khẩu", nil)
-			return
 		}
+		return
 	}
 
 	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
@@ -293,5 +290,93 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	utils.JSON(c, http.StatusOK, "Lấy lại mật khẩu thành công", gin.H{
 		"user": user,
+	})
+}
+
+func (h *AuthHandler) ChangePassword(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req request.ChangePasswordRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+			"errors": translated,
+		})
+		return
+	}
+
+	currentUserIDVal, exists := c.Get("user_id")
+	if !exists {
+		utils.JSON(c, http.StatusUnauthorized, "Không có quyền truy cập", nil)
+		return
+	}
+
+	currentUserID, _ := currentUserIDVal.(string)
+
+	userID := c.Param("user_id")
+	if currentUserID != userID {
+		utils.JSON(c, http.StatusUnauthorized, "Không có quyền truy cập", nil)
+		return
+	}
+
+	user, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, userID, req)
+	if err != nil {
+		switch err {
+		case errors.ErrIncorrectPassword, errors.ErrUserNotFound:
+			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+		default:
+			fmt.Errorf("Lỗi ở ChangePasswordService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể thay đổi mật khẩu", nil)
+		}
+		return
+	}
+
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
+	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+
+	utils.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
+		"user": user,
+	})
+}
+
+func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req request.UpdateProfileRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+			"errors": translated,
+		})
+		return
+	}
+
+	currentUserIDVal, exists := c.Get("user_id")
+	if !exists {
+		utils.JSON(c, http.StatusUnauthorized, "Không có quyền truy cập", nil)
+		return
+	}
+
+	currentUserID, _ := currentUserIDVal.(string)
+
+	userID := c.Param("user_id")
+	if currentUserID != userID {
+		utils.JSON(c, http.StatusUnauthorized, "Không có quyền truy cập", nil)
+		return
+	}
+
+	updatedUser, err := h.authService.UpdateUserProfile(ctx, userID, &req)
+	if err != nil {
+		switch err {
+		case errors.ErrUserProfileNotFound, errors.ErrUserNotFound:
+			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở UpdateUserProfileService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể thay đổi hồ sơ người dùng", nil)
+		}
+	}
+
+	utils.JSON(c, http.StatusOK, "Cập nhật hồ sơ người dùng thành công", gin.H{
+		"user": updatedUser,
 	})
 }
