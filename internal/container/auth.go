@@ -3,8 +3,9 @@ package container
 import (
 	"backend/internal/config"
 	"backend/internal/handler"
-	repository "backend/internal/repository/implement"
-	service "backend/internal/service/implement"
+	"backend/internal/repository"
+	repoImpl "backend/internal/repository/implement"
+	svcImpl "backend/internal/service/implement"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -12,16 +13,19 @@ import (
 )
 
 type AuthModule struct {
-	AuthHandler handler.AuthHandler
+	UserRepository repository.UserRepository
+	AuthHandler    handler.AuthHandler
 }
 
 func NewAuthContainer(redis *redis.Client, config *config.AppConfig, db *gorm.DB, rabbitChan *amqp091.Channel) *AuthModule {
-	authRepo := repository.NewAuthRepository(redis, config)
-	userRepo := repository.NewUserRepository(db)
-	profileRepo := repository.NewProfileRepository(db)
-	authService := service.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, config)
+	authRepo := repoImpl.NewAuthRepository(redis, config)
+	userRepo := repoImpl.NewUserRepository(db)
+	profileRepo := repoImpl.NewProfileRepository(db)
+	addressRepo := repoImpl.NewAddressRepository(db)
+	authService := svcImpl.NewAuthService(userRepo, authRepo, profileRepo, addressRepo, rabbitChan, config)
 	authHandler := handler.NewAuthHandler(authService, config)
 	return &AuthModule{
+		UserRepository: userRepo,
 		AuthHandler: *authHandler,
 	}
 }

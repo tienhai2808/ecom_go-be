@@ -24,15 +24,17 @@ type authServiceImpl struct {
 	userRepository    repository.UserRepository
 	authRepository    repository.AuthRepository
 	profileRepository repository.ProfileRepository
+	addressRepository repository.AddressRepository
 	rabbitChan        *amqp091.Channel
 	config            *config.AppConfig
 }
 
-func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, rabbitChan *amqp091.Channel, config *config.AppConfig) service.AuthService {
+func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, addressRepository repository.AddressRepository, rabbitChan *amqp091.Channel, config *config.AppConfig) service.AuthService {
 	return &authServiceImpl{
 		userRepository:    userRepository,
 		authRepository:    authRepository,
 		profileRepository: profileRepository,
+		addressRepository: addressRepository,
 		rabbitChan:        rabbitChan,
 		config:            config,
 	}
@@ -204,8 +206,8 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 	return user, accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) GetMe(ctx context.Context, userID string) (*model.User, error) {
-	user, err := s.userRepository.GetUserByID(ctx, userID)
+func (s *authServiceImpl) GetMe(ctx context.Context, id string) (*model.User, error) {
+	user, err := s.userRepository.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -346,16 +348,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 	return user, accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) ChangePassword(ctx context.Context, id string, req request.ChangePasswordRequest) (*model.User, string, string, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
-	}
-
-	if user == nil {
-		return nil, "", "", customErr.ErrUserNotFound
-	}
-
+func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*model.User, string, string, error) {
 	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.OldPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
@@ -390,16 +383,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, id string, req req
 	return user, accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, id string, req *request.UpdateProfileRequest) (*model.User, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
-	}
-
-	if user == nil {
-		return nil, customErr.ErrUserNotFound
-	}
-
+func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*model.User, error) {
 	updateData := map[string]interface{}{}
 	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
 		updateData["first_name"] = *req.FirstName
@@ -436,4 +420,52 @@ func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, id string, req 
 	}
 
 	return updatedUser, nil
+}
+
+func (s *authServiceImpl) GetUserAddresses(ctx context.Context, userID string) ([]*model.Address, error) {
+	addresses, err := s.addressRepository.GetAddressesByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy địa chỉ người dùng thất bại: %w", err)
+	}
+
+	return addresses, nil
+}
+
+func (s *authServiceImpl) AddUserAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error) {
+	exists, err := s.addressRepository.CheckDefaultAddressExistsByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("kiểm tra tồn tại địa chỉ mặc định thất bại: %w", err)
+	}
+
+	if exists && req.IsDefault {
+		if err := s.addressRepository.UpdateAddressIsDefaultByUserID(ctx, userID, true); err != nil {
+			if errors.Is(err, customErr.ErrUserAddressNotFound) {
+				return nil, err
+			}
+			return nil, fmt.Errorf("cập nhật địa chỉ mặc định thất bại: %w", err)
+		}
+	}
+
+	if !exists && !req.IsDefault {
+		req.IsDefault = true
+	}
+
+	newAddress := &model.Address{
+		ID:          uuid.NewString(),
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		PhoneNumber: req.PhoneNumber,
+		Commune:     req.Commune,
+		District:    req.District,
+		Province:    req.Province,
+		Address:     req.Address,
+		IsDefault:   req.IsDefault,
+		UserID:      userID,
+	}
+
+	if err := s.addressRepository.CreateAddress(ctx, newAddress); err != nil {
+		return nil, fmt.Errorf("thêm địa chỉ thất bại: %w", err)
+	}
+
+	return newAddress, nil
 }

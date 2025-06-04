@@ -80,7 +80,7 @@ func NewApplication() *Application {
 
 func (app *Application) initRoutes() {
 	api := app.Router.Group(app.Config.App.ApiPrefix)
-	router.NewAuthRouter(api, app.Config, app.Container.AuthModule.AuthHandler)
+	router.NewAuthRouter(api, app.Config, app.Container.AuthModule.UserRepository, app.Container.AuthModule.AuthHandler)
 	router.NewProductRouter(api, app.Container.ProductModule.ProductHandler)
 }
 

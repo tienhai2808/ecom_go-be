@@ -4,11 +4,12 @@ import (
 	"backend/internal/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
+	"backend/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
-func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, authHandler handler.AuthHandler) {
+func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, authHandler handler.AuthHandler) {
 	auth := rg.Group(("/auth"))
 	{
 		auth.POST("/signup", authHandler.Signup)
@@ -17,9 +18,9 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, authHandler ha
 
 		auth.POST("/signin", authHandler.Signin)
 
-		auth.POST("/signout", middleware.RequireAuth(config), authHandler.Signout)
+		auth.POST("/signout", middleware.RequireAuth(config, userRepository), authHandler.Signout)
 
-		auth.GET("/me", middleware.RequireAuth(config), authHandler.GetMe)
+		auth.GET("/me", middleware.RequireAuth(config, userRepository), authHandler.GetMe)
 
 		auth.GET("/refresh-token", authHandler.RefreshToken)
 
@@ -29,8 +30,12 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, authHandler ha
 
 		auth.POST("/reset-password", authHandler.ResetPassword)
 
-		auth.PUT("/change-password/:user_id", middleware.RequireAuth(config), authHandler.ChangePassword)
+		auth.PUT("/change-password/:user_id", middleware.RequireAuth(config, userRepository), authHandler.ChangePassword)
 
-		auth.PATCH("/update-info/:user_id", middleware.RequireAuth(config), authHandler.UpdateUserProfile)
+		auth.PATCH("/update-info/:user_id", middleware.RequireAuth(config, userRepository), authHandler.UpdateUserProfile)
+
+		auth.GET("/my-addresses", middleware.RequireAuth(config, userRepository), authHandler.GetUserAddresses)
+
+		auth.POST("/my-addresses", middleware.RequireAuth(config, userRepository), authHandler.AddUserAddress)
 	}
 }

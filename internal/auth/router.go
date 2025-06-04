@@ -12,9 +12,6 @@ package auth
 
 // 	authGroup := r.Group("/auth")
 // 	{
-// 		authGroup.PATCH("/update-info/:user_id", RequireAuth(ctx), handler.UpdateUserInfo)
-// 		authGroup.PUT("/change-password/:user_id", RequireAuth(ctx), handler.ChangePassword)
-// 		authGroup.GET("/addresses", RequireAuth(ctx), handler.GetAddresses)
 // 		authGroup.POST("/address", RequireAuth(ctx), handler.AddAddress)
 // 		authGroup.PATCH("/address/:address_id", RequireAuth(ctx), handler.UpdateAddress)
 // 		authGroup.DELETE("/address/:address_id", RequireAuth(ctx), handler.DeleteAddress)

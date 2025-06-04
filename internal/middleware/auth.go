@@ -3,6 +3,7 @@ package middleware
 import (
 	"backend/internal/config"
 	"backend/internal/dto"
+	"backend/internal/repository"
 	"fmt"
 	"net/http"
 
@@ -10,13 +11,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
+func RequireAuth(config *config.AppConfig, userRepository repository.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
 		if err != nil || tokenStr == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
 				StatusCode: 401,
-				Message: "Không có token",
+				Message:    "Không có token",
 			})
 			return
 		}
@@ -27,11 +28,10 @@ func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
 			}
 			return []byte(config.App.JWTAccessSecret), nil
 		})
-
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
 				StatusCode: 401,
-				Message: "Token không hợp lệ hoặc đã hết hạn",
+				Message:    "Token không hợp lệ hoặc đã hết hạn",
 			})
 			return
 		}
@@ -40,7 +40,7 @@ func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
 				StatusCode: 401,
-				Message: "Không thể lấy claims từ token",
+				Message:    "Không thể lấy claims từ token",
 			})
 			return
 		}
@@ -49,15 +49,47 @@ func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
 				StatusCode: 401,
-				Message: "Không thể lấy user_id từ token",
+				Message:    "Không thể lấy user_id từ token",
 			})
 			return
 		}
 
-		role, _ := claims["role"].(string)
+		role, ok := claims["role"].(string)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message:    "Không thể xác định quyền từ token",
+			})
+			return
+		}
 
-		c.Set("user_id", userID)
-		c.Set("role", role)
+		ctx := c.Request.Context()
+		user, err := userRepository.GetUserByID(ctx, userID)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, dto.ApiResponse{
+				StatusCode: 500,
+				Message:    "Không thể xác lấy dữ liệu người dùng",
+			})
+			return
+		}
+
+		if user == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message:    "Không có quyền truy cập",
+			})
+			return
+		}
+
+		if string(user.Role) != role {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message:    "Không có quyền truy cập",
+			})
+			return
+		}
+
+		c.Set("user", user)
 
 		c.Next()
 	}

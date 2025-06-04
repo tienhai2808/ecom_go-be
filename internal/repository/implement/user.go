@@ -23,8 +23,7 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var existingUser model.User
 
-	err := r.db.WithContext(ctx).Where("email = ?", email).First((&existingUser)).Error
-	if err != nil {
+	if err := r.db.WithContext(ctx).Where("email = ?", email).First((&existingUser)).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
@@ -37,8 +36,7 @@ func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email s
 func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var existingUser model.User
 
-	err := r.db.WithContext(ctx).Where("username = ?", username).First((&existingUser)).Error
-	if err != nil {
+	if err := r.db.WithContext(ctx).Where("username = ?", username).First((&existingUser)).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
@@ -49,18 +47,17 @@ func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, user
 }
 
 func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) error {
-	err := r.db.WithContext(ctx).Create(user).Error
-	if err != nil {
+	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Preload("Profile").WithContext(ctx).Where("username = ?", username).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -70,11 +67,10 @@ func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username str
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetUserByID(ctx context.Context, userID string) (*model.User, error) {
+func (r *userRepositoryImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Preload("Profile").WithContext(ctx).Where("id = ?", userID).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -87,8 +83,7 @@ func (r *userRepositoryImpl) GetUserByID(ctx context.Context, userID string) (*m
 func (r *userRepositoryImpl) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 
-	err := r.db.Preload("Profile").WithContext(ctx).Where("email = ?", email).First(&user).Error
-	if err != nil {
+	if err := r.db.Preload("Profile").WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
