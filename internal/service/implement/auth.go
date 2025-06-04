@@ -208,3 +208,50 @@ func (s *authServiceImpl) GetMe(userID string) (*model.User, error) {
 
 	return user, nil
 }
+
+func (s *authServiceImpl) ForgotPassword(req request.ForgotPasswordRequest) (string, error) {
+	exists, err := s.userRepository.CheckUserExistsByEmail(req.Email)
+	if err != nil {
+		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
+	}
+
+	if !exists {
+		return "", errors.ErrUserNotFound
+	}
+
+	otp := utils.GenerateOtp(5)
+	forgotPasswordToken := uuid.NewString()
+
+	forgData := dto.ForgotPasswordData{
+		Email:    req.Email,
+		Otp:      otp,
+		Attempts: 0,
+	}
+
+	if err = s.authRepository.AddForgotPasswordData(forgotPasswordToken, forgData, 3*time.Minute); err != nil {
+		return "", fmt.Errorf("lưu dữ liệu quên mật khẩu thất bại: %w", err)
+	}
+
+	emailMsg := dto.EmailMessage{
+		To:      req.Email,
+		Subject: "Mã xác nhận Quên mật khẩu",
+		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
+	}
+
+	body, err := json.Marshal(emailMsg)
+	if err != nil {
+		if err = s.authRepository.DeleteAuthData("forgot-password", forgotPasswordToken); err != nil {
+			return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
+		}
+		return "", fmt.Errorf("lỗi mã hóa email message: %w", err)
+	}
+
+	if err = mq.PublishMessage(s.rabbitChan, "", "email_queue", body); err != nil {
+		if err = s.authRepository.DeleteAuthData("forgot-password", forgotPasswordToken); err != nil {
+			return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
+		}
+		return "", fmt.Errorf("không thể publish message: %w", err)
+	}
+
+	return forgotPasswordToken, nil
+}

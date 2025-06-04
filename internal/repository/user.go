@@ -8,4 +8,5 @@ type UserRepository interface {
 	CreateUser(user *model.User) error
 	GetUserByUsername(username string) (*model.User, error)
 	GetUserByID(userID string) (*model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
 }

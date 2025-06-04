@@ -10,4 +10,5 @@ type AuthService interface {
 	VerifySignup(req request.VerifySignupRequest) (*model.User, string, string, error)
 	Signin(req request.SigninRequest) (*model.User, string, string, error)
 	GetMe(username string) (*model.User, error)
+	ForgotPassword(req request.ForgotPasswordRequest) (string, error)
 }

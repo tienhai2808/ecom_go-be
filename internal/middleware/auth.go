@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"backend/internal/config"
+	"backend/internal/dto"
 	"fmt"
 	"net/http"
 
@@ -13,9 +14,9 @@ func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
 		if err != nil || tokenStr == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
-				"error":      "Không có access token",
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message: "Không có token",
 			})
 			return
 		}
@@ -28,27 +29,27 @@ func RequireAuth(config *config.AppConfig) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
-				"error":      "Token không hợp lệ hoặc đã hết hạn",
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message: "Token không hợp lệ hoặc đã hết hạn",
 			})
 			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
-				"error":      "Không thể parse claims",
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message: "Không thể lấy claims từ token",
 			})
 			return
 		}
 
 		userID, ok := claims["user_id"].(string)
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"statusCode": http.StatusUnauthorized,
-				"error":      "Không có user_id trong token",
+			c.AbortWithStatusJSON(http.StatusUnauthorized, dto.ApiResponse{
+				StatusCode: 401,
+				Message: "Không thể lấy user_id từ token",
 			})
 			return
 		}

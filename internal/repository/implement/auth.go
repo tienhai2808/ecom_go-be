@@ -85,3 +85,19 @@ func (r *authRepositoryImpl) UpdateRegistrationData(token string, data dto.Regis
 
 	return nil
 }
+
+func (r *authRepositoryImpl) AddForgotPasswordData(token string, data dto.ForgotPasswordData, ttl time.Duration) error {
+	forgDataJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %w", err)
+	}
+
+	ctx := context.Background()
+	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
+
+	if err = r.redis.Set(ctx, redisKey, forgDataJSON, ttl).Err(); err != nil {
+		return err
+	}
+
+	return nil
+}

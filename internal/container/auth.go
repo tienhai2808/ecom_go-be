@@ -19,7 +19,7 @@ func NewAuthContainer(redis *redis.Client, config *config.AppConfig, db *gorm.DB
 	authRepo := repository.NewAuthRepository(redis, config)
 	userRepo := repository.NewUserRepository(db)
 	authService := service.NewAuthService(userRepo, authRepo, rabbitChan, config)
-	authHandler := handler.NewAuthHandler(authService)
+	authHandler := handler.NewAuthHandler(authService, config)
 	return &AuthModule{
 		AuthHandler: *authHandler,
 	}
