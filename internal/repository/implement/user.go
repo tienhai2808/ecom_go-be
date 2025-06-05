@@ -20,30 +20,44 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
-	var existingUser model.User
+func (r *userRepositoryImpl) GetAllUsers(ctx context.Context) ([]*model.User, error) {
+	var users []*model.User
 
-	if err := r.db.WithContext(ctx).Where("email = ?", email).First((&existingUser)).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
+	if err := r.db.WithContext(ctx).Preload("Profile").Order("created_at DESC").Find(&users).Error; err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func (r *userRepositoryImpl) CheckUserExistsByID(ctx context.Context, id string) (bool, error) {
+	var count int64
+
+	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Count(&count).Error; err != nil {
 		return false, err
 	}
 
-	return true, nil
+	return count > 0, nil
+}
+
+func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
+	var count int64
+
+	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
 
 func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, username string) (bool, error) {
-	var existingUser model.User
+	var count int64
 
-	if err := r.db.WithContext(ctx).Where("username = ?", username).First((&existingUser)).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
+	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("username = ?", username).Count(&count).Error; err != nil {
 		return false, err
 	}
 
-	return true, nil
+	return count > 0, nil
 }
 
 func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) error {
@@ -104,4 +118,26 @@ func (r *userRepositoryImpl) UpdateUserPasswordByID(ctx context.Context, id, new
 	}
 
 	return nil
+}
+
+func (r *userRepositoryImpl) UpdateUserByID(ctx context.Context, id string, updateData map[string]interface{}) error {
+	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(updateData)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return customErr.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (r *userRepositoryImpl) DeleteManyUsers(ctx context.Context, userIDs []string) (int64, error) {
+	result := r.db.WithContext(ctx).Where("id IN ?", userIDs).Delete(&model.User{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return result.RowsAffected, nil
 }

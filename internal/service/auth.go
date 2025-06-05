@@ -24,8 +24,4 @@ type AuthService interface {
 	ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*model.User, string, string, error)
 
 	UpdateUserProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*model.User, error)
-
-	GetUserAddresses(ctx context.Context, userID string) ([]*model.Address, error)
-
-	AddUserAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error)
 }

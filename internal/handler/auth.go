@@ -3,7 +3,7 @@ package handler
 import (
 	"backend/internal/common"
 	"backend/internal/config"
-	"backend/internal/errors"
+	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/request"
 	"backend/internal/service"
@@ -43,7 +43,7 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 	token, err := h.authService.Signup(ctx, req)
 	if err != nil {
 		switch err {
-		case errors.ErrUsernameExists, errors.ErrEmailExists:
+		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở SignupService: %v\n", err)
@@ -72,7 +72,7 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 	newUser, accessToken, refreshToken, err := h.authService.VerifySignup(ctx, req)
 	if err != nil {
 		switch err {
-		case errors.ErrInvalidOTP, errors.ErrTooManyAttempts, errors.ErrEmailExists, errors.ErrUsernameExists, errors.ErrKeyNotFound:
+		case customErr.ErrInvalidOTP, customErr.ErrTooManyAttempts, customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrKeyNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở VerifySignupService: %v\n", err)
@@ -104,7 +104,7 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 	user, accessToken, refreshToken, err := h.authService.Signin(ctx, req)
 	if err != nil {
 		switch err {
-		case errors.ErrIncorrectPassword, errors.ErrUserNotFound:
+		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở SigninService: %v\n", err)
@@ -174,7 +174,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	_, err = h.authService.GetMe(ctx, userID)
 	if err != nil {
 		switch err {
-		case errors.ErrUserNotFound:
+		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusUnauthorized, "Yêu cầu không hợp lệ", nil)
 		default:
 			fmt.Printf("Lỗi ở GetMeService: %v\n", err)
@@ -218,7 +218,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	token, err := h.authService.ForgotPassword(ctx, req)
 	if err != nil {
 		switch err {
-		case errors.ErrUserNotFound:
+		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
@@ -247,7 +247,7 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 	token, err := h.authService.VerifyForgotPassword(ctx, req)
 	if err != nil {
 		switch err {
-		case errors.ErrInvalidOTP, errors.ErrKeyNotFound, errors.ErrTooManyAttempts:
+		case customErr.ErrInvalidOTP, customErr.ErrKeyNotFound, customErr.ErrTooManyAttempts:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở VerifyForgotPasswordService: %v\n", err)
@@ -277,7 +277,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		switch err {
-		case errors.ErrUserNotFound, errors.ErrKeyNotFound:
+		case customErr.ErrUserNotFound, customErr.ErrKeyNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở ResetPasswordService: %v\n", err)
@@ -321,10 +321,10 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	user, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user, req)
 	if err != nil {
 		switch err {
-		case errors.ErrIncorrectPassword, errors.ErrUserNotFound:
+		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Errorf("Lỗi ở ChangePasswordService: %v\n", err)
+			fmt.Printf("Lỗi ở ChangePasswordService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể thay đổi mật khẩu", nil)
 		}
 		return
@@ -371,7 +371,7 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 	updatedUser, err := h.authService.UpdateUserProfile(ctx, user, &req)
 	if err != nil {
 		switch err {
-		case errors.ErrUserProfileNotFound, errors.ErrUserNotFound:
+		case customErr.ErrUserProfileNotFound, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở UpdateUserProfileService: %v\n", err)
@@ -382,73 +382,5 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 
 	utils.JSON(c, http.StatusOK, "Cập nhật hồ sơ người dùng thành công", gin.H{
 		"user": updatedUser,
-	})
-}
-
-func (h *AuthHandler) GetUserAddresses(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	userAny, exists := c.Get("user")
-	if !exists {
-		utils.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
-		return
-	}
-
-	user, ok := userAny.(*model.User)
-	if !ok {
-		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	addresses, err := h.authService.GetUserAddresses(ctx, user.ID)
-	if err != nil {
-		fmt.Printf("Lỗi ở GetUserAddressService: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể lấy địa chỉ của người dùng", nil)
-		return
-	}
-
-	utils.JSON(c, http.StatusOK, "Lấy địa chỉ người dùng thành công", gin.H{
-		"addresses": addresses,
-	})
-}
-
-func (h *AuthHandler) AddUserAddress(c *gin.Context) {
-	ctx := c.Request.Context()
-	var req request.AddAddressRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
-		return
-	}
-
-	userAny, exists := c.Get("user")
-	if !exists {
-		utils.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
-		return
-	}
-
-	user, ok := userAny.(*model.User)
-	if !ok {
-		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	newAddress, err := h.authService.AddUserAddress(ctx, user.ID, req)
-	if err != nil {
-		switch err {
-		case errors.ErrUserAddressNotFound:
-			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
-		default:
-			fmt.Printf("Lỗi ở AddUserAddressService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể thêm mới địa chỉ", nil)
-		}
-		return
-	}
-
-	utils.JSON(c, http.StatusCreated, "Thêm mới địa chỉ thành công", gin.H{
-		"address": newAddress,
 	})
 }

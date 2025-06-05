@@ -9,16 +9,22 @@ import (
 )
 
 type Container struct {
+	UserModule    *UserModule
 	AuthModule    *AuthModule
+	AddressModule *AddressModule
 	ProductModule *ProductModule
 }
 
 func NewContainer(db *gorm.DB, redis *redis.Client, config *config.AppConfig, rabbitChan *amqp091.Channel) (*Container, error) {
+	userModule := NewUserContainer(db)
 	authModule := NewAuthContainer(redis, config, db, rabbitChan)
+	addressModule := NewAddressContainer(db)
 	productModule := NewProductContainer(db)
 
 	return &Container{
+		UserModule:    userModule,
 		AuthModule:    authModule,
+		AddressModule: addressModule,
 		ProductModule: productModule,
 	}, nil
 }

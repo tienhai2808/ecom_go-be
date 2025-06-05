@@ -1,6 +1,8 @@
 package common
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,8 +17,9 @@ type ValidationError struct {
 func HandleValidationError(err error) []ValidationError {
 	var validationErrors []ValidationError
 
-	if validationErrs, ok := err.(validator.ValidationErrors); ok {
-		for _, e := range validationErrs {
+	// 1. Trường hợp là slice []error (Gin đôi khi wrap lỗi kiểu này)
+	if errs, ok := err.(validator.ValidationErrors); ok {
+		for _, e := range errs {
 			var message string
 
 			switch e.Tag() {
@@ -45,7 +48,34 @@ func HandleValidationError(err error) []ValidationError {
 				Message: message,
 			})
 		}
+		return validationErrors
+	}
+
+	var unmarshalTypeError *json.UnmarshalTypeError
+	if errors.As(err, &unmarshalTypeError) {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   strings.ToLower(unmarshalTypeError.Field),
+			Message: fmt.Sprintf("%s phải là kiểu %s", unmarshalTypeError.Field, unmarshalTypeError.Type.String()),
+		})
+		return validationErrors
+	}
+
+	var syntaxError *json.SyntaxError
+	if errors.As(err, &syntaxError) {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "",
+			Message: fmt.Sprintf("JSON không hợp lệ tại byte %d", syntaxError.Offset),
+		})
+		return validationErrors
+	}
+
+	if err != nil {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "",
+			Message: err.Error(),
+		})
 	}
 
 	return validationErrors
 }
+

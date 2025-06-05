@@ -33,9 +33,5 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository
 		auth.PUT("/change-password/:user_id", middleware.RequireAuth(config, userRepository), authHandler.ChangePassword)
 
 		auth.PATCH("/update-info/:user_id", middleware.RequireAuth(config, userRepository), authHandler.UpdateUserProfile)
-
-		auth.GET("/my-addresses", middleware.RequireAuth(config, userRepository), authHandler.GetUserAddresses)
-
-		auth.POST("/my-addresses", middleware.RequireAuth(config, userRepository), authHandler.AddUserAddress)
 	}
 }
