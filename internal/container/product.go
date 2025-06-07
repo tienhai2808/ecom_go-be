@@ -2,8 +2,8 @@ package container
 
 import (
 	"backend/internal/handler"
-	repository "backend/internal/repository/implement"
-	service "backend/internal/service/implement"
+	repoImpl "backend/internal/repository/implement"
+	serviceImpl "backend/internal/service/implement"
 
 	"gorm.io/gorm"
 )
@@ -13,8 +13,8 @@ type ProductModule struct {
 }
 
 func NewProductContainer(db *gorm.DB) *ProductModule {
-	productRepo := repository.NewProductRepository(db)
-	productService := service.NewProductService(productRepo)
+	productRepo := repoImpl.NewProductRepository(db)
+	productService := serviceImpl.NewProductService(productRepo)
 	productHandler := handler.NewProductHandler(productService)
 
 	return &ProductModule{

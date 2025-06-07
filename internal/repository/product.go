@@ -1,7 +1,12 @@
 package repository
 
-import "backend/internal/model"
+import (
+	"backend/internal/model"
+	"context"
+)
 
 type ProductRepository interface {
-	GetAllProducts() ([]*model.Product, error)
+	GetAllProducts(ctx context.Context) ([]*model.Product, error)
+
+	CreateProduct(ctx context.Context, product *model.Product) error
 }

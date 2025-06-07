@@ -83,7 +83,7 @@ func (app *Application) initRoutes() {
 	router.NewUserRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.UserModule.UserHandler)
 	router.NewAuthRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.AuthModule.AuthHandler)
 	router.NewAddressRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.AddressModule.AddressHandler)
-	router.NewProductRouter(api, app.Container.ProductModule.ProductHandler)
+	router.NewProductRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.ProductModule.ProductHandler)
 }
 
 func (app *Application) Run() {

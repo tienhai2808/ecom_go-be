@@ -19,11 +19,5 @@ func NewUserRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository
 		user.PATCH("/:user_id", userHandler.UpdateUser)
 
 		user.DELETE("/many", userHandler.DeleteManyUsers)
-
-		// address.POST("/my", middleware.RequireAuth(config, userRepository), addressHandler.AddUserAddress)
-
-		// address.PATCH("/my/:address_id", middleware.RequireAuth(config, userRepository), addressHandler.UpdateUserAddress)
-
-		// address.DELETE("/my/:address_id", middleware.RequireAuth(config, userRepository), addressHandler.DeleteUserAddress)
 	}
 }
