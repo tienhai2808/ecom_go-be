@@ -50,6 +50,39 @@ func (h *AddressHandler) GetUserAddresses(c *gin.Context) {
 	})
 }
 
+func (h *AddressHandler) GetUserAddressDetail(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	userAny, exists := c.Get("user")
+	if !exists {
+		utils.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		return
+	}
+
+	user, ok := userAny.(*model.User)
+	if !ok {
+		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		return
+	}
+
+	addressID := c.Param("address_id")
+	address, err := h.addressService.GetUserAddressDetail(ctx, user.ID, addressID)
+	if err != nil {
+		switch err {
+		case customErr.ErrUnauthorized, customErr.ErrAddressNotFound:
+			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở GetUserAddressDetailService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy địa chỉ", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Lấy địa chỉ thành công", gin.H{
+		"address": address,
+	})
+}
+
 func (h *AddressHandler) AddUserAddress(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.AddAddressRequest
@@ -150,12 +183,12 @@ func (h *AddressHandler) DeleteUserAddress(c *gin.Context) {
 	}
 
 	addressID := c.Param("address_id")
-	
+
 	if err := h.addressService.DeleteUserAddress(ctx, user.ID, addressID); err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrUnauthorized:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
-	  default:
+		default:
 			fmt.Printf("Lỗi ở DeleteUserAddressService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa địa chỉ", nil)
 		}

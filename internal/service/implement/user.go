@@ -35,6 +35,19 @@ func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error
 	return users, nil
 }
 
+func (s *userServiceImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+	user, err := s.userRepository.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+
+	if user == nil {
+		return nil, customErr.ErrUserNotFound
+	}
+
+	return user, nil
+}
+
 func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUserRequest) (*model.User, error) {
 	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, req.Email)
 	if err != nil {
@@ -175,10 +188,21 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	return updatedUser, nil
 }
 
+func (s *userServiceImpl) DeleteUserByID(ctx context.Context, id string) error {
+	if err := s.userRepository.DeleteUserByID(ctx, id); err != nil {
+		if errors.Is(err, customErr.ErrUserNotFound) {
+			return err
+		}
+		return fmt.Errorf("xóa người dùng thất bại: %w", err)
+	}
+
+	return nil
+}
+
 func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyUsersRequest) (int64, error) {
 	userIDs := req.UserIds
 	filteredUserIDs := []string{}
-	
+
 	for _, id := range userIDs {
 		if id != currentUserID {
 			filteredUserIDs = append(filteredUserIDs, id)
@@ -189,7 +213,7 @@ func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID str
 		return 0, customErr.ErrUserConflict
 	}
 
-	rowsAffected, err := s.userRepository.DeleteManyUsers(ctx, filteredUserIDs); 
+	rowsAffected, err := s.userRepository.DeleteManyUsers(ctx, filteredUserIDs)
 	if err != nil {
 		return 0, fmt.Errorf("xóa người dùng thất bại: %w", err)
 	}

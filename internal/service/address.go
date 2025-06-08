@@ -9,6 +9,8 @@ import (
 type AddressService interface {
 	GetUserAddresses(ctx context.Context, userID string) ([]*model.Address, error)
 
+	GetUserAddressDetail(ctx context.Context, userID string, id string) (*model.Address, error)
+
 	AddUserAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error)
 
 	UpdateUserAddress(ctx context.Context, userID, id string, req *request.UpdateAddressRequest) (*model.Address, error)

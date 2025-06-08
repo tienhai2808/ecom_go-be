@@ -13,8 +13,6 @@ type AuthService interface {
 
 	Signin(ctx context.Context, req request.SigninRequest) (*model.User, string, string, error)
 
-	GetMe(ctx context.Context, id string) (*model.User, error)
-
 	ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error)
 
 	VerifyForgotPassword(ctx context.Context, req request.VerifyForgotPasswordRequest) (string, error)

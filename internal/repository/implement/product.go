@@ -4,6 +4,7 @@ import (
 	"backend/internal/model"
 	"backend/internal/repository"
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -26,6 +27,19 @@ func (r *productRepositoryImpl) GetAllProducts(ctx context.Context) ([]*model.Pr
 	}
 
 	return products, nil
+}
+
+func (r *productRepositoryImpl) GetProductByID(ctx context.Context, id string) (*model.Product, error) {
+	var product model.Product
+
+	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&product).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &product, nil
 }
 
 func (r *productRepositoryImpl) CreateProduct(ctx context.Context, product *model.Product) error {

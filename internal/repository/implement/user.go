@@ -133,8 +133,21 @@ func (r *userRepositoryImpl) UpdateUserByID(ctx context.Context, id string, upda
 	return nil
 }
 
-func (r *userRepositoryImpl) DeleteManyUsers(ctx context.Context, userIDs []string) (int64, error) {
-	result := r.db.WithContext(ctx).Where("id IN ?", userIDs).Delete(&model.User{})
+func (r *userRepositoryImpl) DeleteUserByID(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return customErr.ErrUserNotFound
+	}
+
+	return nil
+}
+
+func (r *userRepositoryImpl) DeleteManyUsers(ctx context.Context, ids []string) (int64, error) {
+	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.User{})
 	if result.Error != nil {
 		return 0, result.Error
 	}

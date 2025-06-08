@@ -18,12 +18,14 @@ import (
 
 type AuthHandler struct {
 	authService service.AuthService
+	userService service.UserService
 	config      *config.AppConfig
 }
 
-func NewAuthHandler(authService service.AuthService, config *config.AppConfig) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, userService service.UserService, config *config.AppConfig) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		userService: userService,
 		config:      config,
 	}
 }
@@ -171,7 +173,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	_, err = h.authService.GetMe(ctx, userID)
+	_, err = h.userService.GetUserByID(ctx, userID)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
@@ -358,6 +360,7 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 
 	user, ok := userAny.(*model.User)
 	if !ok {
+		fmt.Println("Lỗi ở đổi kiểu dữ liệu user lấy từ context")
 		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"backend/internal/common"
+	customErr "backend/internal/errors"
 	"backend/internal/request"
 	"backend/internal/service"
 	"backend/internal/utils"
@@ -33,6 +34,27 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 
 	utils.JSON(c, http.StatusOK, "lấy danh sách sản phẩm thành công", gin.H{
 		"products": products,
+	})
+}
+
+func (h *ProductHandler) GetProductByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	productID := c.Param("product_id")
+
+	product, err := h.productService.GetProductByID(ctx, productID)
+	if err != nil {
+		switch err {
+		case customErr.ErrProductNotFound:
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở GetProductByIDService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy sản phẩm", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Lấy sản phẩm thành công", gin.H{
+		"product": product,
 	})
 }
 

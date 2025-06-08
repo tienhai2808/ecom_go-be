@@ -18,6 +18,8 @@ func NewUserRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository
 
 		user.PATCH("/:user_id", userHandler.UpdateUser)
 
+		user.DELETE("/:user_id", userHandler.DeleteUserByID)
+
 		user.DELETE("/many", userHandler.DeleteManyUsers)
 	}
 }

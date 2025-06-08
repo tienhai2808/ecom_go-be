@@ -98,6 +98,41 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	})
 }
 
+func (h *UserHandler) DeleteUserByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	userAny, exists := c.Get("user")
+	if !exists {
+		utils.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		return
+	}
+
+	user, ok := userAny.(*model.User)
+	if !ok {
+		fmt.Println("Lỗi ở đổi kiểu dữ liệu user lấy từ context")
+		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		return
+	}
+
+	reqUserID := c.Param("user_id")
+	if reqUserID == user.ID {
+		utils.JSON(c, http.StatusConflict, "Không thể xóa chính bạn", nil)
+		return
+	}
+
+	if err := h.userService.DeleteUserByID(ctx, reqUserID); err != nil {
+		switch err {
+		case customErr.ErrUserNotFound:
+			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở DeleteUserByIDService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa người dùng", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Xóa người dùng thành công", nil)
+}
+
 func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.DeleteManyUsersRequest

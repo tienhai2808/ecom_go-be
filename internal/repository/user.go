@@ -26,5 +26,7 @@ type UserRepository interface {
 
 	UpdateUserByID(ctx context.Context, id string, updateData map[string]interface{}) error
 
-	DeleteManyUsers(ctx context.Context, userIDs []string) (int64, error)
+	DeleteUserByID(ctx context.Context, id string) error
+
+	DeleteManyUsers(ctx context.Context, ids []string) (int64, error)
 }

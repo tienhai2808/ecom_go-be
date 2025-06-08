@@ -204,19 +204,6 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 	return user, accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) GetMe(ctx context.Context, id string) (*model.User, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
-	}
-
-	if user == nil {
-		return nil, customErr.ErrUserNotFound
-	}
-
-	return user, nil
-}
-
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
 	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, req.Email)
 	if err != nil {

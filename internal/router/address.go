@@ -12,7 +12,9 @@ import (
 func NewAddressRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, addressHandler handler.AddressHandler) {
 	address := rg.Group("/addresses")
 	{
-		address.GET("/my", middleware.RequireAuth(config, userRepository), addressHandler.GetUserAddresses)
+		address.GET("/my/all", middleware.RequireAuth(config, userRepository), addressHandler.GetUserAddresses)
+
+		address.GET("/my/:address_id", middleware.RequireAuth(config, userRepository), addressHandler.GetUserAddressDetail)
 
 		address.POST("/my", middleware.RequireAuth(config, userRepository), addressHandler.AddUserAddress)
 

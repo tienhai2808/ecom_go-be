@@ -1,6 +1,7 @@
 package implement
 
 import (
+	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/repository"
 	"backend/internal/request"
@@ -28,6 +29,19 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 	}
 
 	return products, nil
+}
+
+func (s *productServiceImpl) GetProductByID(ctx context.Context, id string) (*model.Product, error) {
+	product, err := s.productRepo.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
+	}
+
+	if product == nil {
+		return nil, customErr.ErrProductNotFound
+	}
+
+	return product, nil
 }
 
 func (s *productServiceImpl) CreateProduct(ctx context.Context, req request.CreateProductRequest) (*model.Product, error) {

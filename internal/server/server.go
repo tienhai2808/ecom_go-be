@@ -8,7 +8,6 @@ import (
 	"backend/internal/mq"
 	"backend/internal/router"
 	"backend/internal/smtp"
-	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -87,9 +86,9 @@ func (app *Application) initRoutes() {
 }
 
 func (app *Application) Run() {
-	fmt.Println("💚 Kết nối MySQL thành công")
-	fmt.Println("💚 Kết nối Redis thành công")
-	fmt.Println("💚 Kết nối RabbitMQ thành công")
+	log.Println("💚 Kết nối MySQL thành công")
+	log.Println("💚 Kết nối Redis thành công")
+	log.Println("💚 Kết nối RabbitMQ thành công")
 	addr := app.Config.App.Host + ":" + app.Config.App.Port
 	if err := app.Router.Run(addr); err != nil {
 		log.Fatalf("❤️ Không thể khởi động server: %v", err)

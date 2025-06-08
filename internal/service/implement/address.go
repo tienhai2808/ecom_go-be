@@ -33,6 +33,23 @@ func (s *addressServiceImpl) GetUserAddresses(ctx context.Context, userID string
 	return addresses, nil
 }
 
+func (s *addressServiceImpl) GetUserAddressDetail(ctx context.Context, userID string, id string) (*model.Address, error) {
+	address, err := s.addressRepository.GetAddressByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin địa chỉ thất bại: %w", err)
+	}
+
+	if address == nil {
+		return nil, customErr.ErrAddressNotFound
+	}
+
+	if address.UserID != userID {
+		return nil, customErr.ErrUnauthorized
+	}
+
+	return address, nil
+}
+
 func (s *addressServiceImpl) AddUserAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error) {
 	count, err := s.addressRepository.CountAddressByUserID(ctx, userID)
 	if err != nil {
