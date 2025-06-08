@@ -12,4 +12,6 @@ type ProductService interface {
 	GetProductByID(ctx context.Context, id string) (*model.Product, error)
 
 	CreateProduct(ctx context.Context, req request.CreateProductRequest) (*model.Product, error)
+
+	UpdateProduct(ctx context.Context, id string, req *request.UpdateProductRequest) (*model.Product, error)
 }

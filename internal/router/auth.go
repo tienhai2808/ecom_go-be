@@ -10,7 +10,7 @@ import (
 )
 
 func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, authHandler handler.AuthHandler) {
-	auth := rg.Group(("/auth"))
+	auth := rg.Group("/auth")
 	{
 		auth.POST("/signup", authHandler.Signup)
 

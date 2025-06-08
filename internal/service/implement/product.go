@@ -7,23 +7,24 @@ import (
 	"backend/internal/request"
 	"backend/internal/service"
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 )
 
 type productServiceImpl struct {
-	productRepo repository.ProductRepository
+	productRepository repository.ProductRepository
 }
 
-func NewProductService(productRepo repository.ProductRepository) service.ProductService {
+func NewProductService(productRepository repository.ProductRepository) service.ProductService {
 	return &productServiceImpl{
-		productRepo: productRepo,
+		productRepository: productRepository,
 	}
 }
 
 func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Product, error) {
-	products, err := s.productRepo.GetAllProducts(ctx)
+	products, err := s.productRepository.GetAllProducts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("lấy tất cả sản phẩm thất bại: %w", err)
 	}
@@ -32,7 +33,7 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 }
 
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id string) (*model.Product, error) {
-	product, err := s.productRepo.GetProductByID(ctx, id)
+	product, err := s.productRepository.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -46,17 +47,65 @@ func (s *productServiceImpl) GetProductByID(ctx context.Context, id string) (*mo
 
 func (s *productServiceImpl) CreateProduct(ctx context.Context, req request.CreateProductRequest) (*model.Product, error) {
 	newProduct := &model.Product{
-		ID: uuid.NewString(),
-		Name: req.Name,
-		Brand: req.Brand,
-		Price: req.Price,
-		Inventory: req.Inventory,
+		ID:          uuid.NewString(),
+		Name:        req.Name,
+		Brand:       req.Brand,
+		Price:       req.Price,
+		Inventory:   req.Inventory,
 		Description: req.Description,
 	}
 
-	if err := s.productRepo.CreateProduct(ctx, newProduct); err != nil {
+	if err := s.productRepository.CreateProduct(ctx, newProduct); err != nil {
 		return nil, fmt.Errorf("tạo sản phẩm thất bại: %w", err)
 	}
 
 	return newProduct, nil
+}
+
+func (s *productServiceImpl) UpdateProduct(ctx context.Context, id string, req *request.UpdateProductRequest) (*model.Product, error) {
+	product, err := s.productRepository.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
+	}
+
+	if product == nil {
+		return nil, customErr.ErrProductNotFound
+	}
+
+	updateData := map[string]interface{}{}
+	if req.Name != nil && *req.Name != product.Name {
+		updateData["name"] = *req.Name
+	}
+	if req.Brand != nil && *req.Brand != product.Brand {
+		updateData["brand"] = *req.Brand
+	}
+	if req.Price != nil && *req.Price != product.Price {
+		updateData["price"] = *req.Price
+	}
+	if req.Inventory != nil && *req.Inventory != product.Inventory {
+		updateData["inventory"] = *req.Inventory
+	}
+	if req.Description != nil && *req.Description != product.Description {
+		updateData["description"] = *req.Description
+	}
+
+	if len(updateData) > 0 {
+		if err = s.productRepository.UpdateProductByID(ctx, id, updateData); err != nil {
+			if errors.Is(err, customErr.ErrProductNotFound) {
+				return nil, err
+			}
+			return nil, fmt.Errorf("cập nhật sản phẩm thất bại: %w", err)
+		}
+	}
+
+	updatedProduct, err := s.productRepository.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
+	}
+
+	if updatedProduct == nil {
+		return nil, customErr.ErrProductNotFound
+	}
+
+	return updatedProduct, nil
 }

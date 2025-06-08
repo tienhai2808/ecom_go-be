@@ -17,5 +17,7 @@ func NewProductRouter(rg *gin.RouterGroup, config *config.AppConfig, userReposit
 		product.GET("/:product_id", productHandler.GetProductByID)
 
 		product.POST("", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.CreateProduct)
+
+		product.PATCH("/:product_id", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.UpdateProduct)
 	}
 }

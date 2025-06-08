@@ -1,9 +1,11 @@
 package implement
 
 import (
+	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/repository"
 	"context"
+
 	"errors"
 
 	"gorm.io/gorm"
@@ -45,6 +47,19 @@ func (r *productRepositoryImpl) GetProductByID(ctx context.Context, id string) (
 func (r *productRepositoryImpl) CreateProduct(ctx context.Context, product *model.Product) error {
 	if err := r.db.WithContext(ctx).Create(product).Error; err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *productRepositoryImpl) UpdateProductByID(ctx context.Context, id string, updateData map[string]interface{}) error {
+	result := r.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Updates(updateData)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return customErr.ErrProductNotFound
 	}
 
 	return nil

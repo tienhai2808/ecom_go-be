@@ -14,11 +14,13 @@ func NewUserRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository
 	{
 		user.GET("/all", userHandler.GetAllUsers)
 
+		user.GET("/:user_id", userHandler.GetUserByID)
+
 		user.POST("", userHandler.CreateUser)
 
 		user.PATCH("/:user_id", userHandler.UpdateUser)
 
-		user.DELETE("/:user_id", userHandler.DeleteUserByID)
+		user.DELETE("/:user_id", userHandler.DeleteUser)
 
 		user.DELETE("/many", userHandler.DeleteManyUsers)
 	}

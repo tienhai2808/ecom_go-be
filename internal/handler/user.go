@@ -38,6 +38,27 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	})
 }
 
+func (h *UserHandler) GetUserByID(c *gin.Context) {
+	ctx := c.Request.Context()
+	userID := c.Param("user_id")
+
+	user, err := h.userService.GetUserByID(ctx, userID)
+	if err != nil {
+		switch err {
+		case customErr.ErrUserNotFound:
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở GetUserByIDService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy người dùng", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Lấy người dùng thành công", gin.H{
+		"user": user,
+	})
+}
+
 func (h *UserHandler) CreateUser(c *gin.Context) {
 	ctx := c.Request.Context()
 	var req request.CreateUserRequest
@@ -98,7 +119,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	})
 }
 
-func (h *UserHandler) DeleteUserByID(c *gin.Context) {
+func (h *UserHandler) DeleteUser(c *gin.Context) {
 	ctx := c.Request.Context()
 	userAny, exists := c.Get("user")
 	if !exists {
@@ -122,7 +143,7 @@ func (h *UserHandler) DeleteUserByID(c *gin.Context) {
 	if err := h.userService.DeleteUserByID(ctx, reqUserID); err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
-			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở DeleteUserByIDService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa người dùng", nil)
@@ -161,7 +182,7 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUserConflict:
-			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			utils.JSON(c, http.StatusConflict, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở DeleteManyUsersService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa người dùng", nil)

@@ -80,3 +80,34 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		"product": newProduct,
 	})
 }
+
+func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req request.UpdateProductRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+			"errors": translated,
+		})
+		return
+	}
+
+	productID := c.Param("product_id")
+
+	updatedProduct, err := h.productService.UpdateProduct(ctx, productID, &req)
+	if err != nil {
+		switch err {
+		case customErr.ErrProductNotFound:
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở UpdateProductService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể cập nhât sản phẩm", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Cập nhật sản phẩm thành công", gin.H{
+		"product": updatedProduct,
+	})
+}

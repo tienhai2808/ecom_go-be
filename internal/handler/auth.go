@@ -221,7 +221,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
-			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
 			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
 			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy lại mật khẩu", nil)

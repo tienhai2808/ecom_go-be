@@ -14,6 +14,9 @@ var allModels = []interface{}{
 	&model.Profile{},
 	&model.Address{},
 	&model.Product{},
+	&model.Category{},
+	&model.Product{},
+	&model.Image{},
 }
 
 func ConnectToDatabase(cfg *config.AppConfig) (*gorm.DB, error) {

@@ -17,7 +17,6 @@ type ValidationError struct {
 func HandleValidationError(err error) []ValidationError {
 	var validationErrors []ValidationError
 
-	// 1. Trường hợp là slice []error (Gin đôi khi wrap lỗi kiểu này)
 	if errs, ok := err.(validator.ValidationErrors); ok {
 		for _, e := range errs {
 			var message string

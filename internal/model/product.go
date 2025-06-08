@@ -11,4 +11,8 @@ type Product struct {
 	Description string    `gorm:"type:text" json:"description"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
+	CategoryID  string    `gorm:"type:char(36)" json:"-"`
+
+	Category Category `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"category"`
+	Images   []Image  `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
 }

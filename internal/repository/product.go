@@ -11,4 +11,6 @@ type ProductRepository interface {
 	GetProductByID(ctx context.Context, id string) (*model.Product, error)
 
 	CreateProduct(ctx context.Context, product *model.Product) error
+
+	UpdateProductByID(ctx context.Context, id string, updateData map[string]interface{}) error
 }
