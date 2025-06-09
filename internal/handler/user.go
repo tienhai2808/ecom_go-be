@@ -156,7 +156,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 	ctx := c.Request.Context()
-	var req request.DeleteManyUsersRequest
+	var req request.DeleteManyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)

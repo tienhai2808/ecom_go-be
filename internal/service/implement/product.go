@@ -109,3 +109,25 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id string, req *
 
 	return updatedProduct, nil
 }
+
+func (s *productServiceImpl) DeleteProduct(ctx context.Context, id string) error {
+	if err := s.productRepository.DeleteProductByID(ctx, id); err != nil {
+		if errors.Is(err, customErr.ErrProductNotFound) {
+			return err
+		}
+		return fmt.Errorf("xóa sản phẩm thất bại: %w", err)
+	}
+
+	return nil
+}
+
+func (s *productServiceImpl) DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error) {
+	productIDs := req.IDs
+
+	rowsAccepted, err := s.productRepository.DeleteManyProducts(ctx, productIDs)
+	if err != nil {
+		return 0, fmt.Errorf("xóa danh sách sản phẩm thât bại: %w", err)
+	}
+
+	return rowsAccepted, nil
+}

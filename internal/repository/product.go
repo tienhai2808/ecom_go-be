@@ -13,4 +13,8 @@ type ProductRepository interface {
 	CreateProduct(ctx context.Context, product *model.Product) error
 
 	UpdateProductByID(ctx context.Context, id string, updateData map[string]interface{}) error
+
+	DeleteProductByID(ctx context.Context, id string) error
+
+	DeleteManyProducts(ctx context.Context, ids []string) (int64, error)
 }

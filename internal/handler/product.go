@@ -74,6 +74,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	if err != nil {
 		fmt.Printf("Lỗi ở CreateProductService %v\n", err)
 		utils.JSON(c, http.StatusInternalServerError, "Không thể tạo mới sản phẩm", nil)
+		return
 	}
 
 	utils.JSON(c, http.StatusOK, "Tạo mới sản phẩm thành công", gin.H{
@@ -110,4 +111,45 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	utils.JSON(c, http.StatusOK, "Cập nhật sản phẩm thành công", gin.H{
 		"product": updatedProduct,
 	})
+}
+
+func (h *ProductHandler) DeleteProduct(c *gin.Context) {
+	ctx := c.Request.Context()
+	productID := c.Param("product_id")
+
+	if err := h.productService.DeleteProduct(ctx, productID); err != nil {
+		switch err {
+		case customErr.ErrProductNotFound:
+			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			fmt.Printf("Lỗi ở DeleteProductService: %v\n", err)
+			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa sản phẩm", nil)
+		}
+		return
+	}
+
+	utils.JSON(c, http.StatusOK, "Xóa sản phẩm thành công", nil)
+}
+
+func (h *ProductHandler) DeleteManyProducts(c *gin.Context) {
+	ctx := c.Request.Context()
+	var req request.DeleteManyRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+			"errors": translated,
+		})
+		return
+	}
+
+	rowsAccepted, err := h.productService.DeleteManyProducts(ctx, req)
+	if err != nil {
+		fmt.Printf("Lỗi ở DeleteManyProductsService: %v\n", err)
+		utils.JSON(c, http.StatusInternalServerError, "Không thể xóa danh sách sản phẩm", nil)
+		return
+	}
+
+	message := fmt.Sprintf("Xóa thành công %d người dùng", rowsAccepted)
+	utils.JSON(c, http.StatusOK, message, nil)
 }

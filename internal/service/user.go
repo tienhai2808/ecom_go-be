@@ -17,5 +17,5 @@ type UserService interface {
 
 	DeleteUserByID(ctx context.Context, id string) error
 
-	DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyUsersRequest) (int64, error)
+	DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error)
 }

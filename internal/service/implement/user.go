@@ -199,8 +199,8 @@ func (s *userServiceImpl) DeleteUserByID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyUsersRequest) (int64, error) {
-	userIDs := req.UserIds
+func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error) {
+	userIDs := req.IDs
 	filteredUserIDs := []string{}
 
 	for _, id := range userIDs {

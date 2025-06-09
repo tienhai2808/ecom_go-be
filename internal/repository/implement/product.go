@@ -64,3 +64,25 @@ func (r *productRepositoryImpl) UpdateProductByID(ctx context.Context, id string
 
 	return nil
 }
+
+func (r *productRepositoryImpl) DeleteProductByID(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Product{})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return customErr.ErrProductNotFound
+	}
+
+	return nil
+}
+
+func (r *productRepositoryImpl) DeleteManyProducts(ctx context.Context, ids []string) (int64, error) {
+	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.Product{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return result.RowsAffected, nil
+}

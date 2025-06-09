@@ -14,4 +14,8 @@ type ProductService interface {
 	CreateProduct(ctx context.Context, req request.CreateProductRequest) (*model.Product, error)
 
 	UpdateProduct(ctx context.Context, id string, req *request.UpdateProductRequest) (*model.Product, error)
+
+	DeleteProduct(ctx context.Context, id string) error 
+
+	DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error)
 }

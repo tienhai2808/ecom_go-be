@@ -28,7 +28,3 @@ type UpdateUserRequest struct {
 	PhoneNumber *string           `json:"phone_number" binding:"omitempty,len=10"`
 	DOB         *time.Time        `json:"dob" binding:"omitempty"`
 }
-
-type DeleteManyUsersRequest struct {
-	UserIds []string `json:"user_ids" binding:"required,min=1,dive,uuid"`
-}

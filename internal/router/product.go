@@ -19,5 +19,9 @@ func NewProductRouter(rg *gin.RouterGroup, config *config.AppConfig, userReposit
 		product.POST("", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.CreateProduct)
 
 		product.PATCH("/:product_id", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.UpdateProduct)
+
+		product.DELETE("/:product_id", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.DeleteProduct)
+
+		product.DELETE("/many", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), productHandler.DeleteManyProducts)
 	}
 }
