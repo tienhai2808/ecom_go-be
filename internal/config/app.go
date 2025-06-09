@@ -9,12 +9,12 @@ import (
 
 type AppConfig struct {
 	App struct {
-		Name              string `yaml:"name"`
-		Host              string `yaml:"host"`
-		Port              string `yaml:"port"`
-		JWTAccessSecret   string `yaml:"jwt_access_secret"`
-		JWTRefreshSecret  string `yaml:"jwt_refresh_secret"`
-		ApiPrefix         string `yaml:"api_prefix"`
+		Name             string `yaml:"name"`
+		Host             string `yaml:"host"`
+		Port             string `yaml:"port"`
+		JWTAccessSecret  string `yaml:"jwt_access_secret"`
+		JWTRefreshSecret string `yaml:"jwt_refresh_secret"`
+		ApiPrefix        string `yaml:"api_prefix"`
 	} `yaml:"app"`
 
 	Database struct {
@@ -32,7 +32,7 @@ type AppConfig struct {
 
 	RabbitMQ struct {
 		Host string `yaml:"host"`
-		Port int `yaml:"port"`
+		Port int    `yaml:"port"`
 		User string `yaml:"user"`
 		Pass string `yaml:"pass"`
 	} `yaml:"rabbitmq"`
@@ -43,6 +43,12 @@ type AppConfig struct {
 		User string `yaml:"user"`
 		Pass string `yaml:"pass"`
 	} `yaml:"smtp"`
+
+	ImageKit struct {
+		UrlEndpoint string `yaml:"url_endpoint"`
+		PublicKey   string `yaml:"public_key"`
+		PrivateKey  string `yaml:"private_key"`
+	} `yaml:"imagekit"`
 }
 
 func LoadAppConfig() (*AppConfig, error) {

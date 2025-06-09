@@ -6,6 +6,7 @@ require (
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/imagekit-developer/imagekit-go v0.0.0-20240521071536-1d7e6e67fcd7
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.7.3
 	gorm.io/driver/mysql v1.5.7
@@ -13,6 +14,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/creasty/defaults v1.6.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-sql-driver/mysql v1.9.2 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -20,6 +22,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	gopkg.in/validator.v2 v2.0.1 // indirect
 )
 
 require (
