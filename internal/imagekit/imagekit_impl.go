@@ -2,28 +2,45 @@ package imagekit
 
 import (
 	"backend/internal/config"
+	"context"
+	"fmt"
 	"mime/multipart"
 
 	"github.com/imagekit-developer/imagekit-go"
+	"github.com/imagekit-developer/imagekit-go/api/uploader"
 )
 
 type imageKitServicedImpl struct {
-	client *imagekit.ImageKit
+	Client *imagekit.ImageKit
 }
 
-func NewImageKitService(config config.AppConfig) ImageKitService {
+func NewImageKitService(config *config.AppConfig) ImageKitService {
 	params := imagekit.NewParams{
-		PublicKey: config.ImageKit.PublicKey,
-		PrivateKey: config.ImageKit.PrivateKey,
 		UrlEndpoint: config.ImageKit.UrlEndpoint,
+		PublicKey:   config.ImageKit.PublicKey,
+		PrivateKey:  config.ImageKit.PrivateKey,
 	}
 	ik := imagekit.NewFromParams(params)
-
 	return &imageKitServicedImpl{
-		client: ik,
+		Client: ik,
 	}
 }
 
-func (s *imageKitServicedImpl) UploadImage(fileHeader *multipart.FileHeader) (string, string, error) {
-	return "", "", nil
+func (s *imageKitServicedImpl) UploadImage(ctx context.Context, fileName string, fileHeader *multipart.FileHeader) (string, string, error) {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return "", "", fmt.Errorf("mở file thất bại: %w", err)
+	}
+	defer file.Close()
+
+	res, err := s.Client.Uploader.Upload(ctx, file, uploader.UploadParam{
+		FileName: fileName,
+		Folder:   "ecom-go",
+	})
+
+	if err != nil {
+		return "", "", fmt.Errorf("upload ảnh thất bại: %w", err)
+	}
+
+	return res.Data.Url, res.Data.FileId, nil
 }

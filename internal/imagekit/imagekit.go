@@ -1,7 +1,10 @@
 package imagekit
 
-import "mime/multipart"
+import (
+	"context"
+	"mime/multipart"
+)
 
 type ImageKitService interface {
-	UploadImage(fileHeader *multipart.FileHeader) (string, string, error)
+	UploadImage(ctx context.Context, fileName string, fileHeader *multipart.FileHeader) (string, string, error)
 }

@@ -1,5 +1,5 @@
 package smtp
 
-type EmailSender interface {
+type SMTPService interface {
 	SendEmail(to, subject, htmlBody string) error
 }

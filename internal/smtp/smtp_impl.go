@@ -8,7 +8,7 @@ import (
 	"net/smtp"
 )
 
-type SMTPSender struct {
+type SMTPServiceImpl struct {
 	auth     smtp.Auth
 	host     string
 	port     string
@@ -17,7 +17,7 @@ type SMTPSender struct {
 	template *template.Template
 }
 
-func NewSMTPSender(cfg *config.AppConfig) EmailSender {
+func NewSMTPService(cfg *config.AppConfig) SMTPService {
 	auth := smtp.PlainAuth("", cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.Host)
 
 	tmpl, err := template.New("email").Parse(emailTemplate)
@@ -25,7 +25,7 @@ func NewSMTPSender(cfg *config.AppConfig) EmailSender {
 		fmt.Printf("🚨 Lỗi load template email: %v\n", err)
 	}
 
-	return &SMTPSender{
+	return &SMTPServiceImpl{
 		auth:     auth,
 		host:     cfg.SMTP.Host,
 		port:     cfg.SMTP.Port,
@@ -35,7 +35,7 @@ func NewSMTPSender(cfg *config.AppConfig) EmailSender {
 	}
 }
 
-func (s *SMTPSender) SendEmail(to, subject, htmlBody string) error {
+func (s *SMTPServiceImpl) SendEmail(to, subject, htmlBody string) error {
 	addr := fmt.Sprintf("%s:%s", s.host, s.port)
 
 	data := struct {

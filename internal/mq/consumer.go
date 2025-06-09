@@ -44,7 +44,7 @@ func ConsumeMessages(ch *amqp091.Channel, queueName string) (<-chan amqp091.Deli
 	return msgs, nil
 }
 
-func StartEmailConsumer(ch *amqp091.Channel, emailSender smtp.EmailSender) {
+func StartEmailConsumer(ch *amqp091.Channel, emailSender smtp.SMTPService) {
 	queueName := "email_queue"
 
 	_, err := ch.QueueDeclare(

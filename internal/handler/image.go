@@ -2,6 +2,7 @@ package handler
 
 import (
 	customErr "backend/internal/errors"
+	"backend/internal/imagekit"
 	"backend/internal/service"
 	"backend/internal/utils"
 	"fmt"
@@ -12,11 +13,13 @@ import (
 
 type ImageHandler struct {
 	imageService service.ImageService
+	imageKitService imagekit.ImageKitService
 }
 
-func NewImageHandler(imageService service.ImageService) *ImageHandler {
+func NewImageHandler(imageService service.ImageService, imageKitService imagekit.ImageKitService) *ImageHandler {
 	return &ImageHandler{
 		imageService: imageService,
+		imageKitService: imageKitService,
 	}
 }
 

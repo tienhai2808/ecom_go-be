@@ -47,7 +47,7 @@ func NewApplication() *Application {
 		log.Fatalf("❤️ Lỗi kết nối tới rabbitmq: %v", err)
 	}
 
-	emailSender := smtp.NewSMTPSender(cfg)
+	emailSender := smtp.NewSMTPService(cfg)
 	mq.StartEmailConsumer(rabbitChan, emailSender)
 
 	con, err := container.NewContainer(db, redisClient, cfg, rabbitChan)

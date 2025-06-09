@@ -21,7 +21,7 @@ func NewContainer(db *gorm.DB, redis *redis.Client, config *config.AppConfig, ra
 	authModule := NewAuthContainer(redis, config, db, rabbitChan)
 	addressModule := NewAddressContainer(db)
 	productModule := NewProductContainer(db)
-	imageModule := NewImageContainer(db)
+	imageModule := NewImageContainer(db, config)
 
 	return &Container{
 		UserModule:    userModule,
