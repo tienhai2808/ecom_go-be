@@ -8,6 +8,7 @@ import (
 	"backend/internal/mq"
 	"backend/internal/repository"
 	"backend/internal/request"
+	"backend/internal/response"
 	"backend/internal/service"
 	"backend/internal/utils"
 	"context"
@@ -101,7 +102,7 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 	return registrationToken, nil
 }
 
-func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySignupRequest) (*model.User, string, string, error) {
+func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySignupRequest) (*response.AuthResponse, string, string, error) {
 	regData, err := s.authRepository.GetRegistrationData(ctx, req.RegistrationToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu đăng ký thất bại: %w", err)
@@ -173,10 +174,10 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		return nil, "", "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
-	return newUser, accessToken, refreshToken, nil
+	return s.ConvertToDto(newUser), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest) (*model.User, string, string, error) {
+func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest) (*response.AuthResponse, string, string, error) {
 	user, err := s.userRepository.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
@@ -201,7 +202,7 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return user, accessToken, refreshToken, nil
+	return s.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
@@ -285,7 +286,7 @@ func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.
 	return resetPasswordToken, nil
 }
 
-func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPasswordRequest) (*model.User, string, string, error) {
+func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPasswordRequest) (*response.AuthResponse, string, string, error) {
 	email, err := s.authRepository.GetResetPasswordData(ctx, req.ResetPasswordToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu làm mới mật khẩu thất bại: %w", err)
@@ -330,10 +331,10 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("xóa dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
 
-	return user, accessToken, refreshToken, nil
+	return s.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*model.User, string, string, error) {
+func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*response.AuthResponse, string, string, error) {
 	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.OldPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
@@ -365,10 +366,10 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return user, accessToken, refreshToken, nil
+	return s.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*model.User, error) {
+func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error) {
 	updateData := map[string]interface{}{}
 	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
 		updateData["first_name"] = *req.FirstName
@@ -404,5 +405,21 @@ func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.Use
 		return nil, customErr.ErrUserNotFound
 	}
 
-	return updatedUser, nil
+	return s.ConvertToDto(updatedUser), nil
+}
+
+func (s *authServiceImpl) ConvertToDto(user *model.User) *response.AuthResponse {
+	return &response.AuthResponse{
+		ID:        user.ID,
+		Username:  user.Username,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		Profile: response.ProfileResponse{
+			FirstName:   user.Profile.FirstName,
+			LastName:    user.Profile.LastName,
+			PhoneNumber: user.Profile.PhoneNumber,
+			Gender:      user.Profile.Gender,
+			DOB:         user.Profile.DOB,
+		},
+	}
 }

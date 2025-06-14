@@ -71,7 +71,7 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 		return
 	}
 
-	newUser, accessToken, refreshToken, err := h.authService.VerifySignup(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authService.VerifySignup(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrInvalidOTP, customErr.ErrTooManyAttempts, customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrKeyNotFound:
@@ -87,7 +87,7 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Đăng ký thành công", gin.H{
-		"user": newUser,
+		"user": userRes,
 	})
 }
 
@@ -103,7 +103,7 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authService.Signin(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authService.Signin(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
@@ -119,7 +119,7 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Đăng nhập thành công", gin.H{
-		"user": user,
+		"user": userRes,
 	})
 }
 
@@ -143,8 +143,10 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 
+	userRes := h.authService.ConvertToDto(user)
+
 	utils.JSON(c, http.StatusOK, "Lấy thông tin người dùng thành công", gin.H{
-		"user": user,
+		"user": userRes,
 	})
 }
 
@@ -275,7 +277,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authService.ResetPassword(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authService.ResetPassword(ctx, req)
 	if err != nil {
 		fmt.Println(err)
 		switch err {
@@ -292,7 +294,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Lấy lại mật khẩu thành công", gin.H{
-		"user": user,
+		"user": userRes,
 	})
 }
 
@@ -320,7 +322,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	user, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user, req)
+	userRes, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
@@ -336,7 +338,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
-		"user": user,
+		"user": userRes,
 	})
 }
 
@@ -371,7 +373,7 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.authService.UpdateUserProfile(ctx, user, &req)
+	userRes, err := h.authService.UpdateUserProfile(ctx, user, &req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserProfileNotFound, customErr.ErrUserNotFound:
@@ -384,6 +386,6 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 	}
 
 	utils.JSON(c, http.StatusOK, "Cập nhật hồ sơ người dùng thành công", gin.H{
-		"user": updatedUser,
+		"user": userRes,
 	})
 }
