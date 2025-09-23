@@ -1,15 +1,18 @@
 package server
 
 import (
-	"backend/internal/cache"
-	"backend/internal/config"
+	"backend/config"
+	"backend/internal/consumers"
 	"backend/internal/container"
-	"backend/internal/database"
-	"backend/internal/mq"
+	"backend/internal/initialization"
 	"backend/internal/router"
-	"backend/internal/smtp"
+	"context"
+	"fmt"
 	"log"
+	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -17,7 +20,7 @@ import (
 )
 
 type Application struct {
-	Config     *config.AppConfig
+	Config     *config.Config
 	DB         *gorm.DB
 	Redis      *redis.Client
 	RabbitConn *amqp091.Connection
@@ -26,82 +29,100 @@ type Application struct {
 	Router     *gin.Engine
 }
 
-func NewApplication() *Application {
-	cfg, err := config.LoadAppConfig()
-	if err != nil {
-		log.Fatalf("❤️ Lỗi khi load cấu hình app: %v", err)
-	}
-
-	db, err := database.ConnectToDatabase(cfg)
-	if err != nil {
-		log.Fatalf("❤️ Lỗi kết nối tới database: %v", err)
-	}
-
-	redisClient, err := cache.ConnectToRedis(cfg)
-	if err != nil {
-		log.Fatalf("❤️ Lỗi kết nối tới redis: %v", err)
-	}
-
-	rabbitConn, rabbitChan, err := mq.ConnectToRabbitMQ(cfg)
-	if err != nil {
-		log.Fatalf("❤️ Lỗi kết nối tới rabbitmq: %v", err)
-	}
-
-	emailSender := smtp.NewSMTPService(cfg)
-	mq.StartEmailConsumer(rabbitChan, emailSender)
-
-	con, err := container.NewContainer(db, redisClient, cfg, rabbitChan)
-	if err != nil {
-		log.Fatalf("❤️ Lỗi tạo container: %v", err)
-	}
-
-	router := gin.Default()
-	if err := router.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
-		log.Fatalf("❤️ Could not set trusted proxies: %v", err)
-	}
-
-	config.SetupCORS(router)
-
-	app := &Application{
-		Config:     cfg,
-		DB:         db,
-		Redis:      redisClient,
-		RabbitConn: rabbitConn,
-		RabbitChan: rabbitChan,
-		Container:  con,
-		Router:     router,
-	}
-
-	app.initRoutes()
-
-	return app
+type Server struct {
+	cfg        *config.Config
+	httpServer *http.Server
+	db         *initialization.DB
+	rdb        *redis.Client
+	rmq        *initialization.RabbitMQConn
 }
 
-func (app *Application) initRoutes() {
-	api := app.Router.Group(app.Config.App.ApiPrefix)
-	router.NewUserRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.UserModule.UserHandler)
-	router.NewAuthRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.AuthModule.AuthHandler)
-	router.NewAddressRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.AddressModule.AddressHandler)
-	router.NewProductRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.ProductModule.ProductHandler)
-	router.NewImageRouter(api, app.Config, app.Container.UserModule.UserRepository, app.Container.ImageModule.ImageHandler)
+func NewServer(cfg *config.Config) (*Server, error) {
+	db, err := initialization.InitMySQL(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	rdb, err := initialization.InitRedis(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	rmq, err := initialization.InitRabbitMQ(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann)
+	if err != nil {
+		return nil, err
+	}
+
+	go consumers.StartSendEmailConsumer(rmq, ctn.AuthModule.SMTPService)
+
+	r := gin.Default()
+
+	if err := r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
+		return nil, fmt.Errorf("thiết lập Proxy thất bại: %w", err)
+	}
+
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+
+	r.Use(cors.New(corsConfig))
+
+	api := r.Group(cfg.App.ApiPrefix)
+
+	router.NewUserRouter(api, cfg, ctn.UserModule.UserRepository, ctn.UserModule.UserHandler)
+	router.NewAuthRouter(api, cfg, ctn.UserModule.UserRepository, ctn.AuthModule.AuthHandler)
+	router.NewAddressRouter(api, cfg, ctn.UserModule.UserRepository, ctn.AddressModule.AddressHandler)
+	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ProductModule.ProductHandler)
+	router.NewImageRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ImageModule.ImageHandler)
+
+	addr := fmt.Sprintf(":%d", cfg.App.Port)
+
+	httpServer := &http.Server{
+		Addr:           addr,
+		Handler:        r,
+		MaxHeaderBytes: 5 * 1024 * 1024,
+	}
+
+	return &Server{
+		cfg,
+		httpServer,
+		db,
+		rdb,
+		rmq,
+	}, nil
 }
 
-func (app *Application) Run() {
-	log.Println("💚 Kết nối MySQL thành công")
-	log.Println("💚 Kết nối Redis thành công")
-	log.Println("💚 Kết nối RabbitMQ thành công")
-	addr := app.Config.App.Host + ":" + app.Config.App.Port
-	if err := app.Router.Run(addr); err != nil {
-		log.Fatalf("❤️ Không thể khởi động server: %v", err)
-	}
+func (s *Server) Start() error {
+	return s.httpServer.ListenAndServe()
 }
 
-func (app *Application) Close() {
-	if sqlDB, err := app.DB.DB(); err == nil {
-		sqlDB.Close()
+func (s *Server) Shutdown(ctx context.Context) {
+	if s.db != nil {
+		s.db.Close()
 	}
-	if app.Redis != nil {
-		app.Redis.Close()
+
+	if s.rdb != nil {
+		s.rdb.Close()
 	}
-	mq.CloseRabbitMQ(app.RabbitConn, app.RabbitChan)
+
+	if s.rmq != nil {
+		s.rmq.Close()
+	}
+
+	if s.httpServer != nil {
+		if err := s.httpServer.Shutdown(ctx); err != nil {
+			log.Printf("Shutdown http server thất bại: %v", err)
+			return
+		}
+	}
 }

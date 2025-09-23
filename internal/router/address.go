@@ -1,7 +1,7 @@
 package router
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
 	"backend/internal/repository"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewAddressRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, addressHandler handler.AddressHandler) {
+func NewAddressRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, addressHandler *handler.AddressHandler) {
 	address := rg.Group("/addresses")
 	{
 		address.GET("/my/all", middleware.RequireAuth(config, userRepository), addressHandler.GetUserAddresses)

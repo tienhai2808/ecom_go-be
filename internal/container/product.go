@@ -9,7 +9,7 @@ import (
 )
 
 type ProductModule struct {
-	ProductHandler handler.ProductHandler
+	ProductHandler *handler.ProductHandler
 }
 
 func NewProductContainer(db *gorm.DB) *ProductModule {
@@ -18,6 +18,6 @@ func NewProductContainer(db *gorm.DB) *ProductModule {
 	productHandler := handler.NewProductHandler(productService)
 
 	return &ProductModule{
-		ProductHandler: *productHandler,
+		ProductHandler: productHandler,
 	}
 }

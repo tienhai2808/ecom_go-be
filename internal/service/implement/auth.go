@@ -1,7 +1,7 @@
 package implement
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/dto"
 	customErr "backend/internal/errors"
 	"backend/internal/model"
@@ -26,10 +26,10 @@ type authServiceImpl struct {
 	authRepository    repository.AuthRepository
 	profileRepository repository.ProfileRepository
 	rabbitChan        *amqp091.Channel
-	config            *config.AppConfig
+	config            *config.Config
 }
 
-func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, rabbitChan *amqp091.Channel, config *config.AppConfig) service.AuthService {
+func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, rabbitChan *amqp091.Channel, config *config.Config) service.AuthService {
 	return &authServiceImpl{
 		userRepository:    userRepository,
 		authRepository:    authRepository,

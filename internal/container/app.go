@@ -1,7 +1,7 @@
 package container
 
 import (
-	"backend/internal/config"
+	"backend/config"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -16,7 +16,7 @@ type Container struct {
 	ImageModule   *ImageModule
 }
 
-func NewContainer(db *gorm.DB, redis *redis.Client, config *config.AppConfig, rabbitChan *amqp091.Channel) (*Container, error) {
+func NewContainer(db *gorm.DB, redis *redis.Client, config *config.Config, rabbitChan *amqp091.Channel) *Container {
 	userModule := NewUserContainer(db)
 	authModule := NewAuthContainer(redis, config, db, rabbitChan)
 	addressModule := NewAddressContainer(db)
@@ -28,6 +28,6 @@ func NewContainer(db *gorm.DB, redis *redis.Client, config *config.AppConfig, ra
 		AuthModule:    authModule,
 		AddressModule: addressModule,
 		ProductModule: productModule,
-		ImageModule: imageModule,
-	}, nil
+		ImageModule:   imageModule,
+	}
 }

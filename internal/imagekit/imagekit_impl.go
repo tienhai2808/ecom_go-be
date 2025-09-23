@@ -1,7 +1,7 @@
 package imagekit
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"context"
 	"fmt"
 	"mime/multipart"
@@ -14,7 +14,7 @@ type imageKitServicedImpl struct {
 	Client *imagekit.ImageKit
 }
 
-func NewImageKitService(config *config.AppConfig) ImageKitService {
+func NewImageKitService(config *config.Config) ImageKitService {
 	params := imagekit.NewParams{
 		UrlEndpoint: config.ImageKit.UrlEndpoint,
 		PublicKey:   config.ImageKit.PublicKey,

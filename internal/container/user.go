@@ -11,7 +11,7 @@ import (
 
 type UserModule struct {
 	UserRepository repository.UserRepository
-	UserHandler    handler.UserHandler
+	UserHandler    *handler.UserHandler
 }
 
 func NewUserContainer(db *gorm.DB) *UserModule {
@@ -22,6 +22,6 @@ func NewUserContainer(db *gorm.DB) *UserModule {
 
 	return &UserModule{
 		UserRepository: userRepo,
-		UserHandler: *userHandler,
+		UserHandler: userHandler,
 	}
 }

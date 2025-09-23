@@ -2,7 +2,7 @@ package handler
 
 import (
 	"backend/internal/common"
-	"backend/internal/config"
+	"backend/config"
 	customErr "backend/internal/errors"
 	"backend/internal/model"
 	"backend/internal/request"
@@ -19,10 +19,10 @@ import (
 type AuthHandler struct {
 	authService service.AuthService
 	userService service.UserService
-	config      *config.AppConfig
+	config      *config.Config
 }
 
-func NewAuthHandler(authService service.AuthService, userService service.UserService, config *config.AppConfig) *AuthHandler {
+func NewAuthHandler(authService service.AuthService, userService service.UserService, config *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		userService: userService,

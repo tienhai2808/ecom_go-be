@@ -1,10 +1,11 @@
 package container
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/handler"
 	repoImpl "backend/internal/repository/implement"
 	serviceImpl "backend/internal/service/implement"
+	"backend/internal/smtp"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -12,18 +13,21 @@ import (
 )
 
 type AuthModule struct {
-	AuthHandler    handler.AuthHandler
+	AuthHandler *handler.AuthHandler
+	SMTPService smtp.SMTPService
 }
 
-func NewAuthContainer(redis *redis.Client, config *config.AppConfig, db *gorm.DB, rabbitChan *amqp091.Channel) *AuthModule {
-	authRepo := repoImpl.NewAuthRepository(redis, config)
+func NewAuthContainer(rdb *redis.Client, cfg *config.Config, db *gorm.DB, rabbitChan *amqp091.Channel) *AuthModule {
+	mailer := smtp.NewSMTPService(cfg)
+	authRepo := repoImpl.NewAuthRepository(rdb, cfg)
 	userRepo := repoImpl.NewUserRepository(db)
 	profileRepo := repoImpl.NewProfileRepository(db)
-	authService := serviceImpl.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, config)
+	authService := serviceImpl.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, cfg)
 	userService := serviceImpl.NewUserService(userRepo, profileRepo)
-	authHandler := handler.NewAuthHandler(authService, userService, config)
-	
+	authHandler := handler.NewAuthHandler(authService, userService, cfg)
+
 	return &AuthModule{
-		AuthHandler: *authHandler,
+		authHandler,
+		mailer,
 	}
 }

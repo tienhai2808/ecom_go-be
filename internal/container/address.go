@@ -9,7 +9,7 @@ import (
 )
 
 type AddressModule struct {
-	AddressHandler handler.AddressHandler
+	AddressHandler *handler.AddressHandler
 }
 
 func NewAddressContainer(db *gorm.DB) *AddressModule {
@@ -18,6 +18,6 @@ func NewAddressContainer(db *gorm.DB) *AddressModule {
 	addressHandler := handler.NewAddressHandler(addressService)
 
 	return &AddressModule{
-		AddressHandler: *addressHandler,
+		AddressHandler: addressHandler,
 	}
 }

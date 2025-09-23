@@ -1,7 +1,7 @@
 package implement
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/dto"
 	"backend/internal/repository"
 	"context"
@@ -14,10 +14,10 @@ import (
 
 type authRepositoryImpl struct {
 	redis  *redis.Client
-	config *config.AppConfig
+	config *config.Config
 }
 
-func NewAuthRepository(redis *redis.Client, config *config.AppConfig) repository.AuthRepository {
+func NewAuthRepository(redis *redis.Client, config *config.Config) repository.AuthRepository {
 	return &authRepositoryImpl{
 		redis:  redis,
 		config: config,

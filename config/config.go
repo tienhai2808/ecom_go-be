@@ -7,11 +7,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type AppConfig struct {
+type Config struct {
 	App struct {
 		Name             string `yaml:"name"`
 		Host             string `yaml:"host"`
-		Port             string `yaml:"port"`
+		Port             int    `yaml:"port"`
 		JWTAccessSecret  string `yaml:"jwt_access_secret"`
 		JWTRefreshSecret string `yaml:"jwt_refresh_secret"`
 		ApiPrefix        string `yaml:"api_prefix"`
@@ -23,11 +23,10 @@ type AppConfig struct {
 		Host     string `yaml:"host"`
 		Port     int    `yaml:"port"`
 		Name     string `yaml:"name"`
-	} `yaml:"database"`
+	} `yaml:"mysql"`
 
 	Redis struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
+		Addr string `yaml:"addr"`
 	} `yaml:"redis"`
 
 	RabbitMQ struct {
@@ -51,18 +50,18 @@ type AppConfig struct {
 	} `yaml:"imagekit"`
 }
 
-func LoadAppConfig() (*AppConfig, error) {
-	var config AppConfig
+func LoadConfig() (*Config, error) {
+	var config Config
 
-	file, err := os.Open("configs/app.yml")
+	file, err := os.Open("config/config.yaml")
 	if err != nil {
-		return nil, fmt.Errorf("❤️ Không thể mở file app.yml: %v", err)
+		return nil, fmt.Errorf("không thể mở file config: %w", err)
 	}
 	defer file.Close()
 
 	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&config); err != nil {
-		return nil, fmt.Errorf("❤️ Không thể giải mã file app.yml: %v", err)
+	if err = decoder.Decode(&config); err != nil {
+		return nil, fmt.Errorf("không thể đọc file cấu hình: %w", err)
 	}
 
 	return &config, nil

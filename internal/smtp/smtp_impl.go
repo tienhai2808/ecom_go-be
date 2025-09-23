@@ -1,42 +1,37 @@
 package smtp
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"net/smtp"
 )
 
-type SMTPServiceImpl struct {
+type smtpServiceImpl struct {
 	auth     smtp.Auth
-	host     string
-	port     string
-	from     string
-	appName  string
 	template *template.Template
+	cfg      *config.Config
 }
 
-func NewSMTPService(cfg *config.AppConfig) SMTPService {
+func NewSMTPService(cfg *config.Config) SMTPService {
 	auth := smtp.PlainAuth("", cfg.SMTP.User, cfg.SMTP.Pass, cfg.SMTP.Host)
 
 	tmpl, err := template.New("email").Parse(emailTemplate)
 	if err != nil {
-		fmt.Printf("🚨 Lỗi load template email: %v\n", err)
+		log.Printf("Lỗi load template email: %v", err)
 	}
 
-	return &SMTPServiceImpl{
-		auth:     auth,
-		host:     cfg.SMTP.Host,
-		port:     cfg.SMTP.Port,
-		from:     cfg.SMTP.User,
-		appName:  cfg.App.Name,
-		template: tmpl,
+	return &smtpServiceImpl{
+		auth,
+		tmpl,
+		cfg,
 	}
 }
 
-func (s *SMTPServiceImpl) SendEmail(to, subject, htmlBody string) error {
-	addr := fmt.Sprintf("%s:%s", s.host, s.port)
+func (s *smtpServiceImpl) SendEmail(to, subject, htmlBody string) error {
+	addr := fmt.Sprintf("%s:%s", s.cfg.SMTP.Host, s.cfg.SMTP.Port)
 
 	data := struct {
 		Subject string
@@ -45,18 +40,18 @@ func (s *SMTPServiceImpl) SendEmail(to, subject, htmlBody string) error {
 	}{
 		Subject: subject,
 		Body:    template.HTML(htmlBody),
-		AppName: s.appName,
+		AppName: s.cfg.App.Name,
 	}
 
 	var buf bytes.Buffer
 	if err := s.template.Execute(&buf, data); err != nil {
-		return fmt.Errorf("🚨 Lỗi render template email: %v", err)
+		return fmt.Errorf("lỗi render template email: %v", err)
 	}
 
-	msg := buildHTMLMessage(s.from, to, subject, buf.String())
+	msg := buildHTMLMessage(s.cfg.SMTP.User, to, subject, buf.String())
 
-	if err := smtp.SendMail(addr, s.auth, s.from, []string{to}, []byte(msg)); err != nil {
-		return fmt.Errorf("🚨 Lỗi gửi email tới %s: %v", to, err)
+	if err := smtp.SendMail(addr, s.auth, s.cfg.SMTP.User, []string{to}, []byte(msg)); err != nil {
+		return fmt.Errorf("lỗi gửi email tới %s: %v", to, err)
 	}
 
 	return nil

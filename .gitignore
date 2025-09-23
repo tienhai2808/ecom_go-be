@@ -35,4 +35,4 @@ main
 # Test API
 *.http
 
-configs/
+config.yaml

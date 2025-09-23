@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/dto"
 	"backend/internal/repository"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func RequireAuth(config *config.AppConfig, userRepository repository.UserRepository) gin.HandlerFunc {
+func RequireAuth(config *config.Config, userRepository repository.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("access_token")
 		if err != nil || tokenStr == "" {

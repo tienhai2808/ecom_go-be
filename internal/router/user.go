@@ -1,7 +1,7 @@
 package router
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
 	"backend/internal/repository"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewUserRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, userHandler handler.UserHandler) {
+func NewUserRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, userHandler *handler.UserHandler) {
 	user := rg.Group("/users", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}))
 	{
 		user.GET("/all", userHandler.GetAllUsers)

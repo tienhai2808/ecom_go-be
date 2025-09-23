@@ -1,7 +1,7 @@
 package router
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
 	"backend/internal/repository"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewCategoryRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, categoryHandler handler.CategoryHandler) {
+func NewCategoryRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, categoryHandler *handler.CategoryHandler) {
 	category := rg.Group("/categories")
 	{
 		category.POST("", middleware.RequireAuth(config, userRepository), middleware.RequireMultiRoles([]string{"admin"}), categoryHandler.CreateCategory)

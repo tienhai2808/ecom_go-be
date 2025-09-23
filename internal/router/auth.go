@@ -1,7 +1,7 @@
 package router
 
 import (
-	"backend/internal/config"
+	"backend/config"
 	"backend/internal/handler"
 	"backend/internal/middleware"
 	"backend/internal/repository"
@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewAuthRouter(rg *gin.RouterGroup, config *config.AppConfig, userRepository repository.UserRepository, authHandler handler.AuthHandler) {
+func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, authHandler *handler.AuthHandler) {
 	auth := rg.Group("/auth")
 	{
 		auth.POST("/signup", authHandler.Signup)
