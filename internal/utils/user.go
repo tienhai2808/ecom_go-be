@@ -8,9 +8,7 @@ import (
 	"math"
 	mrand "math/rand"
 	"strings"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -68,15 +66,4 @@ func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
 	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, uint32(len(storedHash)))
 
 	return subtle.ConstantTimeCompare(storedHash, inputHash) == 1, nil
-}
-
-func GenerateToken(userID string, userRole string, ttl time.Duration, secret string) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID,
-		"role":    userRole,
-		"exp":     time.Now().Add(ttl).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
 }

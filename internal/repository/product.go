@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"backend/internal/model"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/model"
 )
 
 type ProductRepository interface {

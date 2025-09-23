@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"backend/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/model"
 	"context"
 )
 

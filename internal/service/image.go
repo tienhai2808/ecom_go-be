@@ -1,8 +1,8 @@
 package service
 
 import (
-	"backend/internal/model"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/model"
 	"mime/multipart"
 )
 

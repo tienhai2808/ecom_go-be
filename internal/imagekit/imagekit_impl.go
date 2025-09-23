@@ -1,9 +1,9 @@
 package imagekit
 
 import (
-	"backend/config"
 	"context"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
 	"mime/multipart"
 
 	"github.com/imagekit-developer/imagekit-go"

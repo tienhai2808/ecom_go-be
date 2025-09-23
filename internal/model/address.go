@@ -14,6 +14,7 @@ type Address struct {
 	IsDefault   bool      `gorm:"type:boolean;not null" json:"is_default"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
+	UserID      string    `gorm:"type:char(36);not null" json:"-"`
 
-	UserID string `gorm:"type:char(36);not null" json:"-"`
+	User *User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 }

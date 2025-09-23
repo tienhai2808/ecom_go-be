@@ -1,15 +1,14 @@
 package implement
 
 import (
-	"backend/internal/model"
-	"backend/internal/repository"
-	"backend/internal/request"
-	"backend/internal/service"
 	"context"
 	"errors"
 	"fmt"
-
-	customErr "backend/internal/errors"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
 
 	"github.com/google/uuid"
 )

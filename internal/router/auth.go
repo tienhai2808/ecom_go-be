@@ -1,15 +1,20 @@
 package router
 
 import (
-	"backend/config"
-	"backend/internal/handler"
-	"backend/internal/middleware"
-	"backend/internal/repository"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	"github.com/tienhai2808/ecom_go/internal/handler"
+	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/security"
 
 	"github.com/gin-gonic/gin"
 )
 
 func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, authHandler *handler.AuthHandler) {
+	accessName := config.App.AccessName
+	refreshName := config.App.RefreshName
+	secretKey := config.App.JWTSecret
+
 	auth := rg.Group("/auth")
 	{
 		auth.POST("/signup", authHandler.Signup)
@@ -18,11 +23,11 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 		auth.POST("/signin", authHandler.Signin)
 
-		auth.POST("/signout", middleware.RequireAuth(config, userRepository), authHandler.Signout)
+		auth.POST("/signout", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.Signout)
 
-		auth.GET("/me", middleware.RequireAuth(config, userRepository), authHandler.GetMe)
+		auth.GET("/me", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.GetMe)
 
-		auth.GET("/refresh-token", authHandler.RefreshToken)
+		auth.GET("/refresh-token", security.RequireRefreshToken(refreshName, secretKey, userRepository), authHandler.RefreshToken)
 
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
 
@@ -30,8 +35,8 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 		auth.POST("/reset-password", authHandler.ResetPassword)
 
-		auth.PUT("/change-password/:user_id", middleware.RequireAuth(config, userRepository), authHandler.ChangePassword)
+		auth.PUT("/change-password/:user_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.ChangePassword)
 
-		auth.PATCH("/update-info/:user_id", middleware.RequireAuth(config, userRepository), authHandler.UpdateUserProfile)
+		auth.PATCH("/update-info/:user_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.UpdateUserProfile)
 	}
 }

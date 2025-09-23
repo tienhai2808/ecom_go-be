@@ -1,10 +1,10 @@
 package initialization
 
 import (
-	"backend/config"
-	"backend/internal/model"
 	"database/sql"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/model"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

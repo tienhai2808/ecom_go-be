@@ -1,9 +1,9 @@
 package service
 
 import (
-	"backend/internal/model"
-	"backend/internal/request"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
 )
 
 type ProductService interface {
@@ -15,7 +15,7 @@ type ProductService interface {
 
 	UpdateProduct(ctx context.Context, id string, req *request.UpdateProductRequest) (*model.Product, error)
 
-	DeleteProduct(ctx context.Context, id string) error 
+	DeleteProduct(ctx context.Context, id string) error
 
 	DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error)
 }

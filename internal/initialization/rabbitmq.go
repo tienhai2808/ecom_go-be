@@ -1,8 +1,8 @@
 package initialization
 
 import (
-	"backend/config"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
 
 	"github.com/rabbitmq/amqp091-go"
 )

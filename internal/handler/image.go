@@ -1,11 +1,11 @@
 package handler
 
 import (
-	//customErr "backend/internal/errors"
-	"backend/internal/imagekit"
-	"backend/internal/service"
-	"backend/internal/utils"
+	//customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/internal/imagekit"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +55,7 @@ func (h *ImageHandler) UploadImages(c *gin.Context) {
 		}
 
 		imageResDto := ImageResponseDto{
-			ImageURL: imageUrl,
+			ImageURL:   imageUrl,
 			ImageKitID: imageKitID,
 		}
 

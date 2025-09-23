@@ -1,12 +1,12 @@
 package implement
 
 import (
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/repository"
-	"backend/internal/request"
-	"backend/internal/service"
-	"backend/internal/utils"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 	"context"
 	"errors"
 	"fmt"
@@ -78,7 +78,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		Email:    req.Email,
 		Password: hashedPassword,
 		Role:     req.Role,
-		Profile: model.Profile{
+		Profile: &model.Profile{
 			ID:          uuid.NewString(),
 			FirstName:   req.FirstName,
 			LastName:    req.LastName,

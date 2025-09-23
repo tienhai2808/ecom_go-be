@@ -1,19 +1,20 @@
 package handler
 
 import (
-	"backend/internal/common"
-	"backend/config"
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/request"
-	"backend/internal/service"
-	"backend/internal/utils"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/security"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
+
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AuthHandler struct {
@@ -36,9 +37,7 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -48,8 +47,7 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở SignupService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể đăng ký tài khoản", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -65,9 +63,7 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -77,14 +73,13 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 		case customErr.ErrInvalidOTP, customErr.ErrTooManyAttempts, customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrKeyNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở VerifySignupService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xác minh đăng ký", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
-	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Đăng ký thành công", gin.H{
 		"user": userRes,
@@ -97,9 +92,7 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -109,14 +102,13 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở SigninService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể đăng nhập", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
-	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Đăng nhập thành công", gin.H{
 		"user": userRes,
@@ -124,8 +116,8 @@ func (h *AuthHandler) Signin(c *gin.Context) {
 }
 
 func (h *AuthHandler) Signout(c *gin.Context) {
-	c.SetCookie("access_token", "", -1, "/", "", false, true)
-	c.SetCookie("refresh_token", "", -1, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, "", -1, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, "", -1, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Đăng xuất thành công", nil)
 }
@@ -151,58 +143,32 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil || refreshToken == "" {
-		utils.JSON(c, http.StatusUnauthorized, "Không có refresh token", nil)
+	userID := c.GetString("user_id")
+	if userID == "" {
+		utils.JSON(c, http.StatusUnauthorized, customErr.ErrUserIdNotFound.Error(), nil)
 		return
 	}
 
-	claims := jwt.MapClaims{}
-	_, err = jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(h.config.App.JWTRefreshSecret), nil
-	})
+	userRole := c.GetString("user_role")
+	if userRole == "" {
+		utils.JSON(c, http.StatusUnauthorized, customErr.ErrUserRoleNotFound.Error(), nil)
+		return
+	}
+
+	newAccessToken, err := security.GenerateToken(userID, userRole, 15*time.Minute, h.config.App.JWTSecret)
 	if err != nil {
-		utils.JSON(c, http.StatusUnauthorized, "Refresh token không hợp lệ hoặc đã hết hạn", nil)
+		utils.JSON(c, http.StatusInternalServerError, fmt.Sprintf("tạo access token mới thất bại: %v", err), nil)
 		return
 	}
 
-	userID, ok1 := claims["user_id"].(string)
-	role, ok2 := claims["role"].(string)
-	if !ok1 || !ok2 {
-		utils.JSON(c, http.StatusUnauthorized, "Không thể lấy thông tin người dùng từ refresh token", nil)
-		return
-	}
-
-	_, err = h.userService.GetUserByID(ctx, userID)
+	newRefreshToken, err := security.GenerateToken(userID, userRole, 7*24*time.Hour, h.config.App.JWTSecret)
 	if err != nil {
-		switch err {
-		case customErr.ErrUserNotFound:
-			utils.JSON(c, http.StatusUnauthorized, "Yêu cầu không hợp lệ", nil)
-		default:
-			fmt.Printf("Lỗi ở GetMeService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể làm mới token", nil)
-		}
+		utils.JSON(c, http.StatusInternalServerError, fmt.Sprintf("tạo refresh token mới thất bại: %v", err), nil)
 		return
 	}
 
-	newAccessToken, err := utils.GenerateToken(userID, role, 15*time.Minute, h.config.App.JWTAccessSecret)
-	if err != nil {
-		fmt.Printf("Lỗi khi tạo access token mới: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể tạo access token mới", nil)
-		return
-	}
-
-	newRefreshToken, err := utils.GenerateToken(userID, role, 7*24*time.Hour, h.config.App.JWTRefreshSecret)
-	if err != nil {
-		fmt.Printf("Lỗi khi tạo refresh token mới: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể tạo refresh token mới", nil)
-		return
-	}
-
-	c.SetCookie("access_token", newAccessToken, 900, "/", "", false, true)
-	c.SetCookie("refresh_token", newRefreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, newAccessToken, 900, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, newRefreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Làm mới token thành công", nil)
 }
@@ -213,9 +179,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -225,8 +189,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở ForgotPasswordService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy lại mật khẩu", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -242,9 +205,7 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -254,8 +215,7 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 		case customErr.ErrInvalidOTP, customErr.ErrKeyNotFound, customErr.ErrTooManyAttempts:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở VerifyForgotPasswordService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xác thực quên mật khẩu", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -271,27 +231,23 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
 	userRes, accessToken, refreshToken, err := h.authService.ResetPassword(ctx, req)
 	if err != nil {
-		fmt.Println(err)
 		switch err {
 		case customErr.ErrUserNotFound, customErr.ErrKeyNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở ResetPasswordService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể làm mới mật khẩu", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
-	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Lấy lại mật khẩu thành công", gin.H{
 		"user": userRes,
@@ -304,9 +260,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -328,14 +282,13 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở ChangePasswordService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể thay đổi mật khẩu", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
-	c.SetCookie("refresh_token", refreshToken, 604800, "/ecom-go/auth/refresh-token", "", false, true)
+	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	utils.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
 		"user": userRes,
@@ -348,9 +301,7 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
-			"errors": translated,
-		})
+		utils.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
@@ -362,7 +313,6 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		fmt.Println("Lỗi ở đổi kiểu dữ liệu user lấy từ context")
 		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
@@ -379,8 +329,7 @@ func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
 		case customErr.ErrUserProfileNotFound, customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở UpdateUserProfileService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể thay đổi hồ sơ người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}

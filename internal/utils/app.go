@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"backend/internal/dto"
+	"github.com/tienhai2808/ecom_go/internal/dto"
 
 	"github.com/gin-gonic/gin"
 )

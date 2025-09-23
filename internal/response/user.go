@@ -1,9 +1,6 @@
 package response
 
-import (
-	"backend/internal/model"
-	"time"
-)
+import "time"
 
 type AuthResponse struct {
 	ID        string          `json:"id"`
@@ -14,9 +11,9 @@ type AuthResponse struct {
 }
 
 type ProfileResponse struct {
-	FirstName   string           `json:"first_name"`
-	LastName    string           `json:"last_name"`
-	PhoneNumber string           `json:"phone_number"`
-	DOB         time.Time        `json:"dob"`
-	Gender      model.UserGender `json:"gender"`
+	FirstName   string    `json:"first_name"`
+	LastName    string    `json:"last_name"`
+	PhoneNumber string    `json:"phone_number"`
+	DOB         time.Time `json:"dob"`
+	Gender      string    `json:"gender"`
 }

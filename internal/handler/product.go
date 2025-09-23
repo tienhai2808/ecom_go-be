@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"backend/internal/common"
-	customErr "backend/internal/errors"
-	"backend/internal/request"
-	"backend/internal/service"
-	"backend/internal/utils"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,8 +27,7 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 
 	products, err := h.productService.GetAllProducts(ctx)
 	if err != nil {
-		fmt.Printf("Lỗi ở GetAllProductsService: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể lấy danh sách sản phẩm", nil)
+		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
@@ -47,8 +46,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 		case customErr.ErrProductNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở GetProductByIDService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy sản phẩm", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -72,8 +70,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	newProduct, err := h.productService.CreateProduct(ctx, req)
 	if err != nil {
-		fmt.Printf("Lỗi ở CreateProductService %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể tạo mới sản phẩm", nil)
+		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
@@ -102,8 +99,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		case customErr.ErrProductNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở UpdateProductService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể cập nhât sản phẩm", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -122,8 +118,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		case customErr.ErrProductNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở DeleteProductService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa sản phẩm", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -145,8 +140,7 @@ func (h *ProductHandler) DeleteManyProducts(c *gin.Context) {
 
 	rowsAccepted, err := h.productService.DeleteManyProducts(ctx, req)
 	if err != nil {
-		fmt.Printf("Lỗi ở DeleteManyProductsService: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể xóa danh sách sản phẩm", nil)
+		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 

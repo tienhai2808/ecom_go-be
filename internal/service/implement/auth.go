@@ -1,21 +1,25 @@
 package implement
 
 import (
-	"backend/config"
-	"backend/internal/dto"
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/mq"
-	"backend/internal/repository"
-	"backend/internal/request"
-	"backend/internal/response"
-	"backend/internal/service"
-	"backend/internal/utils"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
+
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	"github.com/tienhai2808/ecom_go/internal/dto"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/mq"
+	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/response"
+	"github.com/tienhai2808/ecom_go/internal/security"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
@@ -84,20 +88,12 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	body, err := json.Marshal(emailMsg)
-	if err != nil {
-		if err = s.authRepository.DeleteAuthData(ctx, "signup", registrationToken); err != nil {
-			return "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
+	go func(msg dto.EmailMessage) {
+		body, _ := json.Marshal(emailMsg)
+		if err = mq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+			log.Printf("publish email msg thất bại: %v", err)
 		}
-		return "", fmt.Errorf("lỗi mã hóa email message: %w", err)
-	}
-
-	if err = mq.PublishMessage(s.rabbitChan, "", "email_queue", body); err != nil {
-		if err = s.authRepository.DeleteAuthData(ctx, "signup", registrationToken); err != nil {
-			return "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
-		}
-		return "", fmt.Errorf("không thể publish message: %w", err)
-	}
+	}(emailMsg)
 
 	return registrationToken, nil
 }
@@ -151,7 +147,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		Username: regData.Username,
 		Email:    regData.Email,
 		Password: regData.Password,
-		Profile: model.Profile{
+		Profile: &model.Profile{
 			ID: uuid.NewString(),
 		},
 	}
@@ -160,12 +156,12 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		return nil, "", "", fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
-	accessToken, err := utils.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
+	accessToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := utils.GenerateToken(newUser.ID, string(newUser.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
+	refreshToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 7*24*time.Hour, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
@@ -192,12 +188,12 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
 
-	accessToken, err := utils.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := utils.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
@@ -234,20 +230,12 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	body, err := json.Marshal(emailMsg)
-	if err != nil {
-		if err = s.authRepository.DeleteAuthData(ctx, "forgot-password", forgotPasswordToken); err != nil {
-			return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
+	go func(msg dto.EmailMessage) {
+		body, _ := json.Marshal(emailMsg)
+		if err = mq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+			log.Printf("publish email msg thất bại: %v", err)
 		}
-		return "", fmt.Errorf("lỗi mã hóa email message: %w", err)
-	}
-
-	if err = mq.PublishMessage(s.rabbitChan, "", "email_queue", body); err != nil {
-		if err = s.authRepository.DeleteAuthData(ctx, "forgot-password", forgotPasswordToken); err != nil {
-			return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
-		}
-		return "", fmt.Errorf("không thể publish message: %w", err)
-	}
+	}(emailMsg)
 
 	return forgotPasswordToken, nil
 }
@@ -317,12 +305,12 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := utils.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := utils.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
@@ -356,12 +344,12 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := utils.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTAccessSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := utils.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTRefreshSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}

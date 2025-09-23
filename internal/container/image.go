@@ -1,11 +1,11 @@
 package container
 
 import (
-	"backend/config"
-	"backend/internal/handler"
-	"backend/internal/imagekit"
-	repoImpl "backend/internal/repository/implement"
-	serviceImpl "backend/internal/service/implement"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/handler"
+	"github.com/tienhai2808/ecom_go/internal/imagekit"
+	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
+	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
 
 	"gorm.io/gorm"
 )

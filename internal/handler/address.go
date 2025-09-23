@@ -1,13 +1,12 @@
 package handler
 
 import (
-	"backend/internal/common"
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/request"
-	"backend/internal/service"
-	"backend/internal/utils"
-	"fmt"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,8 +39,7 @@ func (h *AddressHandler) GetUserAddresses(c *gin.Context) {
 
 	addresses, err := h.addressService.GetUserAddresses(ctx, user.ID)
 	if err != nil {
-		fmt.Printf("Lỗi ở GetUserAddressService: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thể lấy địa chỉ của người dùng", nil)
+		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
@@ -72,8 +70,7 @@ func (h *AddressHandler) GetUserAddressDetail(c *gin.Context) {
 		case customErr.ErrUnauthorized, customErr.ErrAddressNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở GetUserAddressDetailService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy địa chỉ", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -113,8 +110,7 @@ func (h *AddressHandler) AddUserAddress(c *gin.Context) {
 		case customErr.ErrUserAddressNotFound, customErr.ErrExceedsQuantity:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở AddUserAddressService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể thêm mới địa chỉ", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -156,8 +152,7 @@ func (h *AddressHandler) UpdateUserAddress(c *gin.Context) {
 		case customErr.ErrAddressNotFound, customErr.ErrExceedsQuantity, customErr.ErrUserAddressNotFound, customErr.ErrUnauthorized:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở UpdateUserAddressService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể cập nhật địa chỉ người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -189,8 +184,7 @@ func (h *AddressHandler) DeleteUserAddress(c *gin.Context) {
 		case customErr.ErrAddressNotFound, customErr.ErrUnauthorized:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở DeleteUserAddressService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa địa chỉ", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}

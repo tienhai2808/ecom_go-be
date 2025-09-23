@@ -1,12 +1,12 @@
 package implement
 
 import (
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/repository"
-	"backend/internal/service"
 	"context"
 	"fmt"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/service"
 	"mime/multipart"
 )
 

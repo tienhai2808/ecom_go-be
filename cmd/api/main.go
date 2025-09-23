@@ -1,8 +1,8 @@
 package main
 
 import (
-	"backend/config"
-	"backend/internal/server"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/server"
 	"context"
 	"log"
 	"os"

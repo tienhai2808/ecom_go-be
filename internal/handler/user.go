@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"backend/internal/common"
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/request"
-	"backend/internal/service"
-	"backend/internal/utils"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -28,8 +28,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 
 	users, err := h.userService.GetAllUsers(ctx)
 	if err != nil {
-		fmt.Printf("Lỗi ở GetAllUserService: %v\n", err)
-		utils.JSON(c, http.StatusInternalServerError, "Không thế lấy danh sách người dùng", nil)
+		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
@@ -48,8 +47,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở GetUserByIDService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể lấy người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -77,8 +75,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở CreateUserService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể thêm mới người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -108,8 +105,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		case customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrUserNotFound, customErr.ErrUserProfileNotFound:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở UpdateUserService %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể cập nhật người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -129,7 +125,6 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		fmt.Println("Lỗi ở đổi kiểu dữ liệu user lấy từ context")
 		utils.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
@@ -145,8 +140,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở DeleteUserByIDService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
@@ -184,8 +178,7 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 		case customErr.ErrUserConflict:
 			utils.JSON(c, http.StatusConflict, err.Error(), nil)
 		default:
-			fmt.Printf("Lỗi ở DeleteManyUsersService: %v\n", err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể xóa người dùng", nil)
+			utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}

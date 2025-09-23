@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"backend/internal/dto"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/dto"
 	"time"
 )
 
@@ -20,6 +20,6 @@ type AuthRepository interface {
 	GetForgotPasswordData(ctx context.Context, token string) (*dto.ForgotPasswordData, error)
 
 	AddResetPasswordData(ctx context.Context, token, email string, ttl time.Duration) error
-	
+
 	GetResetPasswordData(ctx context.Context, token string) (string, error)
 }

@@ -1,9 +1,9 @@
 package smtp
 
 import (
-	"backend/config"
 	"bytes"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
 	"html/template"
 	"log"
 	"net/smtp"

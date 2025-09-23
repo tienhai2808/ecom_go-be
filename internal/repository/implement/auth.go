@@ -1,12 +1,12 @@
 package implement
 
 import (
-	"backend/config"
-	"backend/internal/dto"
-	"backend/internal/repository"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/dto"
+	"github.com/tienhai2808/ecom_go/internal/repository"
 	"time"
 
 	"github.com/redis/go-redis/v9"

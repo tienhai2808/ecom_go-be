@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"backend/internal/model"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/model"
 )
 
 type AddressRepository interface {
@@ -14,13 +14,13 @@ type AddressRepository interface {
 
 	CheckDefaultAddressExistsByUserID(ctx context.Context, userID string) (bool, error)
 
-	UpdateAddressNonDefaultByUserID(ctx context.Context, userID string) error 
+	UpdateAddressNonDefaultByUserID(ctx context.Context, userID string) error
 
 	CountAddressByUserID(ctx context.Context, userID string) (int64, error)
 
 	GetLatestAddressByUserIDExcludeID(ctx context.Context, userID, id string) (*model.Address, error)
 
-	UpdateAddressByID(ctx context.Context, id string, updateData map[string]interface{}) error 
+	UpdateAddressByID(ctx context.Context, id string, updateData map[string]interface{}) error
 
 	UpdateAddressDefaultByID(ctx context.Context, id string) error
 

@@ -1,4 +1,4 @@
-module backend
+module github.com/tienhai2808/ecom_go
 
 go 1.23.4
 

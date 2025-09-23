@@ -1,7 +1,7 @@
 package container
 
 import (
-	"backend/config"
+	"github.com/tienhai2808/ecom_go/config"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"

@@ -12,8 +12,9 @@ type Config struct {
 		Name             string `yaml:"name"`
 		Host             string `yaml:"host"`
 		Port             int    `yaml:"port"`
-		JWTAccessSecret  string `yaml:"jwt_access_secret"`
-		JWTRefreshSecret string `yaml:"jwt_refresh_secret"`
+		JWTSecret  string `yaml:"jwt_secret"`
+		AccessName string `yaml:"access_name"`
+		RefreshName string `yaml:"refresh_name"`
 		ApiPrefix        string `yaml:"api_prefix"`
 	} `yaml:"app"`
 

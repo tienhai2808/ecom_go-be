@@ -1,9 +1,9 @@
 package service
 
 import (
-	"backend/internal/model"
-	"backend/internal/request"
 	"context"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
 )
 
 type UserService interface {

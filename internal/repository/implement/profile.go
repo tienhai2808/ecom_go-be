@@ -1,10 +1,10 @@
 package implement
 
 import (
-	customErr "backend/internal/errors"
-	"backend/internal/model"
-	"backend/internal/repository"
 	"context"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/repository"
 
 	"gorm.io/gorm"
 )

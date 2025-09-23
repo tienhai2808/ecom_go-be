@@ -1,13 +1,13 @@
 package server
 
 import (
-	"backend/config"
-	"backend/internal/consumers"
-	"backend/internal/container"
-	"backend/internal/initialization"
-	"backend/internal/router"
 	"context"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/consumers"
+	"github.com/tienhai2808/ecom_go/internal/container"
+	"github.com/tienhai2808/ecom_go/internal/initialization"
+	"github.com/tienhai2808/ecom_go/internal/router"
 	"log"
 	"net/http"
 	"time"
@@ -54,9 +54,6 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 
 	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann)
-	if err != nil {
-		return nil, err
-	}
 
 	go consumers.StartSendEmailConsumer(rmq, ctn.AuthModule.SMTPService)
 

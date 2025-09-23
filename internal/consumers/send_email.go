@@ -1,13 +1,13 @@
 package consumers
 
 import (
-	"backend/internal/common"
-	"backend/internal/dto"
-	"backend/internal/initialization"
-	"backend/internal/mq"
-	"backend/internal/smtp"
 	"encoding/json"
 	"fmt"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	"github.com/tienhai2808/ecom_go/internal/dto"
+	"github.com/tienhai2808/ecom_go/internal/initialization"
+	"github.com/tienhai2808/ecom_go/internal/mq"
+	"github.com/tienhai2808/ecom_go/internal/smtp"
 	"log"
 )
 

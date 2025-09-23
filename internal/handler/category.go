@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"backend/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/service"
 
 	"github.com/gin-gonic/gin"
 )

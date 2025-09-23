@@ -13,6 +13,6 @@ type Product struct {
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
 	CategoryID  string    `gorm:"type:char(36)" json:"-"`
 
-	Category Category `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"category"`
-	Images   []Image  `gorm:"foreignKey:ProductID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
+	Category *Category `gorm:"foreignKey:CategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"category"`
+	Images   []*Image  `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"images"`
 }
