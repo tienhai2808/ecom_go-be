@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +26,8 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 }
 
 func (h *ProductHandler) GetAllProducts(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	products, err := h.productService.GetAllProducts(ctx)
 	if err != nil {
@@ -37,7 +41,8 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 }
 
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	productID := c.Param("product_id")
 
 	product, err := h.productService.GetProductByID(ctx, productID)
@@ -57,7 +62,8 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 }
 
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.CreateProductRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,7 +86,8 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 }
 
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.UpdateProductRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -110,7 +117,8 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 }
 
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	productID := c.Param("product_id")
 
 	if err := h.productService.DeleteProduct(ctx, productID); err != nil {
@@ -127,7 +135,8 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 }
 
 func (h *ProductHandler) DeleteManyProducts(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.DeleteManyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {

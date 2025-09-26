@@ -1,14 +1,17 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +27,8 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	users, err := h.userService.GetAllUsers(ctx)
 	if err != nil {
@@ -38,7 +42,8 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (h *UserHandler) GetUserByID(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	userID := c.Param("user_id")
 
 	user, err := h.userService.GetUserByID(ctx, userID)
@@ -58,7 +63,8 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 }
 
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.CreateUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,7 +92,8 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.UpdateUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -116,7 +123,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 }
 
 func (h *UserHandler) DeleteUser(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	userAny, exists := c.Get("user")
 	if !exists {
 		utils.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
@@ -149,7 +157,8 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 }
 
 func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.DeleteManyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {

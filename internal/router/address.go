@@ -16,14 +16,14 @@ func NewAddressRouter(rg *gin.RouterGroup, config *config.Config, userRepository
 
 	address := rg.Group("/addresses")
 	{
-		address.GET("/my/all", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.GetUserAddresses)
+		address.GET("/my", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.GetMyAddresses)
 
-		address.GET("/my/:address_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.GetUserAddressDetail)
+		address.GET("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.GetAddressDetails)
 
-		address.POST("/my", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.AddUserAddress)
+		address.POST("", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.CreateAddress)
 
-		address.PATCH("/my/:address_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.UpdateUserAddress)
+		address.PATCH("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.UpdateAddress)
 
-		address.DELETE("/my/:address_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.DeleteUserAddress)
+		address.DELETE("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), addressHandler.DeleteAddress)
 	}
 }

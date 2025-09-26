@@ -20,7 +20,7 @@ func NewAddressRepository(db *gorm.DB) repository.AddressRepository {
 	}
 }
 
-func (r *addressRepositoryImpl) GetAddressByID(ctx context.Context, id string) (*model.Address, error) {
+func (r *addressRepositoryImpl) FindByID(ctx context.Context, id string) (*model.Address, error) {
 	var address model.Address
 
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&address).Error; err != nil {
@@ -33,7 +33,7 @@ func (r *addressRepositoryImpl) GetAddressByID(ctx context.Context, id string) (
 	return &address, nil
 }
 
-func (r *addressRepositoryImpl) CreateAddress(ctx context.Context, address *model.Address) error {
+func (r *addressRepositoryImpl) Create(ctx context.Context, address *model.Address) error {
 	if err := r.db.WithContext(ctx).Create(address).Error; err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (r *addressRepositoryImpl) CreateAddress(ctx context.Context, address *mode
 	return nil
 }
 
-func (r *addressRepositoryImpl) GetAddressesByUserID(ctx context.Context, userID string) ([]*model.Address, error) {
+func (r *addressRepositoryImpl) FindByUserID(ctx context.Context, userID string) ([]*model.Address, error) {
 	var addresses []*model.Address
 
 	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("is_default DESC").Find(&addresses).Error; err != nil {
@@ -51,7 +51,7 @@ func (r *addressRepositoryImpl) GetAddressesByUserID(ctx context.Context, userID
 	return addresses, nil
 }
 
-func (r *addressRepositoryImpl) CheckDefaultAddressExistsByUserID(ctx context.Context, userID string) (bool, error) {
+func (r *addressRepositoryImpl) CheckDefaultExistsByUserID(ctx context.Context, userID string) (bool, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.Address{}).Where("user_id = ? AND is_default = true", userID).Count(&count).Error; err != nil {
@@ -61,7 +61,7 @@ func (r *addressRepositoryImpl) CheckDefaultAddressExistsByUserID(ctx context.Co
 	return count > 0, nil
 }
 
-func (r *addressRepositoryImpl) UpdateAddressNonDefaultByUserID(ctx context.Context, userID string) error {
+func (r *addressRepositoryImpl) UpdateNonDefaultByUserID(ctx context.Context, userID string) error {
 	result := r.db.WithContext(ctx).Model(&model.Address{}).Where("user_id = ? AND is_default = true", userID).Update("is_default", false)
 	if result.Error != nil {
 		return result.Error
@@ -74,7 +74,7 @@ func (r *addressRepositoryImpl) UpdateAddressNonDefaultByUserID(ctx context.Cont
 	return nil
 }
 
-func (r *addressRepositoryImpl) CountAddressByUserID(ctx context.Context, userID string) (int64, error) {
+func (r *addressRepositoryImpl) CountByUserID(ctx context.Context, userID string) (int64, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.Address{}).Where("user_id = ?", userID).Count(&count).Error; err != nil {
@@ -84,7 +84,7 @@ func (r *addressRepositoryImpl) CountAddressByUserID(ctx context.Context, userID
 	return count, nil
 }
 
-func (r *addressRepositoryImpl) GetLatestAddressByUserIDExcludeID(ctx context.Context, userID, id string) (*model.Address, error) {
+func (r *addressRepositoryImpl) FindLatestByUserIDExcludeID(ctx context.Context, userID, id string) (*model.Address, error) {
 	var latestAddress model.Address
 
 	if err := r.db.WithContext(ctx).Where("user_id = ? AND id != ?", userID, id).Order("created_at DESC").First(&latestAddress).Error; err != nil {
@@ -97,7 +97,7 @@ func (r *addressRepositoryImpl) GetLatestAddressByUserIDExcludeID(ctx context.Co
 	return &latestAddress, nil
 }
 
-func (r *addressRepositoryImpl) UpdateAddressByID(ctx context.Context, id string, updateData map[string]interface{}) error {
+func (r *addressRepositoryImpl) Update(ctx context.Context, id string, updateData map[string]interface{}) error {
 	result := r.db.WithContext(ctx).Model(&model.Address{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
@@ -110,7 +110,7 @@ func (r *addressRepositoryImpl) UpdateAddressByID(ctx context.Context, id string
 	return nil
 }
 
-func (r *addressRepositoryImpl) UpdateAddressDefaultByID(ctx context.Context, id string) error {
+func (r *addressRepositoryImpl) UpdateDefault(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Model(&model.Address{}).Where("id = ?", id).Update("is_default", true)
 	if result.Error != nil {
 		return result.Error
@@ -123,7 +123,7 @@ func (r *addressRepositoryImpl) UpdateAddressDefaultByID(ctx context.Context, id
 	return nil
 }
 
-func (r *addressRepositoryImpl) DeleteAddressByID(ctx context.Context, id string) error {
+func (r *addressRepositoryImpl) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Address{})
 	if result.Error != nil {
 		return result.Error

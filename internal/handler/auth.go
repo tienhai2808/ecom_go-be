@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -32,7 +33,8 @@ func NewAuthHandler(authService service.AuthService, userService service.UserSer
 }
 
 func (h *AuthHandler) Signup(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.SignupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -58,7 +60,8 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 }
 
 func (h *AuthHandler) VerifySignup(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.VerifySignupRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +90,8 @@ func (h *AuthHandler) VerifySignup(c *gin.Context) {
 }
 
 func (h *AuthHandler) Signin(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.SigninRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -174,7 +178,8 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 }
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.ForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -200,7 +205,8 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.VerifyForgotPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -226,7 +232,8 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.ResetPasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -255,7 +262,8 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.ChangePasswordRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -296,7 +304,8 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
-	ctx := c.Request.Context()
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.UpdateProfileRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {

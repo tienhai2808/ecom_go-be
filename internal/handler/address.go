@@ -1,13 +1,16 @@
 package handler
 
 import (
+	"context"
+	"net/http"
+	"time"
+
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/utils"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,8 +25,9 @@ func NewAddressHandler(addressService service.AddressService) *AddressHandler {
 	}
 }
 
-func (h *AddressHandler) GetUserAddresses(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	userAny, exists := c.Get("user")
 	if !exists {
@@ -37,7 +41,7 @@ func (h *AddressHandler) GetUserAddresses(c *gin.Context) {
 		return
 	}
 
-	addresses, err := h.addressService.GetUserAddresses(ctx, user.ID)
+	addresses, err := h.addressService.GetMyAddresses(ctx, user.ID)
 	if err != nil {
 		utils.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -48,8 +52,9 @@ func (h *AddressHandler) GetUserAddresses(c *gin.Context) {
 	})
 }
 
-func (h *AddressHandler) GetUserAddressDetail(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	userAny, exists := c.Get("user")
 	if !exists {
@@ -64,7 +69,7 @@ func (h *AddressHandler) GetUserAddressDetail(c *gin.Context) {
 	}
 
 	addressID := c.Param("address_id")
-	address, err := h.addressService.GetUserAddressDetail(ctx, user.ID, addressID)
+	address, err := h.addressService.GetAddressDetail(ctx, user.ID, addressID)
 	if err != nil {
 		switch err {
 		case customErr.ErrUnauthorized, customErr.ErrAddressNotFound:
@@ -80,8 +85,9 @@ func (h *AddressHandler) GetUserAddressDetail(c *gin.Context) {
 	})
 }
 
-func (h *AddressHandler) AddUserAddress(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *AddressHandler) CreateAddress(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.AddAddressRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -104,7 +110,7 @@ func (h *AddressHandler) AddUserAddress(c *gin.Context) {
 		return
 	}
 
-	newAddress, err := h.addressService.AddUserAddress(ctx, user.ID, req)
+	newAddress, err := h.addressService.CreateAddress(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserAddressNotFound, customErr.ErrExceedsQuantity:
@@ -120,8 +126,9 @@ func (h *AddressHandler) AddUserAddress(c *gin.Context) {
 	})
 }
 
-func (h *AddressHandler) UpdateUserAddress(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *AddressHandler) UpdateAddress(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 	var req request.UpdateAddressRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -146,7 +153,7 @@ func (h *AddressHandler) UpdateUserAddress(c *gin.Context) {
 
 	addressID := c.Param("address_id")
 
-	updatedAddress, err := h.addressService.UpdateUserAddress(ctx, user.ID, addressID, &req)
+	updatedAddress, err := h.addressService.UpdateAddress(ctx, user.ID, addressID, &req)
 	if err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrExceedsQuantity, customErr.ErrUserAddressNotFound, customErr.ErrUnauthorized:
@@ -162,8 +169,9 @@ func (h *AddressHandler) UpdateUserAddress(c *gin.Context) {
 	})
 }
 
-func (h *AddressHandler) DeleteUserAddress(c *gin.Context) {
-	ctx := c.Request.Context()
+func (h *AddressHandler) DeleteAddress(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
 
 	userAny, exists := c.Get("user")
 	if !exists {
@@ -179,7 +187,7 @@ func (h *AddressHandler) DeleteUserAddress(c *gin.Context) {
 
 	addressID := c.Param("address_id")
 
-	if err := h.addressService.DeleteUserAddress(ctx, user.ID, addressID); err != nil {
+	if err := h.addressService.DeleteAddress(ctx, user.ID, addressID); err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrUnauthorized:
 			utils.JSON(c, http.StatusBadRequest, err.Error(), nil)

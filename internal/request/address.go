@@ -8,7 +8,7 @@ type AddAddressRequest struct {
 	Commune     string `json:"commune" binding:"required"`
 	District    string `json:"district" binding:"required"`
 	Province    string `json:"province" binding:"required"`
-	IsDefault   bool   `json:"is_default"`
+	IsDefault   *bool  `json:"is_default" binding:"required"`
 }
 
 type UpdateAddressRequest struct {
