@@ -66,7 +66,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 	var req request.CreateUserRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		utils.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
@@ -143,7 +142,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.DeleteUserByID(ctx, reqUserID); err != nil {
+	if err := h.userService.DeleteUser(ctx, reqUserID); err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
 			utils.JSON(c, http.StatusNotFound, err.Error(), nil)
@@ -181,7 +180,7 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 		return
 	}
 
-	rowsAccepted, err := h.userService.DeleteManyUsers(ctx, user.ID, req)
+	rowsAccepted, err := h.userService.DeleteUsers(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserConflict:

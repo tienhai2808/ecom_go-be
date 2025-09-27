@@ -50,24 +50,26 @@ func (s *addressServiceImpl) GetAddressDetail(ctx context.Context, userID string
 }
 
 func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error) {
-	
-	
-	count, err := s.addressRepository.CountByUserID(ctx, userID)
+	addresses, err := s.addressRepository.FindByUserID(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("kiểm tra số lượng địa chỉ người dùng thất bại: %w", err)
+		return nil, fmt.Errorf("lấy danh sách địa chỉ thất bại: %w", err)
 	}
 
-	if count >= 10 {
+	if len(addresses) >= 10 {
 		return nil, customErr.ErrExceedsQuantity
 	}
 
-	exists, err := s.addressRepository.CheckDefaultExistsByUserID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("kiểm tra tồn tại địa chỉ mặc định thất bại: %w", err)
+	var exists bool
+	var existingID string
+	for _, addr := range addresses {
+		if addr.IsDefault {
+			exists = true
+			existingID = addr.ID
+		}
 	}
 
-	if exists && *req.IsDefault {
-		if err := s.addressRepository.UpdateNonDefaultByUserID(ctx, userID); err != nil {
+	if exists && existingID != "" && *req.IsDefault {
+		if err = s.addressRepository.Update(ctx, existingID, map[string]any{"is_default": false}); err != nil {
 			if errors.Is(err, customErr.ErrUserAddressNotFound) {
 				return nil, err
 			}
@@ -88,7 +90,7 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, r
 		UserID:      userID,
 	}
 
-	if err := s.addressRepository.Create(ctx, newAddress); err != nil {
+	if err = s.addressRepository.Create(ctx, newAddress); err != nil {
 		return nil, fmt.Errorf("thêm địa chỉ thất bại: %w", err)
 	}
 
@@ -100,7 +102,6 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin địa chỉ thất bại: %w", err)
 	}
-
 	if address == nil {
 		return nil, customErr.ErrAddressNotFound
 	}
@@ -109,7 +110,7 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 		return nil, customErr.ErrUnauthorized
 	}
 
-	updateData := map[string]interface{}{}
+	updateData := map[string]any{}
 	if req.FirstName != nil && *req.FirstName != address.FirstName {
 		updateData["first_name"] = *req.FirstName
 	}
@@ -134,7 +135,7 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 
 	if req.IsDefault != nil && *req.IsDefault != address.IsDefault {
 		if *req.IsDefault {
-			if err := s.addressRepository.UpdateNonDefaultByUserID(ctx, userID); err != nil {
+			if err := s.addressRepository.Update(ctx, id, map[string]any{"is_default": false}); err != nil {
 				if errors.Is(err, customErr.ErrUserAddressNotFound) {
 					return nil, err
 				}
@@ -155,7 +156,7 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 					return nil, customErr.ErrAddressNotFound
 				}
 
-				if err := s.addressRepository.UpdateDefault(ctx, latestAddress.ID); err != nil {
+				if err = s.addressRepository.Update(ctx, latestAddress.ID, map[string]any{"is_default": true}); err != nil {
 					if errors.Is(err, customErr.ErrAddressNotFound) {
 						return nil, err
 					}
@@ -169,7 +170,7 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 	}
 
 	if len(updateData) > 0 {
-		if err := s.addressRepository.Update(ctx, id, updateData); err != nil {
+		if err = s.addressRepository.Update(ctx, id, updateData); err != nil {
 			if errors.Is(err, customErr.ErrAddressNotFound) {
 				return nil, err
 			}
@@ -181,7 +182,6 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin địa chỉ thất bại: %w", err)
 	}
-
 	if updatedAddress == nil {
 		return nil, customErr.ErrAddressNotFound
 	}

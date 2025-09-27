@@ -15,7 +15,7 @@ type UserService interface {
 
 	UpdateUser(ctx context.Context, id string, req *request.UpdateUserRequest) (*model.User, error)
 
-	DeleteUserByID(ctx context.Context, id string) error
+	DeleteUser(ctx context.Context, id string) error
 
-	DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error)
+	DeleteUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error)
 }

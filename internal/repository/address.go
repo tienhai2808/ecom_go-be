@@ -20,7 +20,7 @@ type AddressRepository interface {
 
 	FindLatestByUserIDExcludeID(ctx context.Context, userID, id string) (*model.Address, error)
 
-	Update(ctx context.Context, id string, updateData map[string]interface{}) error
+	Update(ctx context.Context, id string, updateData map[string]any) error
 
 	UpdateDefault(ctx context.Context, id string) error
 

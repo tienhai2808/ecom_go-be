@@ -44,7 +44,7 @@ func NewAuthService(userRepository repository.UserRepository, authRepository rep
 }
 
 func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest) (string, error) {
-	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -53,7 +53,7 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 		return "", customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.CheckUserExistsByUsername(ctx, req.Username)
+	exists, err = s.userRepository.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -124,7 +124,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrInvalidOTP
 	}
 
-	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, regData.Email)
+	exists, err := s.userRepository.ExistsByEmail(ctx, regData.Email)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -133,7 +133,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.CheckUserExistsByUsername(ctx, regData.Username)
+	exists, err = s.userRepository.ExistsByUsername(ctx, regData.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -152,7 +152,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		},
 	}
 
-	if err := s.userRepository.CreateUser(ctx, newUser); err != nil {
+	if err := s.userRepository.Create(ctx, newUser); err != nil {
 		return nil, "", "", fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
@@ -174,7 +174,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 }
 
 func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest) (*response.AuthResponse, string, string, error) {
-	user, err := s.userRepository.GetUserByUsername(ctx, req.Username)
+	user, err := s.userRepository.FindByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -202,7 +202,7 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 }
 
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
-	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -284,7 +284,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", customErr.ErrKeyNotFound
 	}
 
-	user, err := s.userRepository.GetUserByEmail(ctx, email)
+	user, err := s.userRepository.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -384,7 +384,7 @@ func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.Use
 		}
 	}
 
-	updatedUser, err := s.userRepository.GetUserByID(ctx, user.ID)
+	updatedUser, err := s.userRepository.FindByID(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}

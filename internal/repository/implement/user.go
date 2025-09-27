@@ -20,7 +20,7 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 	}
 }
 
-func (r *userRepositoryImpl) GetAllUsers(ctx context.Context) ([]*model.User, error) {
+func (r *userRepositoryImpl) FindAll(ctx context.Context) ([]*model.User, error) {
 	var users []*model.User
 
 	if err := r.db.WithContext(ctx).Preload("Profile").Order("created_at DESC").Find(&users).Error; err != nil {
@@ -30,7 +30,7 @@ func (r *userRepositoryImpl) GetAllUsers(ctx context.Context) ([]*model.User, er
 	return users, nil
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByID(ctx context.Context, id string) (bool, error) {
+func (r *userRepositoryImpl) ExistsByID(ctx context.Context, id string) (bool, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Count(&count).Error; err != nil {
@@ -40,7 +40,7 @@ func (r *userRepositoryImpl) CheckUserExistsByID(ctx context.Context, id string)
 	return count > 0, nil
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
+func (r *userRepositoryImpl) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
@@ -50,7 +50,7 @@ func (r *userRepositoryImpl) CheckUserExistsByEmail(ctx context.Context, email s
 	return count > 0, nil
 }
 
-func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, username string) (bool, error) {
+func (r *userRepositoryImpl) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("username = ?", username).Count(&count).Error; err != nil {
@@ -60,7 +60,7 @@ func (r *userRepositoryImpl) CheckUserExistsByUsername(ctx context.Context, user
 	return count > 0, nil
 }
 
-func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) error {
+func (r *userRepositoryImpl) Create(ctx context.Context, user *model.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (r *userRepositoryImpl) CreateUser(ctx context.Context, user *model.User) e
 	return nil
 }
 
-func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
+func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string) (*model.User, error) {
 	var user model.User
 
 	if err := r.db.Preload("Profile").WithContext(ctx).Where("username = ?", username).First(&user).Error; err != nil {
@@ -81,7 +81,7 @@ func (r *userRepositoryImpl) GetUserByUsername(ctx context.Context, username str
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
+func (r *userRepositoryImpl) FindByID(ctx context.Context, id string) (*model.User, error) {
 	var user model.User
 
 	if err := r.db.Preload("Profile").WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
@@ -94,7 +94,7 @@ func (r *userRepositoryImpl) GetUserByID(ctx context.Context, id string) (*model
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 
 	if err := r.db.Preload("Profile").WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
@@ -120,7 +120,7 @@ func (r *userRepositoryImpl) UpdateUserPasswordByID(ctx context.Context, id, new
 	return nil
 }
 
-func (r *userRepositoryImpl) UpdateUserByID(ctx context.Context, id string, updateData map[string]interface{}) error {
+func (r *userRepositoryImpl) Update(ctx context.Context, id string, updateData map[string]any) error {
 	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
@@ -133,7 +133,7 @@ func (r *userRepositoryImpl) UpdateUserByID(ctx context.Context, id string, upda
 	return nil
 }
 
-func (r *userRepositoryImpl) DeleteUserByID(ctx context.Context, id string) error {
+func (r *userRepositoryImpl) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{})
 	if result.Error != nil {
 		return result.Error
@@ -146,7 +146,7 @@ func (r *userRepositoryImpl) DeleteUserByID(ctx context.Context, id string) erro
 	return nil
 }
 
-func (r *userRepositoryImpl) DeleteManyUsers(ctx context.Context, ids []string) (int64, error) {
+func (r *userRepositoryImpl) DeleteAllByID(ctx context.Context, ids []string) (int64, error) {
 	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.User{})
 	if result.Error != nil {
 		return 0, result.Error

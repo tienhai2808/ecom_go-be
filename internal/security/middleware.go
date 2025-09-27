@@ -39,7 +39,7 @@ func RequireAuthAndRole(accessName, secretKey, roleName string, userRepo reposit
 			return
 		}
 
-		user, err := userRepo.GetUserByID(c.Request.Context(), userID)
+		user, err := userRepo.FindByID(c.Request.Context(), userID)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, dto.ApiResponse{
 				StatusCode: http.StatusInternalServerError,
@@ -97,7 +97,7 @@ func RequireRefreshToken(refreshName, secretKey string, userRepo repository.User
 			return
 		}
 
-		user, err := userRepo.GetUserByID(c.Request.Context(), userID)
+		user, err := userRepo.FindByID(c.Request.Context(), userID)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, dto.ApiResponse{
 				StatusCode: http.StatusInternalServerError,

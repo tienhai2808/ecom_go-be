@@ -27,7 +27,7 @@ func NewUserService(userRepository repository.UserRepository, profileRepository 
 }
 
 func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error) {
-	users, err := s.userRepository.GetAllUsers(ctx)
+	users, err := s.userRepository.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("lấy tất cả người dùng thất bại: %w", err)
 	}
@@ -36,7 +36,7 @@ func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error
 }
 
 func (s *userServiceImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
+	user, err := s.userRepository.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -49,7 +49,7 @@ func (s *userServiceImpl) GetUserByID(ctx context.Context, id string) (*model.Us
 }
 
 func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUserRequest) (*model.User, error) {
-	exists, err := s.userRepository.CheckUserExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -58,7 +58,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.CheckUserExistsByUsername(ctx, req.Username)
+	exists, err = s.userRepository.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -88,7 +88,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		},
 	}
 
-	if err = s.userRepository.CreateUser(ctx, newUser); err != nil {
+	if err = s.userRepository.Create(ctx, newUser); err != nil {
 		return nil, fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
@@ -96,7 +96,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 }
 
 func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *request.UpdateUserRequest) (*model.User, error) {
-	user, err := s.userRepository.GetUserByID(ctx, id)
+	user, err := s.userRepository.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -106,7 +106,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	}
 
 	if req.Email != nil && *req.Email != user.Email {
-		exists, err := s.userRepository.CheckUserExistsByEmail(ctx, *req.Email)
+		exists, err := s.userRepository.ExistsByEmail(ctx, *req.Email)
 		if err != nil {
 			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 		}
@@ -117,7 +117,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	}
 
 	if req.Username != nil && *req.Username != user.Username {
-		exists, err := s.userRepository.CheckUserExistsByUsername(ctx, *req.Username)
+		exists, err := s.userRepository.ExistsByUsername(ctx, *req.Username)
 		if err != nil {
 			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 		}
@@ -127,7 +127,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 		}
 	}
 
-	updateUserData := map[string]interface{}{}
+	updateUserData := map[string]any{}
 	if req.Username != nil {
 		updateUserData["username"] = *req.Username
 	}
@@ -159,7 +159,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	}
 
 	if len(updateUserData) > 0 {
-		if err := s.userRepository.UpdateUserByID(ctx, user.ID, updateUserData); err != nil {
+		if err := s.userRepository.Update(ctx, user.ID, updateUserData); err != nil {
 			if errors.Is(err, customErr.ErrUserNotFound) {
 				return nil, err
 			}
@@ -176,7 +176,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 		}
 	}
 
-	updatedUser, err := s.userRepository.GetUserByID(ctx, user.ID)
+	updatedUser, err := s.userRepository.FindByID(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -188,8 +188,8 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	return updatedUser, nil
 }
 
-func (s *userServiceImpl) DeleteUserByID(ctx context.Context, id string) error {
-	if err := s.userRepository.DeleteUserByID(ctx, id); err != nil {
+func (s *userServiceImpl) DeleteUser(ctx context.Context, id string) error {
+	if err := s.userRepository.Delete(ctx, id); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return err
 		}
@@ -199,7 +199,7 @@ func (s *userServiceImpl) DeleteUserByID(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error) {
+func (s *userServiceImpl) DeleteUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error) {
 	userIDs := req.IDs
 	filteredUserIDs := []string{}
 
@@ -213,7 +213,7 @@ func (s *userServiceImpl) DeleteManyUsers(ctx context.Context, currentUserID str
 		return 0, customErr.ErrUserConflict
 	}
 
-	rowsAffected, err := s.userRepository.DeleteManyUsers(ctx, filteredUserIDs)
+	rowsAffected, err := s.userRepository.DeleteAllByID(ctx, filteredUserIDs)
 	if err != nil {
 		return 0, fmt.Errorf("xóa người dùng thất bại: %w", err)
 	}

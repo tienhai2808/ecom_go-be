@@ -97,7 +97,7 @@ func (r *addressRepositoryImpl) FindLatestByUserIDExcludeID(ctx context.Context,
 	return &latestAddress, nil
 }
 
-func (r *addressRepositoryImpl) Update(ctx context.Context, id string, updateData map[string]interface{}) error {
+func (r *addressRepositoryImpl) Update(ctx context.Context, id string, updateData map[string]any) error {
 	result := r.db.WithContext(ctx).Model(&model.Address{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
