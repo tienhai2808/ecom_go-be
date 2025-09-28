@@ -2,27 +2,27 @@ package repository
 
 import (
 	"context"
+
 	"github.com/tienhai2808/ecom_go/internal/model"
+	"gorm.io/gorm"
 )
 
 type AddressRepository interface {
 	FindByID(ctx context.Context, id string) (*model.Address, error)
 
+	FindByIDTx(ctx context.Context, tx *gorm.DB, id string) (*model.Address, error)
+
 	Create(ctx context.Context, address *model.Address) error
+
+	CreateTx(ctx context.Context, tx *gorm.DB, address *model.Address) error
 
 	FindByUserID(ctx context.Context, userID string) ([]*model.Address, error)
 
-	CheckDefaultExistsByUserID(ctx context.Context, userID string) (bool, error)
+	CountByUserIDTx(ctx context.Context, tx *gorm.DB, userID string) (int64, error)
 
-	UpdateNonDefaultByUserID(ctx context.Context, userID string) error
+	FindLatestByUserIDExcludeIDTx(ctx context.Context, tx *gorm.DB, userID, id string) (*model.Address, error)
 
-	CountByUserID(ctx context.Context, userID string) (int64, error)
+	UpdateTx(ctx context.Context, tx *gorm.DB, id string, updateData map[string]any) error
 
-	FindLatestByUserIDExcludeID(ctx context.Context, userID, id string) (*model.Address, error)
-
-	Update(ctx context.Context, id string, updateData map[string]any) error
-
-	UpdateDefault(ctx context.Context, id string) error
-
-	Delete(ctx context.Context, id string) error
+	DeleteTx(ctx context.Context, tx *gorm.DB, id string) error
 }

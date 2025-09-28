@@ -16,16 +16,16 @@ func NewUserRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 	user := rg.Group("/users", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository))
 	{
-		user.GET("/all", userHandler.GetAllUsers)
+		user.GET("", userHandler.GetAllUsers)
 
-		user.GET("/:user_id", userHandler.GetUserByID)
+		user.GET("/:id", userHandler.GetUserByID)
 
 		user.POST("", userHandler.CreateUser)
 
-		user.PATCH("/:user_id", userHandler.UpdateUser)
+		user.PATCH("/:id", userHandler.UpdateUser)
 
-		user.DELETE("/:user_id", userHandler.DeleteUser)
+		user.DELETE("/:id", userHandler.DeleteUser)
 
-		user.DELETE("/many", userHandler.DeleteManyUsers)
+		user.DELETE("", userHandler.DeleteManyUsers)
 	}
 }

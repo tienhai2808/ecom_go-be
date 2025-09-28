@@ -3,14 +3,17 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/tienhai2808/ecom_go/config"
 	"github.com/tienhai2808/ecom_go/internal/consumers"
 	"github.com/tienhai2808/ecom_go/internal/container"
 	"github.com/tienhai2808/ecom_go/internal/initialization"
 	"github.com/tienhai2808/ecom_go/internal/router"
-	"log"
-	"net/http"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -122,4 +125,24 @@ func (s *Server) Shutdown(ctx context.Context) {
 			return
 		}
 	}
+
+	log.Println("Dừng server thành công")
+}
+
+func (s *Server) GracefulShutdown(ch <- chan error) {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	select {
+	case err := <-ch:
+		log.Printf("Chạy service thất bại: %v", err)
+	case <-ctx.Done():
+		log.Println("Có tín hiệu dừng server")
+	}
+
+	stop()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	s.Shutdown(shutdownCtx)
 }

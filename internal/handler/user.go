@@ -44,7 +44,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	userID := c.Param("user_id")
+	userID := c.Param("id")
 
 	user, err := h.userService.GetUserByID(ctx, userID)
 	if err != nil {
@@ -103,7 +103,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userID := c.Param("user_id")
+	userID := c.Param("id")
 
 	updatedUser, err := h.userService.UpdateUser(ctx, userID, &req)
 	if err != nil {
@@ -136,7 +136,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	reqUserID := c.Param("user_id")
+	reqUserID := c.Param("id")
 	if reqUserID == user.ID {
 		utils.JSON(c, http.StatusConflict, "Không thể xóa chính bạn", nil)
 		return

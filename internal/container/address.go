@@ -14,7 +14,7 @@ type AddressModule struct {
 
 func NewAddressContainer(db *gorm.DB) *AddressModule {
 	addressRepo := repoImpl.NewAddressRepository(db)
-	addressService := serviceImpl.NewAddressService(addressRepo)
+	addressService := serviceImpl.NewAddressService(db, addressRepo)
 	addressHandler := handler.NewAddressHandler(addressService)
 
 	return &AddressModule{

@@ -68,7 +68,7 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 		return
 	}
 
-	addressID := c.Param("address_id")
+	addressID := c.Param("id")
 	address, err := h.addressService.GetAddressDetail(ctx, user.ID, addressID)
 	if err != nil {
 		switch err {
@@ -151,7 +151,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	addressID := c.Param("address_id")
+	addressID := c.Param("id")
 
 	updatedAddress, err := h.addressService.UpdateAddress(ctx, user.ID, addressID, &req)
 	if err != nil {
@@ -185,7 +185,7 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 		return
 	}
 
-	addressID := c.Param("address_id")
+	addressID := c.Param("id")
 
 	if err := h.addressService.DeleteAddress(ctx, user.ID, addressID); err != nil {
 		switch err {
