@@ -6,13 +6,13 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/common"
 	"github.com/tienhai2808/ecom_go/internal/dto"
 	"github.com/tienhai2808/ecom_go/internal/initialization"
-	"github.com/tienhai2808/ecom_go/internal/mq"
+	"github.com/tienhai2808/ecom_go/internal/rabbitmq"
 	"github.com/tienhai2808/ecom_go/internal/smtp"
 	"log"
 )
 
 func StartSendEmailConsumer(mqc *initialization.RabbitMQConn, mailer smtp.SMTPService) {
-	if err := mq.ConsumeMessage(mqc.Chann, common.QueueName, common.Exchange, common.RoutingKey, func(body []byte) error {
+	if err := rabbitmq.ConsumeMessage(mqc.Chann, common.QueueName, common.Exchange, common.RoutingKey, func(body []byte) error {
 		var emailMsg dto.EmailMessage
 		if err := json.Unmarshal(body, &emailMsg); err != nil {
 			return fmt.Errorf("chuyển đổi tin nhắn email thất bại: %w", err)

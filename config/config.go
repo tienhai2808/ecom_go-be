@@ -9,13 +9,13 @@ import (
 
 type Config struct {
 	App struct {
-		Name             string `yaml:"name"`
-		Host             string `yaml:"host"`
-		Port             int    `yaml:"port"`
-		JWTSecret  string `yaml:"jwt_secret"`
-		AccessName string `yaml:"access_name"`
+		Name        string `yaml:"name"`
+		Host        string `yaml:"host"`
+		Port        int    `yaml:"port"`
+		JWTSecret   string `yaml:"jwt_secret"`
+		AccessName  string `yaml:"access_name"`
 		RefreshName string `yaml:"refresh_name"`
-		ApiPrefix        string `yaml:"api_prefix"`
+		ApiPrefix   string `yaml:"api_prefix"`
 	} `yaml:"app"`
 
 	Database struct {
@@ -36,6 +36,10 @@ type Config struct {
 		User string `yaml:"user"`
 		Pass string `yaml:"pass"`
 	} `yaml:"rabbitmq"`
+
+	Kafka struct {
+		Brokers []string `yaml:"brokers"`
+	} `yaml:"kafka"`
 
 	SMTP struct {
 		Host string `yaml:"host"`

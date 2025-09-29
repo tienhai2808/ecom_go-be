@@ -20,8 +20,6 @@ func InitRabbitMQ(cfg *config.Config) (*RabbitMQConn, error) {
 		cfg.RabbitMQ.Port,
 	)
 
-	fmt.Println(dsn)
-
 	conn, err := amqp091.Dial(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("kết nối RabbitMQ thất bại: %w", err)

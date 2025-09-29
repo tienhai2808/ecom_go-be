@@ -13,24 +13,13 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/consumers"
 	"github.com/tienhai2808/ecom_go/internal/container"
 	"github.com/tienhai2808/ecom_go/internal/initialization"
+	"github.com/tienhai2808/ecom_go/internal/kafka"
 	"github.com/tienhai2808/ecom_go/internal/router"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
-
-type Application struct {
-	Config     *config.Config
-	DB         *gorm.DB
-	Redis      *redis.Client
-	RabbitConn *amqp091.Connection
-	RabbitChan *amqp091.Channel
-	Container  *container.Container
-	Router     *gin.Engine
-}
 
 type Server struct {
 	cfg        *config.Config
@@ -38,6 +27,7 @@ type Server struct {
 	db         *initialization.DB
 	rdb        *redis.Client
 	rmq        *initialization.RabbitMQConn
+	kmq        *initialization.KafkaClient
 }
 
 func NewServer(cfg *config.Config) (*Server, error) {
@@ -53,6 +43,15 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	rmq, err := initialization.InitRabbitMQ(cfg)
 	if err != nil {
+		return nil, err
+	}
+
+	kmq := initialization.InitKafka(cfg)
+
+	ctx := context.Background()
+	go kafka.ConsumeMessages(ctx, kmq.Reader, kafka.MessageHandler)
+
+	if err = kafka.PublishMessage(kmq.Writer, []byte("key1"), []byte("Alo alo 1234")); err != nil {
 		return nil, err
 	}
 
@@ -99,6 +98,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		db,
 		rdb,
 		rmq,
+		kmq,
 	}, nil
 }
 
@@ -119,6 +119,10 @@ func (s *Server) Shutdown(ctx context.Context) {
 		s.rmq.Close()
 	}
 
+	if s.kmq != nil {
+		s.kmq.Close()
+	}
+
 	if s.httpServer != nil {
 		if err := s.httpServer.Shutdown(ctx); err != nil {
 			log.Printf("Shutdown http server thất bại: %v", err)
@@ -129,7 +133,7 @@ func (s *Server) Shutdown(ctx context.Context) {
 	log.Println("Dừng server thành công")
 }
 
-func (s *Server) GracefulShutdown(ch <- chan error) {
+func (s *Server) GracefulShutdown(ch <-chan error) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 

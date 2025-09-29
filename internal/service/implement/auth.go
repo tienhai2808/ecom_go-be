@@ -13,7 +13,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/dto"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
-	"github.com/tienhai2808/ecom_go/internal/mq"
+	"github.com/tienhai2808/ecom_go/internal/rabbitmq"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/response"
@@ -90,7 +90,7 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 
 	go func(msg dto.EmailMessage) {
 		body, _ := json.Marshal(emailMsg)
-		if err = mq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
 		}
 	}(emailMsg)
@@ -232,7 +232,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 
 	go func(msg dto.EmailMessage) {
 		body, _ := json.Marshal(emailMsg)
-		if err = mq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
 		}
 	}(emailMsg)
