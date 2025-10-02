@@ -9,9 +9,8 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/util"
 	"gorm.io/gorm"
-
-	"github.com/google/uuid"
 )
 
 type addressServiceImpl struct {
@@ -26,7 +25,7 @@ func NewAddressService(db *gorm.DB, addressRepository repository.AddressReposito
 	}
 }
 
-func (s *addressServiceImpl) GetMyAddresses(ctx context.Context, userID string) ([]*model.Address, error) {
+func (s *addressServiceImpl) GetMyAddresses(ctx context.Context, userID int64) ([]*model.Address, error) {
 	addresses, err := s.addressRepository.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy địa chỉ người dùng thất bại: %w", err)
@@ -35,7 +34,7 @@ func (s *addressServiceImpl) GetMyAddresses(ctx context.Context, userID string) 
 	return addresses, nil
 }
 
-func (s *addressServiceImpl) GetAddressDetail(ctx context.Context, userID string, id string) (*model.Address, error) {
+func (s *addressServiceImpl) GetAddressDetail(ctx context.Context, userID int64, id int64) (*model.Address, error) {
 	address, err := s.addressRepository.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin địa chỉ thất bại: %w", err)
@@ -52,7 +51,7 @@ func (s *addressServiceImpl) GetAddressDetail(ctx context.Context, userID string
 	return address, nil
 }
 
-func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error) {
+func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID int64, req request.AddAddressRequest) (*model.Address, error) {
 	addresses, err := s.addressRepository.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy danh sách địa chỉ thất bại: %w", err)
@@ -63,7 +62,7 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, r
 	}
 
 	var exists bool
-	var existingID string
+	var existingID int64
 	var newAddress *model.Address
 	for _, addr := range addresses {
 		if addr.IsDefault {
@@ -73,14 +72,19 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, r
 	}
 
 	if err = s.db.Transaction(func(tx *gorm.DB) error {
-		if exists && existingID != "" && *req.IsDefault {
+		if exists && existingID != 0 && *req.IsDefault {
 			if err = s.addressRepository.UpdateTx(ctx, tx, existingID, map[string]any{"is_default": false}); err != nil {
 				return fmt.Errorf("cập nhật địa chỉ mặc định thất bại: %w", err)
 			}
 		}
 
+		addressID, err := util.NewSnowflakeID()
+		if err != nil {
+			return err
+		}
+
 		newAddress = &model.Address{
-			ID:          uuid.NewString(),
+			ID:          addressID,
 			FirstName:   req.FirstName,
 			LastName:    req.LastName,
 			PhoneNumber: req.PhoneNumber,
@@ -104,7 +108,7 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID string, r
 	return newAddress, nil
 }
 
-func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id string, req *request.UpdateAddressRequest) (*model.Address, error) {
+func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id int64, req *request.UpdateAddressRequest) (*model.Address, error) {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		address, err := s.addressRepository.FindByIDTx(ctx, tx, id)
 		if err != nil {
@@ -192,7 +196,7 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id strin
 	return updatedAddress, nil
 }
 
-func (s *addressServiceImpl) DeleteAddress(ctx context.Context, userID, id string) error {
+func (s *addressServiceImpl) DeleteAddress(ctx context.Context, userID, id int64) error {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		address, err := s.addressRepository.FindByIDTx(ctx, tx, id)
 		if err != nil {

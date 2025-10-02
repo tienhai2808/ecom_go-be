@@ -7,13 +7,13 @@ import (
 )
 
 type AddressService interface {
-	GetMyAddresses(ctx context.Context, userID string) ([]*model.Address, error)
+	GetMyAddresses(ctx context.Context, userID int64) ([]*model.Address, error)
 
-	GetAddressDetail(ctx context.Context, userID string, id string) (*model.Address, error)
+	GetAddressDetail(ctx context.Context, userID int64, id int64) (*model.Address, error)
 
-	CreateAddress(ctx context.Context, userID string, req request.AddAddressRequest) (*model.Address, error)
+	CreateAddress(ctx context.Context, userID int64, req request.AddAddressRequest) (*model.Address, error)
 
-	UpdateAddress(ctx context.Context, userID, id string, req *request.UpdateAddressRequest) (*model.Address, error)
+	UpdateAddress(ctx context.Context, userID, id int64, req *request.UpdateAddressRequest) (*model.Address, error)
 
-	DeleteAddress(ctx context.Context, userID, id string) error
+	DeleteAddress(ctx context.Context, userID, id int64) error
 }

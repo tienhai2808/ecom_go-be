@@ -22,7 +22,7 @@ func NewImageService(imageRepository repository.ImageRepository, productReposito
 	}
 }
 
-func (s *imageServiceImpl) UploadImages(ctx context.Context, files []*multipart.FileHeader, productID string) ([]*model.Image, error) {
+func (s *imageServiceImpl) UploadImages(ctx context.Context, files []*multipart.FileHeader, productID int64) ([]*model.Image, error) {
 	product, err := s.productRepository.GetProductByID(ctx, productID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)

@@ -18,6 +18,7 @@ var allModels = []interface{}{
 	&model.Category{},
 	&model.Product{},
 	&model.Image{},
+	&model.Inventory{},
 }
 
 type DB struct {

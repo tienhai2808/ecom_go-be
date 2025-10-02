@@ -1,23 +1,14 @@
-package utils
+package util
 
 import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"math"
-	mrand "math/rand"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
 )
-
-func GenerateOtp(length int) string {
-	min := int(math.Pow10(length))
-	max := 9 * min
-	otp := min + mrand.Intn(max)
-	return fmt.Sprintf("%d", otp)
-}
 
 func HashPassword(password string) (string, error) {
 	salt := make([]byte, 16)

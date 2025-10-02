@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
+	mrand "math/rand"
 	"time"
 
 	"github.com/tienhai2808/ecom_go/config"
@@ -19,7 +21,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/response"
 	"github.com/tienhai2808/ecom_go/internal/security"
 	"github.com/tienhai2808/ecom_go/internal/service"
-	"github.com/tienhai2808/ecom_go/internal/utils"
+	"github.com/tienhai2808/ecom_go/internal/util"
 
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
@@ -43,7 +45,7 @@ func NewAuthService(userRepository repository.UserRepository, authRepository rep
 	}
 }
 
-func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest) (string, error) {
+func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest) (string, error) {
 	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
@@ -62,10 +64,10 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 		return "", customErr.ErrUsernameExists
 	}
 
-	otp := utils.GenerateOtp(5)
+	otp := generateOtp(5)
 	registrationToken := uuid.NewString()
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		return "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
@@ -98,7 +100,7 @@ func (s *authServiceImpl) Signup(ctx context.Context, req request.SignupRequest)
 	return registrationToken, nil
 }
 
-func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySignupRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySignUpRequest) (*response.AuthResponse, string, string, error) {
 	regData, err := s.authRepository.GetRegistrationData(ctx, req.RegistrationToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu đăng ký thất bại: %w", err)
@@ -142,13 +144,16 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrUsernameExists
 	}
 
+	userID, err := util.NewSnowflakeID()
+	profileID, err := util.NewSnowflakeID()
+
 	newUser := &model.User{
-		ID:       uuid.NewString(),
+		ID:       userID,
 		Username: regData.Username,
 		Email:    regData.Email,
 		Password: regData.Password,
 		Profile: &model.Profile{
-			ID: uuid.NewString(),
+			ID: profileID,
 		},
 	}
 
@@ -173,7 +178,7 @@ func (s *authServiceImpl) VerifySignup(ctx context.Context, req request.VerifySi
 	return s.ConvertToDto(newUser), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.AuthResponse, string, string, error) {
 	user, err := s.userRepository.FindByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
@@ -183,7 +188,7 @@ func (s *authServiceImpl) Signin(ctx context.Context, req request.SigninRequest)
 		return nil, "", "", customErr.ErrUserNotFound
 	}
 
-	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.Password)
+	isCorrectPassword, err := util.VerifyPassword(user.Password, req.Password)
 	if err != nil || !isCorrectPassword {
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
@@ -211,7 +216,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 		return "", customErr.ErrUserNotFound
 	}
 
-	otp := utils.GenerateOtp(5)
+	otp := generateOtp(5)
 	forgotPasswordToken := uuid.NewString()
 
 	forgData := dto.ForgotPasswordData{
@@ -293,12 +298,12 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", customErr.ErrUserNotFound
 	}
 
-	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	hashedPassword, err := util.HashPassword(req.NewPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.userRepository.UpdateUserPasswordByID(ctx, user.ID, hashedPassword); err != nil {
+	if err = s.userRepository.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return nil, "", "", err
 		}
@@ -323,7 +328,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 }
 
 func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*response.AuthResponse, string, string, error) {
-	isCorrectPassword, err := utils.VerifyPassword(user.Password, req.OldPassword)
+	isCorrectPassword, err := util.VerifyPassword(user.Password, req.OldPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
 	}
@@ -332,12 +337,12 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
 
-	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	hashedPassword, err := util.HashPassword(req.NewPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.userRepository.UpdateUserPasswordByID(ctx, user.ID, hashedPassword); err != nil {
+	if err = s.userRepository.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return nil, "", "", err
 		}
@@ -357,8 +362,8 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 	return s.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error) {
-	updateData := map[string]interface{}{}
+func (s *authServiceImpl) UpdateProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error) {
+	updateData := map[string]any{}
 	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
 		updateData["first_name"] = *req.FirstName
 	}
@@ -376,7 +381,7 @@ func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.Use
 	}
 
 	if len(updateData) > 0 {
-		if err := s.profileRepository.UpdateProfileByUserID(ctx, user.ID, updateData); err != nil {
+		if err := s.profileRepository.UpdateByUserID(ctx, user.ID, updateData); err != nil {
 			if errors.Is(err, customErr.ErrUserProfileNotFound) {
 				return nil, err
 			}
@@ -384,7 +389,7 @@ func (s *authServiceImpl) UpdateUserProfile(ctx context.Context, user *model.Use
 		}
 	}
 
-	updatedUser, err := s.userRepository.FindByID(ctx, user.ID)
+	updatedUser, err := s.userRepository.FindByIDWithProfile(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -410,4 +415,11 @@ func (s *authServiceImpl) ConvertToDto(user *model.User) *response.AuthResponse 
 			DOB:         user.Profile.DOB,
 		},
 	}
+}
+
+func generateOtp(length int) string {
+	min := int(math.Pow10(length))
+	max := 9 * min
+	otp := min + mrand.Intn(max)
+	return fmt.Sprintf("%d", otp)
 }

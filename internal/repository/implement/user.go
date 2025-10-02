@@ -30,7 +30,7 @@ func (r *userRepositoryImpl) FindAll(ctx context.Context) ([]*model.User, error)
 	return users, nil
 }
 
-func (r *userRepositoryImpl) ExistsByID(ctx context.Context, id string) (bool, error) {
+func (r *userRepositoryImpl) ExistsByID(ctx context.Context, id int64) (bool, error) {
 	var count int64
 
 	if err := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Count(&count).Error; err != nil {
@@ -81,9 +81,8 @@ func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string
 	return &user, nil
 }
 
-func (r *userRepositoryImpl) FindByID(ctx context.Context, id string) (*model.User, error) {
+func (r *userRepositoryImpl) FindByIDWithProfile(ctx context.Context, id int64) (*model.User, error) {
 	var user model.User
-
 	if err := r.db.Preload("Profile").WithContext(ctx).Where("id = ?", id).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -120,7 +119,7 @@ func (r *userRepositoryImpl) UpdateUserPasswordByID(ctx context.Context, id, new
 	return nil
 }
 
-func (r *userRepositoryImpl) Update(ctx context.Context, id string, updateData map[string]any) error {
+func (r *userRepositoryImpl) Update(ctx context.Context, id int64, updateData map[string]any) error {
 	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
@@ -133,7 +132,7 @@ func (r *userRepositoryImpl) Update(ctx context.Context, id string, updateData m
 	return nil
 }
 
-func (r *userRepositoryImpl) Delete(ctx context.Context, id string) error {
+func (r *userRepositoryImpl) Delete(ctx context.Context, id int64) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{})
 	if result.Error != nil {
 		return result.Error
@@ -146,7 +145,7 @@ func (r *userRepositoryImpl) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *userRepositoryImpl) DeleteAllByID(ctx context.Context, ids []string) (int64, error) {
+func (r *userRepositoryImpl) DeleteAllByID(ctx context.Context, ids []int64) (int64, error) {
 	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.User{})
 	if result.Error != nil {
 		return 0, result.Error

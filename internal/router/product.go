@@ -16,16 +16,16 @@ func NewProductRouter(rg *gin.RouterGroup, config *config.Config, userRepository
 
 	product := rg.Group("/products")
 	{
-		product.GET("/all", productHandler.GetAllProducts)
+		product.GET("", productHandler.GetAllProducts)
 
-		product.GET("/:product_id", productHandler.GetProductByID)
+		product.GET("/:id", productHandler.GetProductByID)
 
 		product.POST("", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.CreateProduct)
 
-		product.PATCH("/:product_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.UpdateProduct)
+		product.PATCH("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.UpdateProduct)
 
-		product.DELETE("/:product_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteProduct)
+		product.DELETE("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteProduct)
 
-		product.DELETE("/many", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteManyProducts)
+		product.DELETE("", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteManyProducts)
 	}
 }

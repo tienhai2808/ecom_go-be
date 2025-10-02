@@ -41,6 +41,10 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
+	if err = initialization.InitSnowFlake(); err != nil {
+		return nil, err
+	}
+
 	rmq, err := initialization.InitRabbitMQ(cfg)
 	if err != nil {
 		return nil, err
@@ -48,20 +52,14 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	kmq := initialization.InitKafka(cfg)
 
-	ctx := context.Background()
-	go kafka.ConsumeMessages(ctx, kmq.Reader, kafka.MessageHandler)
-
-	if err = kafka.PublishMessage(kmq.Writer, []byte("key1"), []byte("Alo alo 1234")); err != nil {
-		return nil, err
-	}
-
 	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann)
 
+	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
 	go consumers.StartSendEmailConsumer(rmq, ctn.AuthModule.SMTPService)
 
 	r := gin.Default()
 
-	if err := r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
+	if err = r.SetTrustedProxies([]string{"127.0.0.1"}); err != nil {
 		return nil, fmt.Errorf("thiết lập Proxy thất bại: %w", err)
 	}
 

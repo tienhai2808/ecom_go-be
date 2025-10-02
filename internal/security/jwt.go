@@ -8,7 +8,7 @@ import (
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 )
 
-func GenerateToken(userID string, userRole string, ttl time.Duration, secret string) (string, error) {
+func GenerateToken(userID int64, userRole string, ttl time.Duration, secret string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":  userID,
 		"role": userRole,
@@ -21,7 +21,7 @@ func GenerateToken(userID string, userRole string, ttl time.Duration, secret str
 }
 
 func ParseToken(tokenStr, secretKey string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("phương thức ký không hợp lệ: %v", t.Header["alg"])
 		}
@@ -38,15 +38,17 @@ func ParseToken(tokenStr, secretKey string) (jwt.MapClaims, error) {
 	return nil, customErr.ErrInvalidToken
 }
 
-func ExtractToken(claims jwt.MapClaims) (string, string, error) {
-	userID, ok := claims["sub"].(string)
+func ExtractToken(claims jwt.MapClaims) (int64, string, error) {
+	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {
-		return "", "", customErr.ErrUserIdNotFound
+		return 0, "", customErr.ErrUserIdNotFound
 	}
+
+	userID := int64(userIDFloat)
 
 	userRole, ok := claims["role"].(string)
 	if !ok {
-		return "", "", customErr.ErrUserRoleNotFound
+		return 0, "", customErr.ErrUserRoleNotFound
 	}
 
 	return userID, userRole, nil

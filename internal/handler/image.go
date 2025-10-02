@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/tienhai2808/ecom_go/internal/imagekit"
 	"github.com/tienhai2808/ecom_go/internal/service"
-	"github.com/tienhai2808/ecom_go/internal/utils"
+	"github.com/tienhai2808/ecom_go/internal/util"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,14 +33,14 @@ func (h *ImageHandler) UploadImages(c *gin.Context) {
 	ctx := c.Request.Context()
 	form, err := c.MultipartForm()
 	if err != nil {
-		utils.JSON(c, http.StatusBadRequest, "Không thể parse muiltipart form", nil)
+		util.JSON(c, http.StatusBadRequest, "Không thể parse muiltipart form", nil)
 		return
 	}
 	defer form.RemoveAll()
 
 	files := form.File["files"]
 	if len(files) == 0 {
-		utils.JSON(c, http.StatusBadRequest, "Không có hình ảnh nào được tải lên", nil)
+		util.JSON(c, http.StatusBadRequest, "Không có hình ảnh nào được tải lên", nil)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (h *ImageHandler) UploadImages(c *gin.Context) {
 		imageUrl, imageKitID, err := h.imageKitService.UploadImage(ctx, fileName, file)
 		if err != nil {
 			fmt.Printf("Lỗi up load ảnh %s ở ImageKitService %v\n", fileName, err)
-			utils.JSON(c, http.StatusInternalServerError, "Không thể upload ảnh lên ImageKit", nil)
+			util.JSON(c, http.StatusInternalServerError, "Không thể upload ảnh lên ImageKit", nil)
 			return
 		}
 
@@ -64,15 +64,15 @@ func (h *ImageHandler) UploadImages(c *gin.Context) {
 	// if err != nil {
 	// 	switch err {
 	// 	case customErr.ErrProductNotFound:
-	// 		utils.JSON(c, http.StatusNotFound, err.Error(), nil)
+	// 		util.JSON(c, http.StatusNotFound, err.Error(), nil)
 	// 	default:
 	// 		fmt.Printf("Lỗi ở UploadImagesService: %v\n", err)
-	// 		utils.JSON(c, http.StatusInternalServerError, "Không thể upload ảnh sản phẩm", nil)
+	// 		util.JSON(c, http.StatusInternalServerError, "Không thể upload ảnh sản phẩm", nil)
 	// 	}
 	// 	return
 	// }
 
-	utils.JSON(c, http.StatusOK, "Upload ảnh sản phẩm thành công", gin.H{
+	util.JSON(c, http.StatusOK, "Upload ảnh sản phẩm thành công", gin.H{
 		"images": imageResDtos,
 	})
 }

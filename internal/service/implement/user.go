@@ -1,17 +1,15 @@
 package implement
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
-	"github.com/tienhai2808/ecom_go/internal/utils"
-	"context"
-	"errors"
-	"fmt"
-
-	"github.com/google/uuid"
+	"github.com/tienhai2808/ecom_go/internal/util"
 )
 
 type userServiceImpl struct {
@@ -35,8 +33,8 @@ func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error
 	return users, nil
 }
 
-func (s *userServiceImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
-	user, err := s.userRepository.FindByID(ctx, id)
+func (s *userServiceImpl) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
+	user, err := s.userRepository.FindByIDWithProfile(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -67,19 +65,28 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, customErr.ErrUsernameExists
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		return nil, fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
+	userID, err := util.NewSnowflakeID()
+	if err != nil {
+		return nil, err
+	}
+	profileID, err := util.NewSnowflakeID()
+	if err != nil {
+		return nil, err
+	}
+
 	newUser := &model.User{
-		ID:       uuid.NewString(),
+		ID:       userID,
 		Username: req.Username,
 		Email:    req.Email,
 		Password: hashedPassword,
 		Role:     req.Role,
 		Profile: &model.Profile{
-			ID:          uuid.NewString(),
+			ID:          profileID,
 			FirstName:   req.FirstName,
 			LastName:    req.LastName,
 			Gender:      req.Gender,
@@ -95,8 +102,8 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 	return newUser, nil
 }
 
-func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *request.UpdateUserRequest) (*model.User, error) {
-	user, err := s.userRepository.FindByID(ctx, id)
+func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request.UpdateUserRequest) (*model.User, error) {
+	user, err := s.userRepository.FindByIDWithProfile(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -141,7 +148,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 		updateUserData["role"] = *req.Role
 	}
 
-	updateProfileData := map[string]interface{}{}
+	updateProfileData := map[string]any{}
 	if req.FirstName != nil {
 		updateProfileData["first_name"] = *req.FirstName
 	}
@@ -168,7 +175,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	}
 
 	if len(updateProfileData) > 0 {
-		if err := s.profileRepository.UpdateProfileByUserID(ctx, user.ID, updateProfileData); err != nil {
+		if err := s.profileRepository.UpdateByUserID(ctx, user.ID, updateProfileData); err != nil {
 			if errors.Is(err, customErr.ErrUserProfileNotFound) {
 				return nil, err
 			}
@@ -176,7 +183,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 		}
 	}
 
-	updatedUser, err := s.userRepository.FindByID(ctx, user.ID)
+	updatedUser, err := s.userRepository.FindByIDWithProfile(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -188,7 +195,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id string, req *reques
 	return updatedUser, nil
 }
 
-func (s *userServiceImpl) DeleteUser(ctx context.Context, id string) error {
+func (s *userServiceImpl) DeleteUser(ctx context.Context, id int64) error {
 	if err := s.userRepository.Delete(ctx, id); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return err
@@ -199,9 +206,9 @@ func (s *userServiceImpl) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *userServiceImpl) DeleteUsers(ctx context.Context, currentUserID string, req request.DeleteManyRequest) (int64, error) {
+func (s *userServiceImpl) DeleteUsers(ctx context.Context, currentUserID int64, req request.DeleteManyRequest) (int64, error) {
 	userIDs := req.IDs
-	filteredUserIDs := []string{}
+	filteredUserIDs := []int64{}
 
 	for _, id := range userIDs {
 		if id != currentUserID {

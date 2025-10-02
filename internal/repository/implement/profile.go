@@ -19,7 +19,7 @@ func NewProfileRepository(db *gorm.DB) repository.ProfileRepository {
 	}
 }
 
-func (r *profileRepositoryImpl) UpdateProfileByUserID(ctx context.Context, userID string, updateData map[string]interface{}) error {
+func (r *profileRepositoryImpl) UpdateByUserID(ctx context.Context, userID int64, updateData map[string]any) error {
 	result := r.db.WithContext(ctx).Model(&model.Profile{}).Where("user_id = ?", userID).Updates(updateData)
 	if result.Error != nil {
 		return result.Error

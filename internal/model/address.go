@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Address struct {
-	ID          string    `gorm:"type:char(36);primaryKey" json:"id"`
+	ID          int64     `gorm:"type:bigint;primaryKey" json:"id"`
 	FirstName   string    `gorm:"type:varchar(255);nullable" json:"first_name"`
 	LastName    string    `gorm:"type:varchar(255);nullable" json:"last_name"`
 	PhoneNumber string    `gorm:"type:varchar(20);not null" json:"phone_number"`
@@ -14,7 +14,7 @@ type Address struct {
 	IsDefault   bool      `gorm:"type:boolean;not null" json:"is_default"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"-"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
-	UserID      string    `gorm:"type:char(36);not null" json:"-"`
+	UserID      int64     `gorm:"type:bigint;not null" json:"-"`
 
 	User *User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 }

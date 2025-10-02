@@ -7,5 +7,5 @@ import (
 )
 
 type ImageService interface {
-	UploadImages(ctx context.Context, files []*multipart.FileHeader, productID string) ([]*model.Image, error)
+	UploadImages(ctx context.Context, files []*multipart.FileHeader, productID int64) ([]*model.Image, error)
 }

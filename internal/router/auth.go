@@ -17,13 +17,13 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 	auth := rg.Group("/auth")
 	{
-		auth.POST("/signup", authHandler.Signup)
+		auth.POST("/signup", authHandler.SignUp)
 
-		auth.POST("/signup/verify", authHandler.VerifySignup)
+		auth.POST("/signup/verify", authHandler.VerifySignUp)
 
-		auth.POST("/signin", authHandler.Signin)
+		auth.POST("/signin", authHandler.SignIn)
 
-		auth.POST("/signout", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.Signout)
+		auth.POST("/signout", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.SignOut)
 
 		auth.GET("/me", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.GetMe)
 
@@ -35,8 +35,8 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 		auth.POST("/reset-password", authHandler.ResetPassword)
 
-		auth.PUT("/change-password/:user_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.ChangePassword)
+		auth.POST("/change-password", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.ChangePassword)
 
-		auth.PATCH("/update-info/:user_id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.UpdateUserProfile)
+		auth.PATCH("/profile/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.UpdateUserProfile)
 	}
 }
