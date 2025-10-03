@@ -13,7 +13,7 @@ type AddressService interface {
 
 	CreateAddress(ctx context.Context, userID int64, req request.AddAddressRequest) (*model.Address, error)
 
-	UpdateAddress(ctx context.Context, userID, id int64, req *request.UpdateAddressRequest) (*model.Address, error)
+	UpdateAddress(ctx context.Context, userID, id int64, req request.UpdateAddressRequest) (*model.Address, error)
 
 	DeleteAddress(ctx context.Context, userID, id int64) error
 }

@@ -23,6 +23,4 @@ type AuthService interface {
 	ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*response.AuthResponse, string, string, error)
 
 	UpdateProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error)
-
-	ConvertToDto(user *model.User) *response.AuthResponse
 }

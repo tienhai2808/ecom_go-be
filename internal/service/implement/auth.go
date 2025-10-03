@@ -145,7 +145,13 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 	}
 
 	userID, err := util.NewSnowflakeID()
+	if err != nil {
+		return nil, "", "", err
+	}
 	profileID, err := util.NewSnowflakeID()
+	if err != nil {
+		return nil, "", "", err
+	}
 
 	newUser := &model.User{
 		ID:       userID,
@@ -175,7 +181,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
-	return s.ConvertToDto(newUser), accessToken, refreshToken, nil
+	return util.ConvertToDto(newUser), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.AuthResponse, string, string, error) {
@@ -203,7 +209,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return s.ConvertToDto(user), accessToken, refreshToken, nil
+	return util.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
@@ -324,7 +330,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("xóa dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
 
-	return s.ConvertToDto(user), accessToken, refreshToken, nil
+	return util.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*response.AuthResponse, string, string, error) {
@@ -359,7 +365,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return s.ConvertToDto(user), accessToken, refreshToken, nil
+	return util.ConvertToDto(user), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) UpdateProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error) {
@@ -373,7 +379,7 @@ func (s *authServiceImpl) UpdateProfile(ctx context.Context, user *model.User, r
 	if req.Gender != nil && *req.Gender != user.Profile.Gender {
 		updateData["gender"] = *req.Gender
 	}
-	if req.DOB != nil && *req.DOB != user.Profile.DOB {
+	if req.DOB != nil && req.DOB != user.Profile.DOB {
 		updateData["dob"] = *req.DOB
 	}
 	if req.PhoneNumber != nil && *req.PhoneNumber != user.Profile.PhoneNumber {
@@ -398,23 +404,7 @@ func (s *authServiceImpl) UpdateProfile(ctx context.Context, user *model.User, r
 		return nil, customErr.ErrUserNotFound
 	}
 
-	return s.ConvertToDto(updatedUser), nil
-}
-
-func (s *authServiceImpl) ConvertToDto(user *model.User) *response.AuthResponse {
-	return &response.AuthResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		Profile: response.ProfileResponse{
-			FirstName:   user.Profile.FirstName,
-			LastName:    user.Profile.LastName,
-			PhoneNumber: user.Profile.PhoneNumber,
-			Gender:      user.Profile.Gender,
-			DOB:         user.Profile.DOB,
-		},
-	}
+	return util.ConvertToDto(updatedUser), nil
 }
 
 func generateOtp(length int) string {

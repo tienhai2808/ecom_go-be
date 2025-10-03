@@ -90,7 +90,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 			FirstName:   req.FirstName,
 			LastName:    req.LastName,
 			Gender:      req.Gender,
-			DOB:         req.DOB,
+			DOB:         &req.DOB,
 			PhoneNumber: req.PhoneNumber,
 		},
 	}

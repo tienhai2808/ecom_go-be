@@ -165,7 +165,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	updatedAddress, err := h.addressService.UpdateAddress(ctx, user.ID, addressID, &req)
+	updatedAddress, err := h.addressService.UpdateAddress(ctx, user.ID, addressID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrExceedsQuantity, customErr.ErrUserAddressNotFound, customErr.ErrUnauthorized:

@@ -140,7 +140,7 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	userRes := h.authService.ConvertToDto(user)
+	userRes := util.ConvertToDto(user)
 
 	util.JSON(c, http.StatusOK, "Lấy thông tin người dùng thành công", gin.H{
 		"user": userRes,

@@ -11,9 +11,10 @@ type AuthResponse struct {
 }
 
 type ProfileResponse struct {
+	ID          int64     `json:"id"`
 	FirstName   string    `json:"first_name"`
 	LastName    string    `json:"last_name"`
 	PhoneNumber string    `json:"phone_number"`
-	DOB         time.Time `json:"dob"`
+	DOB         *time.Time `json:"dob"`
 	Gender      string    `json:"gender"`
 }

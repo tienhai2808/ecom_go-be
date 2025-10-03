@@ -85,11 +85,9 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID int64, re
 
 		newAddress = &model.Address{
 			ID:          addressID,
-			FirstName:   req.FirstName,
-			LastName:    req.LastName,
+			FullName:   req.FullName,
 			PhoneNumber: req.PhoneNumber,
 			Commune:     req.Commune,
-			District:    req.District,
 			Province:    req.Province,
 			Address:     req.Address,
 			IsDefault:   *req.IsDefault,
@@ -108,7 +106,7 @@ func (s *addressServiceImpl) CreateAddress(ctx context.Context, userID int64, re
 	return newAddress, nil
 }
 
-func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id int64, req *request.UpdateAddressRequest) (*model.Address, error) {
+func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id int64, req request.UpdateAddressRequest) (*model.Address, error) {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		address, err := s.addressRepository.FindByIDTx(ctx, tx, id)
 		if err != nil {
@@ -123,11 +121,8 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id int64
 		}
 
 		updateData := map[string]any{}
-		if req.FirstName != nil && *req.FirstName != address.FirstName {
-			updateData["first_name"] = *req.FirstName
-		}
-		if req.LastName != nil && *req.LastName != address.LastName {
-			updateData["last_name"] = *req.LastName
+		if req.FullName != nil && *req.FullName != address.FullName {
+			updateData["full_name"] = *req.FullName
 		}
 		if req.PhoneNumber != nil && *req.PhoneNumber != address.PhoneNumber {
 			updateData["phone_number"] = *req.PhoneNumber
@@ -137,9 +132,6 @@ func (s *addressServiceImpl) UpdateAddress(ctx context.Context, userID, id int64
 		}
 		if req.Commune != nil && *req.Commune != address.Commune {
 			updateData["commune"] = *req.Commune
-		}
-		if req.District != nil && *req.District != address.District {
-			updateData["district"] = *req.District
 		}
 		if req.Province != nil && *req.Province != address.Province {
 			updateData["province"] = *req.Province
