@@ -52,6 +52,11 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	kmq := initialization.InitKafka(cfg)
 
+	_, err = initialization.InitCloudinary(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann)
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)

@@ -53,6 +53,12 @@ type Config struct {
 		PublicKey   string `yaml:"public_key"`
 		PrivateKey  string `yaml:"private_key"`
 	} `yaml:"imagekit"`
+
+	Cloudinary struct {
+		CloudName string `yaml:"cloud_name"`
+		ApiKey    string `yaml:"api_key"`
+		ApiSecret string `yaml:"api_secret"`
+	} `yaml:"cloudinary"`
 }
 
 func LoadConfig() (*Config, error) {
