@@ -8,9 +8,9 @@ type Product struct {
 	Slug        string    `gorm:"type:varchar(255);not null;unique" json:"brand"`
 	Price       float64   `gorm:"type:decimal(10,2);not null" json:"price"`
 	Description string    `gorm:"type:text" json:"description"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
-	CategoryID  int64     `gorm:"type:bigint" json:"-"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	CategoryID  int64     `gorm:"type:bigint" json:"category_id"`
 
 	Category  *Category  `gorm:"foreignKey:CategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"category"`
 	Images    []*Image   `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"images"`

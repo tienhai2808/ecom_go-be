@@ -12,8 +12,9 @@ import (
 
 	"github.com/tienhai2808/ecom_go/config"
 	"github.com/tienhai2808/ecom_go/internal/common"
-	"github.com/tienhai2808/ecom_go/internal/dto"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/rabbitmq"
 	"github.com/tienhai2808/ecom_go/internal/repository"
@@ -72,7 +73,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 		return "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	regData := dto.RegistrationData{
+	regData := types.RegistrationData{
 		Email:    req.Email,
 		Username: req.Username,
 		Password: hashedPassword,
@@ -84,13 +85,13 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 		return "", fmt.Errorf("lưu dữ liệu đăng ký thất bại: %w", err)
 	}
 
-	emailMsg := dto.EmailMessage{
+	emailMsg := types.EmailMessage{
 		To:      req.Email,
 		Subject: "Mã xác nhận Đăng ký tài khoản",
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	go func(msg dto.EmailMessage) {
+	go func(msg types.EmailMessage) {
 		body, _ := json.Marshal(emailMsg)
 		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
@@ -100,7 +101,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 	return registrationToken, nil
 }
 
-func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySignUpRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySignUpRequest) (*response.UserResponse, string, string, error) {
 	regData, err := s.authRepository.GetRegistrationData(ctx, req.RegistrationToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu đăng ký thất bại: %w", err)
@@ -181,10 +182,10 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
-	return util.ConvertToDto(newUser), accessToken, refreshToken, nil
+	return mapper.ToUserResponse(newUser), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.UserResponse, string, string, error) {
 	user, err := s.userRepository.FindByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
@@ -209,7 +210,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return util.ConvertToDto(user), accessToken, refreshToken, nil
+	return mapper.ToUserResponse(user), accessToken, refreshToken, nil
 }
 
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
@@ -225,7 +226,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 	otp := generateOtp(5)
 	forgotPasswordToken := uuid.NewString()
 
-	forgData := dto.ForgotPasswordData{
+	forgData := types.ForgotPasswordData{
 		Email:    req.Email,
 		Otp:      otp,
 		Attempts: 0,
@@ -235,13 +236,13 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 		return "", fmt.Errorf("lưu dữ liệu quên mật khẩu thất bại: %w", err)
 	}
 
-	emailMsg := dto.EmailMessage{
+	emailMsg := types.EmailMessage{
 		To:      req.Email,
 		Subject: "Mã xác nhận Quên mật khẩu",
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	go func(msg dto.EmailMessage) {
+	go func(msg types.EmailMessage) {
 		body, _ := json.Marshal(emailMsg)
 		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
@@ -285,7 +286,7 @@ func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.
 	return resetPasswordToken, nil
 }
 
-func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPasswordRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPasswordRequest) (*response.UserResponse, string, string, error) {
 	email, err := s.authRepository.GetResetPasswordData(ctx, req.ResetPasswordToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu làm mới mật khẩu thất bại: %w", err)
@@ -330,10 +331,18 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("xóa dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
 
-	return util.ConvertToDto(user), accessToken, refreshToken, nil
+	return mapper.ToUserResponse(user), accessToken, refreshToken, nil
 }
 
-func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, req request.ChangePasswordRequest) (*response.AuthResponse, string, string, error) {
+func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req request.ChangePasswordRequest) (*response.UserResponse, string, string, error) {
+	user, err := s.userRepository.FindByIDWithProfile(ctx, userID)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
+	}
+	if user == nil {
+		return nil, "", "", customErr.ErrUserNotFound
+	}
+
 	isCorrectPassword, err := util.VerifyPassword(user.Password, req.OldPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
@@ -365,46 +374,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, user *model.User, 
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	return util.ConvertToDto(user), accessToken, refreshToken, nil
-}
-
-func (s *authServiceImpl) UpdateProfile(ctx context.Context, user *model.User, req *request.UpdateProfileRequest) (*response.AuthResponse, error) {
-	updateData := map[string]any{}
-	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
-		updateData["first_name"] = *req.FirstName
-	}
-	if req.LastName != nil && *req.LastName != user.Profile.LastName {
-		updateData["last_name"] = *req.LastName
-	}
-	if req.Gender != nil && *req.Gender != user.Profile.Gender {
-		updateData["gender"] = *req.Gender
-	}
-	if req.DOB != nil && req.DOB != user.Profile.DOB {
-		updateData["dob"] = *req.DOB
-	}
-	if req.PhoneNumber != nil && *req.PhoneNumber != user.Profile.PhoneNumber {
-		updateData["phone_number"] = *req.PhoneNumber
-	}
-
-	if len(updateData) > 0 {
-		if err := s.profileRepository.UpdateByUserID(ctx, user.ID, updateData); err != nil {
-			if errors.Is(err, customErr.ErrUserProfileNotFound) {
-				return nil, err
-			}
-			return nil, fmt.Errorf("cập nhật thông tin người dùng thất bại: %w", err)
-		}
-	}
-
-	updatedUser, err := s.userRepository.FindByIDWithProfile(ctx, user.ID)
-	if err != nil {
-		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
-	}
-
-	if updatedUser == nil {
-		return nil, customErr.ErrUserNotFound
-	}
-
-	return util.ConvertToDto(updatedUser), nil
+	return mapper.ToUserResponse(user), accessToken, refreshToken, nil
 }
 
 func generateOtp(length int) string {

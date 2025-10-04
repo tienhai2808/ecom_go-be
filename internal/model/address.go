@@ -10,9 +10,9 @@ type Address struct {
 	Commune     string    `gorm:"type:varchar(255);not null" json:"commune"`
 	Province    string    `gorm:"type:varchar(255);not null" json:"province"`
 	IsDefault   bool      `gorm:"type:boolean;not null" json:"is_default"`
-	CreatedAt   time.Time `gorm:"autoCreateTime" json:"-"`
-	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"-"`
-	UserID      int64     `gorm:"type:bigint;not null" json:"-"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	UserID      int64     `gorm:"type:bigint;not null" json:"user_id"`
 
-	User *User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	User *User `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"user"`
 }

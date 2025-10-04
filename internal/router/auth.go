@@ -2,7 +2,6 @@ package router
 
 import (
 	"github.com/tienhai2808/ecom_go/config"
-	"github.com/tienhai2808/ecom_go/internal/common"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/security"
@@ -23,9 +22,9 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 		auth.POST("/signin", authHandler.SignIn)
 
-		auth.POST("/signout", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.SignOut)
+		auth.POST("/signout", security.RequireAuth(accessName, secretKey, userRepository), authHandler.SignOut)
 
-		auth.GET("/me", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.GetMe)
+		auth.GET("/me", security.RequireAuth(accessName, secretKey, userRepository), authHandler.GetMe)
 
 		auth.GET("/refresh-token", security.RequireRefreshToken(refreshName, secretKey, userRepository), authHandler.RefreshToken)
 
@@ -35,8 +34,6 @@ func NewAuthRouter(rg *gin.RouterGroup, config *config.Config, userRepository re
 
 		auth.POST("/reset-password", authHandler.ResetPassword)
 
-		auth.POST("/change-password", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.ChangePassword)
-
-		auth.PATCH("/profile/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleUser, userRepository), authHandler.UpdateUserProfile)
+		auth.POST("/change-password", security.RequireAuth(accessName, secretKey, userRepository), authHandler.ChangePassword)
 	}
 }

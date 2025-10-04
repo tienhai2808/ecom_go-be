@@ -4,16 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/tienhai2808/ecom_go/config"
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
-	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/security"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"github.com/tienhai2808/ecom_go/internal/util"
 
 	"github.com/gin-gonic/gin"
@@ -134,16 +133,14 @@ func (h *AuthHandler) GetMe(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
-	userRes := util.ConvertToDto(user)
-
 	util.JSON(c, http.StatusOK, "Lấy thông tin người dùng thành công", gin.H{
-		"user": userRes,
+		"user": user,
 	})
 }
 
@@ -181,8 +178,8 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.ForgotPasswordRequest
 
+	var req request.ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		util.JSON(c, http.StatusBadRequest, translated, nil)
@@ -208,8 +205,8 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.VerifyForgotPasswordRequest
 
+	var req request.VerifyForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		util.JSON(c, http.StatusBadRequest, translated, nil)
@@ -235,8 +232,8 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.ResetPasswordRequest
 
+	var req request.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		util.JSON(c, http.StatusBadRequest, translated, nil)
@@ -265,8 +262,8 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.ChangePasswordRequest
 
+	var req request.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		util.JSON(c, http.StatusBadRequest, translated, nil)
@@ -279,13 +276,13 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
-	userRes, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user, req)
+	userRes, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
@@ -300,57 +297,6 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
-		"user": userRes,
-	})
-}
-
-func (h *AuthHandler) UpdateUserProfile(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-	var req request.UpdateProfileRequest
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, translated, nil)
-		return
-	}
-
-	userAny, exists := c.Get("user")
-	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
-		return
-	}
-
-	user, ok := userAny.(*model.User)
-	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	profileIDStr := c.Param("id")
-	profileID, err := strconv.ParseInt(profileIDStr, 10, 64)
-	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
-		return
-	}
-
-	if user.Profile.ID != profileID {
-		util.JSON(c, http.StatusForbidden, "Không có quyền truy cập", nil)
-		return
-	}
-
-	userRes, err := h.authService.UpdateProfile(ctx, user, &req)
-	if err != nil {
-		switch err {
-		case customErr.ErrUserProfileNotFound, customErr.ErrUserNotFound:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
-		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
-		}
-		return
-	}
-
-	util.JSON(c, http.StatusOK, "Cập nhật hồ sơ người dùng thành công", gin.H{
 		"user": userRes,
 	})
 }

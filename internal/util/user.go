@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tienhai2808/ecom_go/internal/model"
-	"github.com/tienhai2808/ecom_go/internal/response"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -59,21 +57,4 @@ func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
 	inputHash := argon2.IDKey([]byte(inputPassword), salt, timeCost, memory, threads, uint32(len(storedHash)))
 
 	return subtle.ConstantTimeCompare(storedHash, inputHash) == 1, nil
-}
-
-func ConvertToDto(user *model.User) *response.AuthResponse {
-	return &response.AuthResponse{
-		ID:        user.ID,
-		Username:  user.Username,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt,
-		Profile: response.ProfileResponse{
-			ID: user.Profile.ID,
-			FirstName:   user.Profile.FirstName,
-			LastName:    user.Profile.LastName,
-			PhoneNumber: user.Profile.PhoneNumber,
-			Gender:      user.Profile.Gender,
-			DOB:         user.Profile.DOB,
-		},
-	}
 }

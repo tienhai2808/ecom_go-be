@@ -51,7 +51,6 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
-
 	if exists {
 		return nil, customErr.ErrEmailExists
 	}
@@ -60,7 +59,6 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
-
 	if exists {
 		return nil, customErr.ErrUsernameExists
 	}
@@ -90,7 +88,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 			FirstName:   req.FirstName,
 			LastName:    req.LastName,
 			Gender:      req.Gender,
-			DOB:         &req.DOB,
+			DOB:         req.DOB,
 			PhoneNumber: req.PhoneNumber,
 		},
 	}
@@ -107,61 +105,56 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
-
 	if user == nil {
 		return nil, customErr.ErrUserNotFound
 	}
 
-	if req.Email != nil && *req.Email != user.Email {
-		exists, err := s.userRepository.ExistsByEmail(ctx, *req.Email)
-		if err != nil {
-			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
-		}
-
-		if exists {
-			return nil, customErr.ErrEmailExists
-		}
-	}
-
+	updateUserData := map[string]any{}
 	if req.Username != nil && *req.Username != user.Username {
 		exists, err := s.userRepository.ExistsByUsername(ctx, *req.Username)
 		if err != nil {
 			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 		}
-
 		if exists {
 			return nil, customErr.ErrUsernameExists
 		}
-	}
-
-	updateUserData := map[string]any{}
-	if req.Username != nil {
 		updateUserData["username"] = *req.Username
 	}
-	if req.Email != nil {
+	if req.Email != nil && *req.Email != user.Email {
+		exists, err := s.userRepository.ExistsByEmail(ctx, *req.Email)
+		if err != nil {
+			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
+		}
+		if exists {
+			return nil, customErr.ErrEmailExists
+		}
 		updateUserData["email"] = *req.Email
 	}
 	if req.Password != nil {
-		updateUserData["password"] = *req.Password
+		hashedPw, err := util.HashPassword(*req.Password)
+		if err != nil {
+			return nil, err
+		}
+		updateUserData["password"] = hashedPw
 	}
-	if req.Role != nil {
+	if req.Role != nil && *req.Role != user.Role {
 		updateUserData["role"] = *req.Role
 	}
 
 	updateProfileData := map[string]any{}
-	if req.FirstName != nil {
+	if req.FirstName != nil && *req.FirstName != user.Profile.FirstName {
 		updateProfileData["first_name"] = *req.FirstName
 	}
-	if req.LastName != nil {
+	if req.LastName != nil && *req.LastName != user.Profile.LastName {
 		updateProfileData["last_name"] = *req.LastName
 	}
-	if req.PhoneNumber != nil {
+	if req.PhoneNumber != nil && *req.PhoneNumber != user.Profile.PhoneNumber {
 		updateProfileData["phone_number"] = *req.PhoneNumber
 	}
-	if req.DOB != nil {
+	if req.DOB != nil && req.DOB != user.Profile.DOB {
 		updateProfileData["dob"] = *req.DOB
 	}
-	if req.Gender != nil {
+	if req.Gender != nil && *req.Gender != user.Profile.Gender {
 		updateProfileData["gender"] = *req.Gender
 	}
 
@@ -175,8 +168,8 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 	}
 
 	if len(updateProfileData) > 0 {
-		if err := s.profileRepository.UpdateByUserID(ctx, user.ID, updateProfileData); err != nil {
-			if errors.Is(err, customErr.ErrUserProfileNotFound) {
+		if err := s.profileRepository.Update(ctx, user.Profile.ID, updateProfileData); err != nil {
+			if errors.Is(err, customErr.ErrProfileNotFound) {
 				return nil, err
 			}
 			return nil, fmt.Errorf("cập nhật thông tin người dùng thất bại: %w", err)

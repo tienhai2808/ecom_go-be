@@ -9,6 +9,7 @@ import (
 
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
@@ -38,7 +39,7 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Lấy danh sách người dùng thành công", gin.H{
-		"users": users,
+		"users": mapper.ToUsersResponse(users),
 	})
 }
 
@@ -65,7 +66,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Lấy người dùng thành công", gin.H{
-		"user": user,
+		"user": mapper.ToUserResponse(user),
 	})
 }
 
@@ -93,15 +94,15 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusCreated, "Thêm mới người dùng thành công", gin.H{
-		"user": newUser,
+		"user": mapper.ToUserResponse(newUser),
 	})
 }
 
 func (h *UserHandler) UpdateUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.UpdateUserRequest
 
+	var req request.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
@@ -120,7 +121,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	updatedUser, err := h.userService.UpdateUser(ctx, userID, &req)
 	if err != nil {
 		switch err {
-		case customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrUserNotFound, customErr.ErrUserProfileNotFound:
+		case customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrUserNotFound, customErr.ErrProfileNotFound:
 			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
 			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
@@ -129,7 +130,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Cập nhật người dùng thành công", gin.H{
-		"user": updatedUser,
+		"user": mapper.ToUserResponse(updatedUser),
 	})
 }
 

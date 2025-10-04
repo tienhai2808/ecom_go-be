@@ -81,6 +81,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	router.NewAddressRouter(api, cfg, ctn.UserModule.UserRepository, ctn.AddressModule.AddressHandler)
 	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ProductModule.ProductHandler)
 	router.NewImageRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ImageModule.ImageHandler)
+	router.NewProfileRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ProfileModule.ProfileHandler)
 
 	addr := fmt.Sprintf(":%d", cfg.App.Port)
 

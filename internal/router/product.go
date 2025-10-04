@@ -2,7 +2,6 @@ package router
 
 import (
 	"github.com/tienhai2808/ecom_go/config"
-	"github.com/tienhai2808/ecom_go/internal/common"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/security"
@@ -20,12 +19,12 @@ func NewProductRouter(rg *gin.RouterGroup, config *config.Config, userRepository
 
 		product.GET("/:id", productHandler.GetProductByID)
 
-		product.POST("", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.CreateProduct)
+		product.POST("", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.CreateProduct)
 
-		product.PATCH("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.UpdateProduct)
+		product.PATCH("/:id", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.UpdateProduct)
 
-		product.DELETE("/:id", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteProduct)
+		product.DELETE("/:id", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.DeleteProduct)
 
-		product.DELETE("", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), productHandler.DeleteManyProducts)
+		product.DELETE("", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.DeleteManyProducts)
 	}
 }

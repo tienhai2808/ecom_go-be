@@ -2,7 +2,6 @@ package router
 
 import (
 	"github.com/tienhai2808/ecom_go/config"
-	"github.com/tienhai2808/ecom_go/internal/common"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/security"
@@ -16,6 +15,6 @@ func NewCategoryRouter(rg *gin.RouterGroup, config *config.Config, userRepositor
 
 	category := rg.Group("/categories")
 	{
-		category.POST("", security.RequireAuthAndRole(accessName, secretKey, common.RoleAdmin, userRepository), categoryHandler.CreateCategory)
+		category.POST("", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), categoryHandler.CreateCategory)
 	}
 }

@@ -6,4 +6,6 @@ var (
 	ErrUnAuth = errors.New("người dùng chưa đăng nhập")
 
 	ErrInvalidToken = errors.New("token không hợp lệ hoặc đã hết hạn")
+
+	ErrForbidden = errors.New("không có quyền truy cập")
 )

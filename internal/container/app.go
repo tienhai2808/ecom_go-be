@@ -14,6 +14,7 @@ type Container struct {
 	AddressModule *AddressModule
 	ProductModule *ProductModule
 	ImageModule   *ImageModule
+	ProfileModule *ProfileModule
 }
 
 func NewContainer(db *gorm.DB, redis *redis.Client, config *config.Config, rabbitChan *amqp091.Channel) *Container {
@@ -22,12 +23,14 @@ func NewContainer(db *gorm.DB, redis *redis.Client, config *config.Config, rabbi
 	addressModule := NewAddressContainer(db)
 	productModule := NewProductContainer(db)
 	imageModule := NewImageContainer(db, config)
+	profileModule := NewProfileContainer(db)
 
 	return &Container{
-		UserModule:    userModule,
-		AuthModule:    authModule,
-		AddressModule: addressModule,
-		ProductModule: productModule,
-		ImageModule:   imageModule,
+		userModule,
+		authModule,
+		addressModule,
+		productModule,
+		imageModule,
+		profileModule,
 	}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
@@ -49,7 +50,7 @@ func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Lấy địa chỉ người dùng thành công", gin.H{
-		"addresses": addresses,
+		"addresses": mapper.ToAddressesResponse(addresses),
 	})
 }
 
@@ -88,7 +89,7 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Lấy địa chỉ thành công", gin.H{
-		"address": address,
+		"address": mapper.ToAddressResponse(address),
 	})
 }
 
@@ -129,7 +130,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusCreated, "Thêm mới địa chỉ thành công", gin.H{
-		"address": newAddress,
+		"address": mapper.ToAddressResponse(newAddress),
 	})
 }
 
@@ -177,7 +178,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	}
 
 	util.JSON(c, http.StatusOK, "Cập nhật địa chỉ người dùng thành công", gin.H{
-		"address": updatedAddress,
+		"address": mapper.ToAddressResponse(updatedAddress),
 	})
 }
 

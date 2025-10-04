@@ -15,10 +15,8 @@ type ProductModule struct {
 func NewProductContainer(db *gorm.DB) *ProductModule {
 	productRepo := repoImpl.NewProductRepository(db)
 	categoryRepo := repoImpl.NewCategoryRepository(db)
-	productService := serviceImpl.NewProductService(productRepo, categoryRepo)
-	productHandler := handler.NewProductHandler(productService)
+	productSvc := serviceImpl.NewProductService(productRepo, categoryRepo)
+	productHdl := handler.NewProductHandler(productSvc)
 
-	return &ProductModule{
-		ProductHandler: productHandler,
-	}
+	return &ProductModule{productHdl}
 }

@@ -1,4 +1,4 @@
-package dto
+package types
 
 type RegistrationData struct {
 	Email    string `json:"email"`

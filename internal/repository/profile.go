@@ -1,7 +1,13 @@
 package repository
 
-import "context"
+import (
+	"context"
+
+	"github.com/tienhai2808/ecom_go/internal/model"
+)
 
 type ProfileRepository interface {
-	UpdateByUserID(ctx context.Context, userID int64, updateData map[string]any) error 
+	FindByID(ctx context.Context, id int64) (*model.Profile, error)
+
+	Update(ctx context.Context, id int64, updateData map[string]any) error 
 }

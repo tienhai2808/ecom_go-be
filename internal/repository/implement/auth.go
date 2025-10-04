@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tienhai2808/ecom_go/config"
-	"github.com/tienhai2808/ecom_go/internal/dto"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"time"
 
@@ -24,7 +24,7 @@ func NewAuthRepository(redis *redis.Client, config *config.Config) repository.Au
 	}
 }
 
-func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token string, data dto.RegistrationData, ttl time.Duration) error {
+func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token string, data types.RegistrationData, ttl time.Duration) error {
 	regData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
@@ -49,7 +49,7 @@ func (r *authRepositoryImpl) DeleteAuthData(ctx context.Context, name, token str
 	return nil
 }
 
-func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token string) (*dto.RegistrationData, error) {
+func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token string) (*types.RegistrationData, error) {
 	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
 
 	regDataJSON, err := r.redis.Get(ctx, redisKey).Result()
@@ -59,7 +59,7 @@ func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token stri
 		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
 	}
 
-	var regData dto.RegistrationData
+	var regData types.RegistrationData
 	if err = json.Unmarshal([]byte(regDataJSON), &regData); err != nil {
 		return nil, fmt.Errorf("giải mã dữ liệu đăng ký thất bại: %w", err)
 	}
@@ -67,7 +67,7 @@ func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token stri
 	return &regData, nil
 }
 
-func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token string, data dto.RegistrationData, ttl time.Duration) error {
+func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token string, data types.RegistrationData, ttl time.Duration) error {
 	regDataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
@@ -81,7 +81,7 @@ func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token s
 	return nil
 }
 
-func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token string, data dto.ForgotPasswordData, ttl time.Duration) error {
+func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token string, data types.ForgotPasswordData, ttl time.Duration) error {
 	forgDataJSON, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %w", err)
@@ -96,7 +96,7 @@ func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token st
 	return nil
 }
 
-func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token string) (*dto.ForgotPasswordData, error) {
+func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token string) (*types.ForgotPasswordData, error) {
 	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
 
 	forgDataJSON, err := r.redis.Get(ctx, redisKey).Result()
@@ -106,7 +106,7 @@ func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token st
 		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
 	}
 
-	var forgData dto.ForgotPasswordData
+	var forgData types.ForgotPasswordData
 	if err = json.Unmarshal([]byte(forgDataJSON), &forgData); err != nil {
 		return nil, fmt.Errorf("giải mã dữ liệu quên mật khẩu thất bại: %w", err)
 	}
