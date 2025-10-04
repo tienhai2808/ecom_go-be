@@ -17,20 +17,18 @@ import (
 )
 
 type ProductHandler struct {
-	productService service.ProductService
+	productSvc service.ProductService
 }
 
-func NewProductHandler(productService service.ProductService) *ProductHandler {
-	return &ProductHandler{
-		productService: productService,
-	}
+func NewProductHandler(productSvc service.ProductService) *ProductHandler {
+	return &ProductHandler{productSvc}
 }
 
 func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	products, err := h.productService.GetAllProducts(ctx)
+	products, err := h.productSvc.GetAllProducts(ctx)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -52,7 +50,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 		return
 	}
 
-	product, err := h.productService.GetProductByID(ctx, productID)
+	product, err := h.productSvc.GetProductByID(ctx, productID)
 	if err != nil {
 		switch err {
 		case customErr.ErrProductNotFound:
@@ -81,7 +79,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	newProduct, err := h.productService.CreateProduct(ctx, req)
+	newProduct, err := h.productSvc.CreateProduct(ctx, req)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -112,7 +110,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
-	updatedProduct, err := h.productService.UpdateProduct(ctx, productID, &req)
+	updatedProduct, err := h.productSvc.UpdateProduct(ctx, productID, &req)
 	if err != nil {
 		switch err {
 		case customErr.ErrProductNotFound:
@@ -138,7 +136,7 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 		return
 	}
 
-	if err := h.productService.DeleteProduct(ctx, productID); err != nil {
+	if err := h.productSvc.DeleteProduct(ctx, productID); err != nil {
 		switch err {
 		case customErr.ErrProductNotFound:
 			util.JSON(c, http.StatusNotFound, err.Error(), nil)
@@ -164,7 +162,7 @@ func (h *ProductHandler) DeleteManyProducts(c *gin.Context) {
 		return
 	}
 
-	rowsAccepted, err := h.productService.DeleteManyProducts(ctx, req)
+	rowsAccepted, err := h.productSvc.DeleteManyProducts(ctx, req)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return

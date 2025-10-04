@@ -1,12 +1,9 @@
 package util
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gosimple/slug"
 	"github.com/tienhai2808/ecom_go/internal/response"
-	"github.com/tienhai2808/ecom_go/internal/initialization"
 )
 
 func JSON(c *gin.Context, statusCode int, message string, data any) {
@@ -15,15 +12,6 @@ func JSON(c *gin.Context, statusCode int, message string, data any) {
 		Message:    message,
 		Data:       data,
 	})
-}
-
-func NewSnowflakeID() (int64, error) {
-	id, err := initialization.Sf.NextID()
-	if err != nil {
-		return 0, fmt.Errorf("tạo ID thất bại")
-	}
-
-	return id, nil
 }
 
 func GenerateSlug(str string) string {

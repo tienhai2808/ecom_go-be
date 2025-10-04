@@ -6,15 +6,11 @@ import (
 )
 
 type ImageHandler struct {
-	imageService    service.ImageService
+	imageSvc service.ImageService
 }
 
-func NewImageHandler(imageService service.ImageService) *ImageHandler {
-	return &ImageHandler{
-		imageService:    imageService,
-	}
+func NewImageHandler(imageSvc service.ImageService) *ImageHandler {
+	return &ImageHandler{imageSvc}
 }
 
-func (h *ImageHandler) UploadImages(c *gin.Context) {
-
-}
+func (h *ImageHandler) UploadImages(c *gin.Context) {}

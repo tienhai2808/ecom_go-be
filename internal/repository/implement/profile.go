@@ -16,9 +16,7 @@ type profileRepositoryImpl struct {
 }
 
 func NewProfileRepository(db *gorm.DB) repository.ProfileRepository {
-	return &profileRepositoryImpl{
-		db: db,
-	}
+	return &profileRepositoryImpl{db}
 }
 
 func (r *profileRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Profile, error) {

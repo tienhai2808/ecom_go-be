@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 )
 
 type KafkaClient struct {

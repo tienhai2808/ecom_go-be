@@ -5,6 +5,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
 	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
+	"github.com/tienhai2808/ecom_go/internal/snowflake"
 
 	"gorm.io/gorm"
 )
@@ -14,14 +15,14 @@ type UserModule struct {
 	UserHandler    *handler.UserHandler
 }
 
-func NewUserContainer(db *gorm.DB) *UserModule {
+func NewUserContainer(db *gorm.DB, sfg snowflake.SnowflakeGenerator) *UserModule {
 	userRepo := repoImpl.NewUserRepository(db)
 	profileRepo := repoImpl.NewProfileRepository(db)
-	userService := serviceImpl.NewUserService(userRepo, profileRepo)
-	userHandler := handler.NewUserHandler(userService)
+	userSvc := serviceImpl.NewUserService(userRepo, profileRepo, sfg)
+	userHdl := handler.NewUserHandler(userSvc)
 
 	return &UserModule{
-		UserRepository: userRepo,
-		UserHandler:    userHandler,
+		userRepo,
+		userHdl,
 	}
 }

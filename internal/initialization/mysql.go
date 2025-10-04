@@ -3,7 +3,7 @@ package initialization
 import (
 	"database/sql"
 	"fmt"
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/model"
 
 	"gorm.io/driver/mysql"

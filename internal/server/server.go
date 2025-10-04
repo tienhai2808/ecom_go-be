@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/consumers"
 	"github.com/tienhai2808/ecom_go/internal/container"
 	"github.com/tienhai2808/ecom_go/internal/initialization"
@@ -41,7 +41,8 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	if err = initialization.InitSnowFlake(); err != nil {
+	sf, err := initialization.InitSnowFlake()
+	if err != nil {
 		return nil, err
 	}
 
@@ -57,7 +58,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann)
+	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann, sf)
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
 	go consumers.StartSendEmailConsumer(rmq, ctn.AuthModule.SMTPService)

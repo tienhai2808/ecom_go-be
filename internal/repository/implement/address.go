@@ -14,9 +14,7 @@ type addressRepositoryImpl struct {
 }
 
 func NewAddressRepository(db *gorm.DB) repository.AddressRepository {
-	return &addressRepositoryImpl{
-		db: db,
-	}
+	return &addressRepositoryImpl{db}
 }
 
 func (r *addressRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Address, error) {

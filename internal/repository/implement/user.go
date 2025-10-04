@@ -15,9 +15,7 @@ type userRepositoryImpl struct {
 }
 
 func NewUserRepository(db *gorm.DB) repository.UserRepository {
-	return &userRepositoryImpl{
-		db: db,
-	}
+	return &userRepositoryImpl{db}
 }
 
 func (r *userRepositoryImpl) FindAll(ctx context.Context) ([]*model.User, error) {

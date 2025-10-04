@@ -15,9 +15,7 @@ type imageRepositoryImpl struct {
 }
 
 func NewImageRepository(db *gorm.DB) repository.ImageRepository {
-	return &imageRepositoryImpl{
-		db: db,
-	}
+	return &imageRepositoryImpl{db}
 }
 
 func (r *imageRepositoryImpl) GetImageByID(ctx context.Context, id string) (*model.Image, error) {

@@ -10,9 +10,8 @@ import (
 	mrand "math/rand"
 	"time"
 
-	"github.com/tienhai2808/ecom_go/config"
 	"github.com/tienhai2808/ecom_go/internal/common"
-	"github.com/tienhai2808/ecom_go/internal/types"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
@@ -22,6 +21,8 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/response"
 	"github.com/tienhai2808/ecom_go/internal/security"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/snowflake"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"github.com/tienhai2808/ecom_go/internal/util"
 
 	"github.com/google/uuid"
@@ -29,25 +30,27 @@ import (
 )
 
 type authServiceImpl struct {
-	userRepository    repository.UserRepository
-	authRepository    repository.AuthRepository
-	profileRepository repository.ProfileRepository
-	rabbitChan        *amqp091.Channel
-	config            *config.Config
+	userRepo    repository.UserRepository
+	authRepo    repository.AuthRepository
+	profileRepo repository.ProfileRepository
+	rabbitChan  *amqp091.Channel
+	cfg         *config.Config
+	sfg         snowflake.SnowflakeGenerator
 }
 
-func NewAuthService(userRepository repository.UserRepository, authRepository repository.AuthRepository, profileRepository repository.ProfileRepository, rabbitChan *amqp091.Channel, config *config.Config) service.AuthService {
+func NewAuthService(userRepo repository.UserRepository, authRepo repository.AuthRepository, profileRepo repository.ProfileRepository, rabbitChan *amqp091.Channel, cfg *config.Config, sfg snowflake.SnowflakeGenerator) service.AuthService {
 	return &authServiceImpl{
-		userRepository:    userRepository,
-		authRepository:    authRepository,
-		profileRepository: profileRepository,
-		rabbitChan:        rabbitChan,
-		config:            config,
+		userRepo,
+		authRepo,
+		profileRepo,
+		rabbitChan,
+		cfg,
+		sfg,
 	}
 }
 
 func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest) (string, error) {
-	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -56,7 +59,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 		return "", customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.ExistsByUsername(ctx, req.Username)
+	exists, err = s.userRepo.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -81,7 +84,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 		Attempts: 0,
 	}
 
-	if err = s.authRepository.AddRegistrationData(ctx, registrationToken, regData, 3*time.Minute); err != nil {
+	if err = s.authRepo.AddRegistrationData(ctx, registrationToken, regData, 3*time.Minute); err != nil {
 		return "", fmt.Errorf("lưu dữ liệu đăng ký thất bại: %w", err)
 	}
 
@@ -102,7 +105,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 }
 
 func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySignUpRequest) (*response.UserResponse, string, string, error) {
-	regData, err := s.authRepository.GetRegistrationData(ctx, req.RegistrationToken)
+	regData, err := s.authRepo.GetRegistrationData(ctx, req.RegistrationToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu đăng ký thất bại: %w", err)
 	}
@@ -112,14 +115,14 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 	}
 
 	if regData.Attempts >= 3 {
-		if err = s.authRepository.DeleteAuthData(ctx, "signup", req.RegistrationToken); err != nil {
+		if err = s.authRepo.DeleteAuthData(ctx, "signup", req.RegistrationToken); err != nil {
 			return nil, "", "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
 		}
 		return nil, "", "", customErr.ErrTooManyAttempts
 	}
 
 	regData.Attempts++
-	if err = s.authRepository.UpdateRegistrationData(ctx, req.RegistrationToken, *regData, 3*time.Minute); err != nil {
+	if err = s.authRepo.UpdateRegistrationData(ctx, req.RegistrationToken, *regData, 3*time.Minute); err != nil {
 		return nil, "", "", fmt.Errorf("cập nhật dữ liệu đăng ký thất bại: %w", err)
 	}
 
@@ -127,7 +130,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrInvalidOTP
 	}
 
-	exists, err := s.userRepository.ExistsByEmail(ctx, regData.Email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, regData.Email)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -136,7 +139,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.ExistsByUsername(ctx, regData.Username)
+	exists, err = s.userRepo.ExistsByUsername(ctx, regData.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -145,11 +148,11 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", customErr.ErrUsernameExists
 	}
 
-	userID, err := util.NewSnowflakeID()
+	userID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, "", "", err
 	}
-	profileID, err := util.NewSnowflakeID()
+	profileID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -164,21 +167,21 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		},
 	}
 
-	if err := s.userRepository.Create(ctx, newUser); err != nil {
+	if err := s.userRepo.Create(ctx, newUser); err != nil {
 		return nil, "", "", fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.config.App.JWTSecret)
+	accessToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 7*24*time.Hour, s.config.App.JWTSecret)
+	refreshToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 7*24*time.Hour, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	if err = s.authRepository.DeleteAuthData(ctx, "signup", req.RegistrationToken); err != nil {
+	if err = s.authRepo.DeleteAuthData(ctx, "signup", req.RegistrationToken); err != nil {
 		return nil, "", "", fmt.Errorf("xóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
@@ -186,7 +189,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.UserResponse, string, string, error) {
-	user, err := s.userRepository.FindByUsername(ctx, req.Username)
+	user, err := s.userRepo.FindByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -200,12 +203,12 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
@@ -214,7 +217,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 }
 
 func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.ForgotPasswordRequest) (string, error) {
-	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return "", fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -232,7 +235,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 		Attempts: 0,
 	}
 
-	if err = s.authRepository.AddForgotPasswordData(ctx, forgotPasswordToken, forgData, 3*time.Minute); err != nil {
+	if err = s.authRepo.AddForgotPasswordData(ctx, forgotPasswordToken, forgData, 3*time.Minute); err != nil {
 		return "", fmt.Errorf("lưu dữ liệu quên mật khẩu thất bại: %w", err)
 	}
 
@@ -253,7 +256,7 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 }
 
 func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.VerifyForgotPasswordRequest) (string, error) {
-	forgData, err := s.authRepository.GetForgotPasswordData(ctx, req.ForgotPasswordToken)
+	forgData, err := s.authRepo.GetForgotPasswordData(ctx, req.ForgotPasswordToken)
 	if err != nil {
 		return "", fmt.Errorf("lấy dữ liệu quên mật khẩu thất bại: %w", err)
 	}
@@ -263,7 +266,7 @@ func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.
 	}
 
 	if forgData.Attempts >= 3 {
-		if err = s.authRepository.DeleteAuthData(ctx, "forgot-password", req.ForgotPasswordToken); err != nil {
+		if err = s.authRepo.DeleteAuthData(ctx, "forgot-password", req.ForgotPasswordToken); err != nil {
 			return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
 		}
 		return "", customErr.ErrTooManyAttempts
@@ -275,11 +278,11 @@ func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.
 
 	resetPasswordToken := uuid.NewString()
 
-	if err = s.authRepository.AddResetPasswordData(ctx, resetPasswordToken, forgData.Email, 3*time.Minute); err != nil {
+	if err = s.authRepo.AddResetPasswordData(ctx, resetPasswordToken, forgData.Email, 3*time.Minute); err != nil {
 		return "", fmt.Errorf("lưu dữ liệu thay đổi mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.authRepository.DeleteAuthData(ctx, "forgot-password", req.ForgotPasswordToken); err != nil {
+	if err = s.authRepo.DeleteAuthData(ctx, "forgot-password", req.ForgotPasswordToken); err != nil {
 		return "", fmt.Errorf("xóa dữ liệu quên mật khẩu thất bại: %w", err)
 	}
 
@@ -287,7 +290,7 @@ func (s *authServiceImpl) VerifyForgotPassword(ctx context.Context, req request.
 }
 
 func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPasswordRequest) (*response.UserResponse, string, string, error) {
-	email, err := s.authRepository.GetResetPasswordData(ctx, req.ResetPasswordToken)
+	email, err := s.authRepo.GetResetPasswordData(ctx, req.ResetPasswordToken)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
@@ -296,7 +299,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", customErr.ErrKeyNotFound
 	}
 
-	user, err := s.userRepository.FindByEmail(ctx, email)
+	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -310,24 +313,24 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.userRepository.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
+	if err = s.userRepo.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return nil, "", "", err
 		}
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}
 
-	if err = s.authRepository.DeleteAuthData(ctx, "reset-password", req.ResetPasswordToken); err != nil {
+	if err = s.authRepo.DeleteAuthData(ctx, "reset-password", req.ResetPasswordToken); err != nil {
 		return nil, "", "", fmt.Errorf("xóa dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
 
@@ -335,7 +338,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 }
 
 func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req request.ChangePasswordRequest) (*response.UserResponse, string, string, error) {
-	user, err := s.userRepository.FindByIDWithProfile(ctx, userID)
+	user, err := s.userRepo.FindByIDWithProfile(ctx, userID)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -357,19 +360,19 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req 
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	if err = s.userRepository.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
+	if err = s.userRepo.Update(ctx, user.ID, map[string]any{"password": hashedPassword}); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return nil, "", "", err
 		}
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.config.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
 
-	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.config.App.JWTSecret)
+	refreshToken, err := security.GenerateToken(user.ID, string(user.Role), 7*24*time.Hour, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo refresh_token thất bại: %w", err)
 	}

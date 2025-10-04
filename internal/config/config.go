@@ -64,7 +64,7 @@ type Config struct {
 func LoadConfig() (*Config, error) {
 	var config Config
 
-	file, err := os.Open("config/config.yaml")
+	file, err := os.Open("configs/config.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("không thể mở file config: %w", err)
 	}

@@ -1,30 +1,29 @@
 package router
 
 import (
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/security"
-
 	"github.com/gin-gonic/gin"
 )
 
-func NewProductRouter(rg *gin.RouterGroup, config *config.Config, userRepository repository.UserRepository, productHandler *handler.ProductHandler) {
-	accessName := config.App.AccessName
-	secretKey := config.App.JWTSecret
+func NewProductRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo repository.UserRepository, productHdl *handler.ProductHandler) {
+	accessName := cfg.App.AccessName
+	secretKey := cfg.App.JWTSecret
 
 	product := rg.Group("/products")
 	{
-		product.GET("", productHandler.GetAllProducts)
+		product.GET("", productHdl.GetAllProducts)
 
-		product.GET("/:id", productHandler.GetProductByID)
+		product.GET("/:id", productHdl.GetProductByID)
 
-		product.POST("", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.CreateProduct)
+		product.POST("", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.CreateProduct)
 
-		product.PATCH("/:id", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.UpdateProduct)
+		product.PATCH("/:id", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.UpdateProduct)
 
-		product.DELETE("/:id", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.DeleteProduct)
+		product.DELETE("/:id", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.DeleteProduct)
 
-		product.DELETE("", security.RequireAuth(accessName, secretKey, userRepository), security.RequireAdmin(), productHandler.DeleteManyProducts)
+		product.DELETE("", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.DeleteManyProducts)
 	}
 }

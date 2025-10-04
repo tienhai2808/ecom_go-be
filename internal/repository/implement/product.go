@@ -16,14 +16,11 @@ type productRepositoryImpl struct {
 }
 
 func NewProductRepository(db *gorm.DB) repository.ProductRepository {
-	return &productRepositoryImpl{
-		db: db,
-	}
+	return &productRepositoryImpl{db}
 }
 
 func (r *productRepositoryImpl) GetAllProducts(ctx context.Context) ([]*model.Product, error) {
 	var products []*model.Product
-
 	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&products).Error; err != nil {
 		return nil, err
 	}

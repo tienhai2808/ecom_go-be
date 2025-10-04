@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/cloudinary/cloudinary-go/v2"
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 )
 
 func InitCloudinary(cfg *config.Config) (*cloudinary.Cloudinary, error) {

@@ -10,23 +10,26 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"github.com/tienhai2808/ecom_go/internal/util"
 )
 
 type productServiceImpl struct {
-	productRepository  repository.ProductRepository
-	categoryRepository repository.CategoryRepository
+	productRepo  repository.ProductRepository
+	categoryRepo repository.CategoryRepository
+	sfg          snowflake.SnowflakeGenerator
 }
 
-func NewProductService(productRepository repository.ProductRepository, categoryRepository repository.CategoryRepository) service.ProductService {
+func NewProductService(productRepo repository.ProductRepository, categoryRepo repository.CategoryRepository, sfg snowflake.SnowflakeGenerator) service.ProductService {
 	return &productServiceImpl{
-		productRepository,
-		categoryRepository,
+		productRepo,
+		categoryRepo,
+		sfg,
 	}
 }
 
 func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Product, error) {
-	products, err := s.productRepository.GetAllProducts(ctx)
+	products, err := s.productRepo.GetAllProducts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("lấy tất cả sản phẩm thất bại: %w", err)
 	}
@@ -35,7 +38,7 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 }
 
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {
-	product, err := s.productRepository.GetProductByID(ctx, id)
+	product, err := s.productRepo.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -48,16 +51,16 @@ func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*mod
 }
 
 func (s *productServiceImpl) CreateProduct(ctx context.Context, req request.CreateProductRequest) (*model.Product, error) {
-	productID, err := util.NewSnowflakeID()
+	productID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, err
 	}
-	inventoryID, err := util.NewSnowflakeID()
+	inventoryID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, err
 	}
 
-	category, err := s.categoryRepository.FindByID(ctx, req.CategoryID)
+	category, err := s.categoryRepo.FindByID(ctx, req.CategoryID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin danh mục sản phẩm thất bại: %w", err)
 	}
@@ -80,7 +83,7 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req request.Crea
 	}
 	newProduct.Inventory.SetStock()
 
-	if err := s.productRepository.CreateProduct(ctx, newProduct); err != nil {
+	if err := s.productRepo.CreateProduct(ctx, newProduct); err != nil {
 		return nil, fmt.Errorf("tạo sản phẩm thất bại: %w", err)
 	}
 
@@ -88,7 +91,7 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req request.Crea
 }
 
 func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *request.UpdateProductRequest) (*model.Product, error) {
-	product, err := s.productRepository.GetProductByID(ctx, id)
+	product, err := s.productRepo.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -114,7 +117,7 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 	}
 
 	if len(updateData) > 0 {
-		if err = s.productRepository.UpdateProductByID(ctx, id, updateData); err != nil {
+		if err = s.productRepo.UpdateProductByID(ctx, id, updateData); err != nil {
 			if errors.Is(err, customErr.ErrProductNotFound) {
 				return nil, err
 			}
@@ -122,7 +125,7 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 		}
 	}
 
-	updatedProduct, err := s.productRepository.GetProductByID(ctx, id)
+	updatedProduct, err := s.productRepo.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -135,7 +138,7 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 }
 
 func (s *productServiceImpl) DeleteProduct(ctx context.Context, id int64) error {
-	if err := s.productRepository.DeleteProductByID(ctx, id); err != nil {
+	if err := s.productRepo.DeleteProductByID(ctx, id); err != nil {
 		if errors.Is(err, customErr.ErrProductNotFound) {
 			return err
 		}
@@ -147,7 +150,7 @@ func (s *productServiceImpl) DeleteProduct(ctx context.Context, id int64) error 
 
 func (s *productServiceImpl) DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error) {
 	productIDs := req.IDs
-	rowsAccepted, err := s.productRepository.DeleteManyProducts(ctx, productIDs)
+	rowsAccepted, err := s.productRepo.DeleteManyProducts(ctx, productIDs)
 	if err != nil {
 		return 0, fmt.Errorf("xóa danh sách sản phẩm thât bại: %w", err)
 	}

@@ -7,13 +7,11 @@ import (
 )
 
 type CategoryHandler struct {
-	categoryService service.CategoryService
+	categorySvc service.CategoryService
 }
 
-func NewCategoryHandler(categoryService service.CategoryService) *CategoryHandler {
-	return &CategoryHandler{
-		categoryService: categoryService,
-	}
+func NewCategoryHandler(categorySvc service.CategoryService) *CategoryHandler {
+	return &CategoryHandler{categorySvc}
 }
 
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {

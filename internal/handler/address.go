@@ -18,13 +18,11 @@ import (
 )
 
 type AddressHandler struct {
-	addressService service.AddressService
+	addressSvc service.AddressService
 }
 
-func NewAddressHandler(addressService service.AddressService) *AddressHandler {
-	return &AddressHandler{
-		addressService: addressService,
-	}
+func NewAddressHandler(addressSvc service.AddressService) *AddressHandler {
+	return &AddressHandler{addressSvc}
 }
 
 func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
@@ -43,7 +41,7 @@ func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
 		return
 	}
 
-	addresses, err := h.addressService.GetMyAddresses(ctx, user.ID)
+	addresses, err := h.addressSvc.GetMyAddresses(ctx, user.ID)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -77,7 +75,7 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 		return
 	}
 
-	address, err := h.addressService.GetAddressDetail(ctx, user.ID, addressID)
+	address, err := h.addressSvc.GetAddressDetail(ctx, user.ID, addressID)
 	if err != nil {
 		switch err {
 		case customErr.ErrUnauthorized, customErr.ErrAddressNotFound:
@@ -118,7 +116,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 		return
 	}
 
-	newAddress, err := h.addressService.CreateAddress(ctx, user.ID, req)
+	newAddress, err := h.addressSvc.CreateAddress(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserAddressNotFound, customErr.ErrExceedsQuantity:
@@ -166,7 +164,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	updatedAddress, err := h.addressService.UpdateAddress(ctx, user.ID, addressID, req)
+	updatedAddress, err := h.addressSvc.UpdateAddress(ctx, user.ID, addressID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrExceedsQuantity, customErr.ErrUserAddressNotFound, customErr.ErrUnauthorized:
@@ -205,7 +203,7 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 		return
 	}
 
-	if err := h.addressService.DeleteAddress(ctx, user.ID, addressID); err != nil {
+	if err := h.addressSvc.DeleteAddress(ctx, user.ID, addressID); err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrUnauthorized:
 			util.JSON(c, http.StatusBadRequest, err.Error(), nil)

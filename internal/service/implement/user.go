@@ -4,28 +4,32 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"github.com/tienhai2808/ecom_go/internal/util"
 )
 
 type userServiceImpl struct {
-	userRepository    repository.UserRepository
-	profileRepository repository.ProfileRepository
+	userRepo    repository.UserRepository
+	profileRepo repository.ProfileRepository
+	sfg         snowflake.SnowflakeGenerator
 }
 
-func NewUserService(userRepository repository.UserRepository, profileRepository repository.ProfileRepository) service.UserService {
+func NewUserService(userRepo repository.UserRepository, profileRepo repository.ProfileRepository, sfg snowflake.SnowflakeGenerator) service.UserService {
 	return &userServiceImpl{
-		userRepository:    userRepository,
-		profileRepository: profileRepository,
+		userRepo,
+		profileRepo,
+		sfg,
 	}
 }
 
 func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error) {
-	users, err := s.userRepository.FindAll(ctx)
+	users, err := s.userRepo.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("lấy tất cả người dùng thất bại: %w", err)
 	}
@@ -34,7 +38,7 @@ func (s *userServiceImpl) GetAllUsers(ctx context.Context) ([]*model.User, error
 }
 
 func (s *userServiceImpl) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
-	user, err := s.userRepository.FindByIDWithProfile(ctx, id)
+	user, err := s.userRepo.FindByIDWithProfile(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -47,7 +51,7 @@ func (s *userServiceImpl) GetUserByID(ctx context.Context, id int64) (*model.Use
 }
 
 func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUserRequest) (*model.User, error) {
-	exists, err := s.userRepository.ExistsByEmail(ctx, req.Email)
+	exists, err := s.userRepo.ExistsByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -55,7 +59,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, customErr.ErrEmailExists
 	}
 
-	exists, err = s.userRepository.ExistsByUsername(ctx, req.Username)
+	exists, err = s.userRepo.ExistsByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 	}
@@ -68,11 +72,11 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
 
-	userID, err := util.NewSnowflakeID()
+	userID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, err
 	}
-	profileID, err := util.NewSnowflakeID()
+	profileID, err := s.sfg.NextID()
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +97,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		},
 	}
 
-	if err = s.userRepository.Create(ctx, newUser); err != nil {
+	if err = s.userRepo.Create(ctx, newUser); err != nil {
 		return nil, fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
@@ -101,7 +105,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 }
 
 func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request.UpdateUserRequest) (*model.User, error) {
-	user, err := s.userRepository.FindByIDWithProfile(ctx, id)
+	user, err := s.userRepo.FindByIDWithProfile(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -111,7 +115,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 
 	updateUserData := map[string]any{}
 	if req.Username != nil && *req.Username != user.Username {
-		exists, err := s.userRepository.ExistsByUsername(ctx, *req.Username)
+		exists, err := s.userRepo.ExistsByUsername(ctx, *req.Username)
 		if err != nil {
 			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 		}
@@ -121,7 +125,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 		updateUserData["username"] = *req.Username
 	}
 	if req.Email != nil && *req.Email != user.Email {
-		exists, err := s.userRepository.ExistsByEmail(ctx, *req.Email)
+		exists, err := s.userRepo.ExistsByEmail(ctx, *req.Email)
 		if err != nil {
 			return nil, fmt.Errorf("kiểm tra người dùng tồn tại thất bại: %w", err)
 		}
@@ -159,7 +163,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 	}
 
 	if len(updateUserData) > 0 {
-		if err := s.userRepository.Update(ctx, user.ID, updateUserData); err != nil {
+		if err := s.userRepo.Update(ctx, user.ID, updateUserData); err != nil {
 			if errors.Is(err, customErr.ErrUserNotFound) {
 				return nil, err
 			}
@@ -168,7 +172,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 	}
 
 	if len(updateProfileData) > 0 {
-		if err := s.profileRepository.Update(ctx, user.Profile.ID, updateProfileData); err != nil {
+		if err := s.profileRepo.Update(ctx, user.Profile.ID, updateProfileData); err != nil {
 			if errors.Is(err, customErr.ErrProfileNotFound) {
 				return nil, err
 			}
@@ -176,7 +180,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 		}
 	}
 
-	updatedUser, err := s.userRepository.FindByIDWithProfile(ctx, user.ID)
+	updatedUser, err := s.userRepo.FindByIDWithProfile(ctx, user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -189,7 +193,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 }
 
 func (s *userServiceImpl) DeleteUser(ctx context.Context, id int64) error {
-	if err := s.userRepository.Delete(ctx, id); err != nil {
+	if err := s.userRepo.Delete(ctx, id); err != nil {
 		if errors.Is(err, customErr.ErrUserNotFound) {
 			return err
 		}
@@ -213,7 +217,7 @@ func (s *userServiceImpl) DeleteUsers(ctx context.Context, currentUserID int64, 
 		return 0, customErr.ErrUserConflict
 	}
 
-	rowsAffected, err := s.userRepository.DeleteAllByID(ctx, filteredUserIDs)
+	rowsAffected, err := s.userRepo.DeleteAllByID(ctx, filteredUserIDs)
 	if err != nil {
 		return 0, fmt.Errorf("xóa người dùng thất bại: %w", err)
 	}

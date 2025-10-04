@@ -1,7 +1,9 @@
 package container
 
 import (
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/sony/sonyflake/v2"
+	"github.com/tienhai2808/ecom_go/internal/config"
+	customSf "github.com/tienhai2808/ecom_go/internal/snowflake"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -17,12 +19,13 @@ type Container struct {
 	ProfileModule *ProfileModule
 }
 
-func NewContainer(db *gorm.DB, redis *redis.Client, config *config.Config, rabbitChan *amqp091.Channel) *Container {
-	userModule := NewUserContainer(db)
-	authModule := NewAuthContainer(redis, config, db, rabbitChan)
-	addressModule := NewAddressContainer(db)
-	productModule := NewProductContainer(db)
-	imageModule := NewImageContainer(db, config)
+func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan *amqp091.Channel, sf *sonyflake.Sonyflake) *Container {
+	sfg := customSf.NewSnowflakeGenerator(sf)
+	userModule := NewUserContainer(db, sfg)
+	authModule := NewAuthContainer(rdb, cfg, db, rabbitChan, sfg)
+	addressModule := NewAddressContainer(db, sfg)
+	productModule := NewProductContainer(db, sfg)
+	imageModule := NewImageContainer(db, cfg)
 	profileModule := NewProfileContainer(db)
 
 	return &Container{

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tienhai2808/ecom_go/config"
 	"github.com/tienhai2808/ecom_go/internal/common"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/security"
@@ -19,16 +19,16 @@ import (
 )
 
 type AuthHandler struct {
-	authService service.AuthService
-	userService service.UserService
-	config      *config.Config
+	authSvc service.AuthService
+	userSvc service.UserService
+	cfg     *config.Config
 }
 
-func NewAuthHandler(authService service.AuthService, userService service.UserService, config *config.Config) *AuthHandler {
+func NewAuthHandler(authSvc service.AuthService, userSvc service.UserService, cfg *config.Config) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
-		userService: userService,
-		config:      config,
+		authSvc,
+		userSvc,
+		cfg,
 	}
 }
 
@@ -43,7 +43,7 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.SignUp(ctx, req)
+	token, err := h.authSvc.SignUp(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
@@ -70,7 +70,7 @@ func (h *AuthHandler) VerifySignUp(c *gin.Context) {
 		return
 	}
 
-	userRes, accessToken, refreshToken, err := h.authService.VerifySignUp(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authSvc.VerifySignUp(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrInvalidOTP, customErr.ErrTooManyAttempts, customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrKeyNotFound:
@@ -81,8 +81,8 @@ func (h *AuthHandler) VerifySignUp(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Đăng ký thành công", gin.H{
 		"user": userRes,
@@ -100,7 +100,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		return
 	}
 
-	userRes, accessToken, refreshToken, err := h.authService.SignIn(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authSvc.SignIn(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
@@ -111,8 +111,8 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Đăng nhập thành công", gin.H{
 		"user": userRes,
@@ -120,8 +120,8 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 }
 
 func (h *AuthHandler) SignOut(c *gin.Context) {
-	c.SetCookie(h.config.App.AccessName, "", -1, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, "", -1, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, "", -1, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, "", -1, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Đăng xuất thành công", nil)
 }
@@ -157,20 +157,20 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newAccessToken, err := security.GenerateToken(userID, userRole, 15*time.Minute, h.config.App.JWTSecret)
+	newAccessToken, err := security.GenerateToken(userID, userRole, 15*time.Minute, h.cfg.App.JWTSecret)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, fmt.Sprintf("tạo access token mới thất bại: %v", err), nil)
 		return
 	}
 
-	newRefreshToken, err := security.GenerateToken(userID, userRole, 7*24*time.Hour, h.config.App.JWTSecret)
+	newRefreshToken, err := security.GenerateToken(userID, userRole, 7*24*time.Hour, h.cfg.App.JWTSecret)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, fmt.Sprintf("tạo refresh token mới thất bại: %v", err), nil)
 		return
 	}
 
-	c.SetCookie(h.config.App.AccessName, newAccessToken, 900, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, newRefreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, newAccessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, newRefreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Làm mới token thành công", nil)
 }
@@ -186,7 +186,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.ForgotPassword(ctx, req)
+	token, err := h.authSvc.ForgotPassword(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
@@ -213,7 +213,7 @@ func (h *AuthHandler) VerifyForgotPassword(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authService.VerifyForgotPassword(ctx, req)
+	token, err := h.authSvc.VerifyForgotPassword(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrInvalidOTP, customErr.ErrKeyNotFound, customErr.ErrTooManyAttempts:
@@ -240,7 +240,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	userRes, accessToken, refreshToken, err := h.authService.ResetPassword(ctx, req)
+	userRes, accessToken, refreshToken, err := h.authSvc.ResetPassword(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound, customErr.ErrKeyNotFound:
@@ -251,8 +251,8 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Lấy lại mật khẩu thành công", gin.H{
 		"user": userRes,
@@ -282,7 +282,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	userRes, accessToken, refreshToken, err := h.authService.ChangePassword(ctx, user.ID, req)
+	userRes, accessToken, refreshToken, err := h.authSvc.ChangePassword(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrIncorrectPassword, customErr.ErrUserNotFound:
@@ -293,8 +293,8 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.config.App.AccessName, accessToken, 900, "/", "", false, true)
-	c.SetCookie(h.config.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.config.App.ApiPrefix), "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	util.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
 		"user": userRes,

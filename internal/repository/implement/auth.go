@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/types"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"time"
@@ -13,14 +13,14 @@ import (
 )
 
 type authRepositoryImpl struct {
-	redis  *redis.Client
-	config *config.Config
+	rdb  *redis.Client
+	cfg *config.Config
 }
 
-func NewAuthRepository(redis *redis.Client, config *config.Config) repository.AuthRepository {
+func NewAuthRepository(rdb *redis.Client, cfg *config.Config) repository.AuthRepository {
 	return &authRepositoryImpl{
-		redis:  redis,
-		config: config,
+		rdb,
+		cfg,
 	}
 }
 
@@ -30,9 +30,9 @@ func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token stri
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
 	}
 
-	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
 
-	if err := r.redis.Set(ctx, redisKey, regData, ttl).Err(); err != nil {
+	if err := r.rdb.Set(ctx, redisKey, regData, ttl).Err(); err != nil {
 		return err
 	}
 
@@ -40,9 +40,9 @@ func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token stri
 }
 
 func (r *authRepositoryImpl) DeleteAuthData(ctx context.Context, name, token string) error {
-	redisKey := fmt.Sprintf("%s:%s:%s", r.config.App.Name, name, token)
+	redisKey := fmt.Sprintf("%s:%s:%s", r.cfg.App.Name, name, token)
 
-	if err := r.redis.Del(ctx, redisKey).Err(); err != nil {
+	if err := r.rdb.Del(ctx, redisKey).Err(); err != nil {
 		return err
 	}
 
@@ -50,9 +50,9 @@ func (r *authRepositoryImpl) DeleteAuthData(ctx context.Context, name, token str
 }
 
 func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token string) (*types.RegistrationData, error) {
-	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
 
-	regDataJSON, err := r.redis.Get(ctx, redisKey).Result()
+	regDataJSON, err := r.rdb.Get(ctx, redisKey).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -73,8 +73,8 @@ func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token s
 		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
 	}
 
-	redisKey := fmt.Sprintf("%s:signup:%s", r.config.App.Name, token)
-	if err := r.redis.Set(ctx, redisKey, regDataJSON, ttl).Err(); err != nil {
+	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
+	if err := r.rdb.Set(ctx, redisKey, regDataJSON, ttl).Err(); err != nil {
 		return err
 	}
 
@@ -87,9 +87,9 @@ func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token st
 		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %w", err)
 	}
 
-	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.cfg.App.Name, token)
 
-	if err = r.redis.Set(ctx, redisKey, forgDataJSON, ttl).Err(); err != nil {
+	if err = r.rdb.Set(ctx, redisKey, forgDataJSON, ttl).Err(); err != nil {
 		return err
 	}
 
@@ -97,9 +97,9 @@ func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token st
 }
 
 func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token string) (*types.ForgotPasswordData, error) {
-	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.cfg.App.Name, token)
 
-	forgDataJSON, err := r.redis.Get(ctx, redisKey).Result()
+	forgDataJSON, err := r.rdb.Get(ctx, redisKey).Result()
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
@@ -115,9 +115,9 @@ func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token st
 }
 
 func (r *authRepositoryImpl) AddResetPasswordData(ctx context.Context, token, email string, ttl time.Duration) error {
-	redisKey := fmt.Sprintf("%s:reset-password:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:reset-password:%s", r.cfg.App.Name, token)
 
-	if err := r.redis.Set(ctx, redisKey, email, ttl).Err(); err != nil {
+	if err := r.rdb.Set(ctx, redisKey, email, ttl).Err(); err != nil {
 		return err
 	}
 
@@ -125,9 +125,9 @@ func (r *authRepositoryImpl) AddResetPasswordData(ctx context.Context, token, em
 }
 
 func (r *authRepositoryImpl) GetResetPasswordData(ctx context.Context, token string) (string, error) {
-	redisKey := fmt.Sprintf("%s:reset-password:%s", r.config.App.Name, token)
+	redisKey := fmt.Sprintf("%s:reset-password:%s", r.cfg.App.Name, token)
 
-	email, err := r.redis.Get(ctx, redisKey).Result()
+	email, err := r.rdb.Get(ctx, redisKey).Result()
 	if err == redis.Nil {
 		return "", nil
 	} else if err != nil {

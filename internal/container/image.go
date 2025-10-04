@@ -1,7 +1,7 @@
 package container
 
 import (
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
 	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
@@ -15,10 +15,8 @@ type ImageModule struct {
 func NewImageContainer(db *gorm.DB, config *config.Config) *ImageModule {
 	imageRepo := repoImpl.NewImageRepository(db)
 	productRepo := repoImpl.NewProductRepository(db)
-	imageService := serviceImpl.NewImageService(imageRepo, productRepo)
-	imageHandler := handler.NewImageHandler(imageService)
+	imageSvc := serviceImpl.NewImageService(imageRepo, productRepo)
+	imageHdl := handler.NewImageHandler(imageSvc)
 
-	return &ImageModule{
-		ImageHandler: imageHandler,
-	}
+	return &ImageModule{imageHdl}
 }

@@ -19,20 +19,18 @@ import (
 )
 
 type UserHandler struct {
-	userService service.UserService
+	userSvc service.UserService
 }
 
-func NewUserHandler(userService service.UserService) *UserHandler {
-	return &UserHandler{
-		userService: userService,
-	}
+func NewUserHandler(userSvc service.UserService) *UserHandler {
+	return &UserHandler{userSvc}
 }
 
 func (h *UserHandler) GetAllUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	users, err := h.userService.GetAllUsers(ctx)
+	users, err := h.userSvc.GetAllUsers(ctx)
 	if err != nil {
 		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
@@ -54,7 +52,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userService.GetUserByID(ctx, userID)
+	user, err := h.userSvc.GetUserByID(ctx, userID)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
@@ -82,7 +80,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	newUser, err := h.userService.CreateUser(ctx, req)
+	newUser, err := h.userSvc.CreateUser(ctx, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
@@ -118,7 +116,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	updatedUser, err := h.userService.UpdateUser(ctx, userID, &req)
+	updatedUser, err := h.userSvc.UpdateUser(ctx, userID, &req)
 	if err != nil {
 		switch err {
 		case customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrUserNotFound, customErr.ErrProfileNotFound:
@@ -161,7 +159,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.DeleteUser(ctx, reqUserID); err != nil {
+	if err := h.userSvc.DeleteUser(ctx, reqUserID); err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
 			util.JSON(c, http.StatusNotFound, err.Error(), nil)
@@ -199,7 +197,7 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 		return
 	}
 
-	rowsAccepted, err := h.userService.DeleteUsers(ctx, user.ID, req)
+	rowsAccepted, err := h.userSvc.DeleteUsers(ctx, user.ID, req)
 	if err != nil {
 		switch err {
 		case customErr.ErrUserConflict:

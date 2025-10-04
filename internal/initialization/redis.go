@@ -3,7 +3,7 @@ package initialization
 import (
 	"context"
 	"fmt"
-	"github.com/tienhai2808/ecom_go/config"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	
 	"github.com/redis/go-redis/v9"
 )
