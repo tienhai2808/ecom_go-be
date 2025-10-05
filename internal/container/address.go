@@ -9,15 +9,13 @@ import (
 )
 
 type AddressModule struct {
-	AddressHandler *handler.AddressHandler
+	AddressHdl *handler.AddressHandler
 }
 
 func NewAddressContainer(db *gorm.DB, sfg snowflake.SnowflakeGenerator) *AddressModule {
 	addressRepo := repoImpl.NewAddressRepository(db)
-	addressService := serviceImpl.NewAddressService(db, addressRepo, sfg)
-	addressHandler := handler.NewAddressHandler(addressService)
+	addressSvc := serviceImpl.NewAddressService(db, addressRepo, sfg)
+	addressHdl := handler.NewAddressHandler(addressSvc)
 
-	return &AddressModule{
-		AddressHandler: addressHandler,
-	}
+	return &AddressModule{addressHdl}
 }

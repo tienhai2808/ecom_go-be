@@ -7,15 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
-	"github.com/tienhai2808/ecom_go/internal/util"
-
-	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
@@ -32,11 +30,11 @@ func (h *UserHandler) GetAllUsers(c *gin.Context) {
 
 	users, err := h.userSvc.GetAllUsers(ctx)
 	if err != nil {
-		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Lấy danh sách người dùng thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Lấy danh sách người dùng thành công", gin.H{
 		"users": mapper.ToUsersResponse(users),
 	})
 }
@@ -48,7 +46,7 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	userIDStr := c.Param("id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -56,14 +54,14 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
-			util.JSON(c, http.StatusNotFound, err.Error(), nil)
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Lấy người dùng thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Lấy người dùng thành công", gin.H{
 		"user": mapper.ToUserResponse(user),
 	})
 }
@@ -74,7 +72,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	var req request.CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
 			"errors": translated,
 		})
 		return
@@ -84,14 +82,14 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUsernameExists, customErr.ErrEmailExists:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusCreated, "Thêm mới người dùng thành công", gin.H{
+	common.JSON(c, http.StatusCreated, "Thêm mới người dùng thành công", gin.H{
 		"user": mapper.ToUserResponse(newUser),
 	})
 }
@@ -103,7 +101,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	var req request.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
 			"errors": translated,
 		})
 		return
@@ -112,7 +110,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	userIDStr := c.Param("id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -120,14 +118,14 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrEmailExists, customErr.ErrUsernameExists, customErr.ErrUserNotFound, customErr.ErrProfileNotFound:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Cập nhật người dùng thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Cập nhật người dùng thành công", gin.H{
 		"user": mapper.ToUserResponse(updatedUser),
 	})
 }
@@ -137,39 +135,39 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	defer cancel()
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
 	reqUserIDStr := c.Param("id")
 	reqUserID, err := strconv.ParseInt(reqUserIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
-	
+
 	if reqUserID == user.ID {
-		util.JSON(c, http.StatusConflict, "Không thể xóa chính bạn", nil)
+		common.JSON(c, http.StatusConflict, "Không thể xóa chính bạn", nil)
 		return
 	}
 
 	if err := h.userSvc.DeleteUser(ctx, reqUserID); err != nil {
 		switch err {
 		case customErr.ErrUserNotFound:
-			util.JSON(c, http.StatusNotFound, err.Error(), nil)
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Xóa người dùng thành công", nil)
+	common.JSON(c, http.StatusOK, "Xóa người dùng thành công", nil)
 }
 
 func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
@@ -179,7 +177,7 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
 			"errors": translated,
 		})
 		return
@@ -187,13 +185,13 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
@@ -201,13 +199,13 @@ func (h *UserHandler) DeleteManyUsers(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUserConflict:
-			util.JSON(c, http.StatusConflict, err.Error(), nil)
+			common.JSON(c, http.StatusConflict, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
 	message := fmt.Sprintf("Xóa thành công %d người dùng", rowsAccepted)
-	util.JSON(c, http.StatusOK, message, nil)
+	common.JSON(c, http.StatusOK, message, nil)
 }

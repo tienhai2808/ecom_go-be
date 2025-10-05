@@ -1,9 +1,16 @@
 package handler
 
 import (
-	"github.com/tienhai2808/ecom_go/internal/service"
+	"context"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/tienhai2808/ecom_go/internal/common"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/mapper"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/service"
 )
 
 type CategoryHandler struct {
@@ -15,5 +22,28 @@ func NewCategoryHandler(categorySvc service.CategoryService) *CategoryHandler {
 }
 
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
-	c.JSON(200, "Hello")
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	var req request.CreateCategoryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
+	category, err := h.categorySvc.CreateCategory(ctx, req)
+	if err != nil {
+		switch err {
+		case customErr.ErrCategorySlugAlreadyExists:
+			common.JSON(c, http.StatusConflict, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusCreated, "Tạo danh mục sản phẩm thành công", gin.H{
+		"category": mapper.ToCategoryResponse(category),
+	})
 }

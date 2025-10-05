@@ -6,9 +6,7 @@ import (
 )
 
 type ImageRepository interface {
-	GetImageByID(ctx context.Context, id string) (*model.Image, error)
+	Create(ctx context.Context, image *model.Image) error
 
-	CreateImage(ctx context.Context, image *model.Image) error
-
-	UpdateDownLoadUrlByID(ctx context.Context, id string, downloadUrl string) error
+	Update(ctx context.Context, id int64, updateData map[string]any) error
 }

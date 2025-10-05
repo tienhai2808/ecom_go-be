@@ -19,7 +19,7 @@ func NewProductRepository(db *gorm.DB) repository.ProductRepository {
 	return &productRepositoryImpl{db}
 }
 
-func (r *productRepositoryImpl) GetAllProducts(ctx context.Context) ([]*model.Product, error) {
+func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, error) {
 	var products []*model.Product
 	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&products).Error; err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (r *productRepositoryImpl) GetAllProducts(ctx context.Context) ([]*model.Pr
 	return products, nil
 }
 
-func (r *productRepositoryImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {
+func (r *productRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Product, error) {
 	var product model.Product
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&product).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -40,11 +40,11 @@ func (r *productRepositoryImpl) GetProductByID(ctx context.Context, id int64) (*
 	return &product, nil
 }
 
-func (r *productRepositoryImpl) CreateProduct(ctx context.Context, product *model.Product) error {
+func (r *productRepositoryImpl) Create(ctx context.Context, product *model.Product) error {
 	return r.db.WithContext(ctx).Create(product).Error
 }
 
-func (r *productRepositoryImpl) UpdateProductByID(ctx context.Context, id int64, updateData map[string]any) error {
+func (r *productRepositoryImpl) Update(ctx context.Context, id int64, updateData map[string]any) error {
 	result := r.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
@@ -57,7 +57,7 @@ func (r *productRepositoryImpl) UpdateProductByID(ctx context.Context, id int64,
 	return nil
 }
 
-func (r *productRepositoryImpl) DeleteProductByID(ctx context.Context, id int64) error {
+func (r *productRepositoryImpl) Delete(ctx context.Context, id int64) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Product{})
 	if result.Error != nil {
 		return result.Error
@@ -70,7 +70,7 @@ func (r *productRepositoryImpl) DeleteProductByID(ctx context.Context, id int64)
 	return nil
 }
 
-func (r *productRepositoryImpl) DeleteManyProducts(ctx context.Context, ids []int64) (int64, error) {
+func (r *productRepositoryImpl) DeleteAllByID(ctx context.Context, ids []int64) (int64, error) {
 	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.Product{})
 	if result.Error != nil {
 		return 0, result.Error

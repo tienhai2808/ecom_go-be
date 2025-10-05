@@ -14,7 +14,7 @@ type ForgotPasswordData struct {
 	Attempts int    `json:"attempts"`
 }
 
-type EmailMessage struct {
+type SendEmailMessage struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`

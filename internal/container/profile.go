@@ -8,7 +8,7 @@ import (
 )
 
 type ProfileModule struct {
-	ProfileHandler *handler.ProfileHandler
+	ProfileHdl *handler.ProfileHandler
 }
 
 func NewProfileContainer(db *gorm.DB) *ProfileModule {

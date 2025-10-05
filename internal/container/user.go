@@ -11,8 +11,8 @@ import (
 )
 
 type UserModule struct {
-	UserRepository repository.UserRepository
-	UserHandler    *handler.UserHandler
+	UserRepo repository.UserRepository
+	UserHdl  *handler.UserHandler
 }
 
 func NewUserContainer(db *gorm.DB, sfg snowflake.SnowflakeGenerator) *UserModule {

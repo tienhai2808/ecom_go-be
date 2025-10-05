@@ -17,6 +17,10 @@ func NewCategoryRepository(db *gorm.DB) repository.CategoryRepository {
 	return &categoryRepositoryImpl{db}
 }
 
+func (r *categoryRepositoryImpl) Create(ctx context.Context, category *model.Category) error {
+	return r.db.WithContext(ctx).Create(category).Error
+}
+
 func (r *categoryRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Category, error) {
 	var category model.Category
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {

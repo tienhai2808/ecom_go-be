@@ -1,11 +1,19 @@
 package request
 
-type CreateProductRequest struct {
-	Name        string  `json:"name" binding:"required,min=2"`
-	CategoryID  int64   `json:"category_id" binding:"required,gt=0"`
-	Price       float64 `json:"price" binding:"required,gt=0"`
-	Quantity    uint    `json:"quantity" binding:"required,min=0"`
-	Description string  `json:"description" binding:"omitempty"`
+type CreateProductForm struct {
+	Name        string                   `json:"name" validate:"required,min=2"`
+	CategoryID  int64                    `json:"category_id" validate:"required,gt=0"`
+	Price       float64                  `json:"price" validate:"required,gt=0"`
+	Quantity    uint                     `json:"quantity" validate:"required,min=0"`
+	Description string                   `json:"description" validate:"required,min=2"`
+	IsActive    *bool                    `json:"is_active" validate:"required"`
+	Images      []CreateProductImageForm `json:"images" validate:"required,dive"`
+}
+
+type CreateProductImageForm struct {
+	IsThumbnail *bool  `form:"is_thumbnail" validate:"required"`
+	SortOrder   int    `form:"sort_order" validate:"required,gt=0"`
+	File        []byte `form:"file" validate:"required"`
 }
 
 type UpdateProductRequest struct {

@@ -1,4 +1,4 @@
-package util
+package security
 
 import (
 	"crypto/rand"
@@ -12,8 +12,7 @@ import (
 
 func HashPassword(password string) (string, error) {
 	salt := make([]byte, 16)
-	_, err := rand.Read(salt)
-	if err != nil {
+	if _, err := rand.Read(salt);  err != nil {
 		return "", fmt.Errorf("lỗi khi tạo salt băm mật khẩu: %w", err)
 	}
 
@@ -40,8 +39,7 @@ func VerifyPassword(storedPassword, inputPassword string) (bool, error) {
 	var memory, timeCost uint32
 	var threads uint8
 
-	_, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &timeCost, &threads)
-	if err != nil {
+	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &timeCost, &threads); err != nil {
 		return false, fmt.Errorf("lỗi khi đọc tham số: %w", err)
 	}
 

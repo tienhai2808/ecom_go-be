@@ -6,15 +6,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
-	"github.com/tienhai2808/ecom_go/internal/util"
-
-	"github.com/gin-gonic/gin"
 )
 
 type AddressHandler struct {
@@ -31,23 +29,23 @@ func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
 	addresses, err := h.addressSvc.GetMyAddresses(ctx, user.ID)
 	if err != nil {
-		util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Lấy địa chỉ người dùng thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Lấy địa chỉ người dùng thành công", gin.H{
 		"addresses": mapper.ToAddressesResponse(addresses),
 	})
 }
@@ -58,20 +56,20 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
 	addressIDStr := c.Param("id")
 	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -79,14 +77,14 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUnauthorized, customErr.ErrAddressNotFound:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Lấy địa chỉ thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Lấy địa chỉ thành công", gin.H{
 		"address": mapper.ToAddressResponse(address),
 	})
 }
@@ -98,7 +96,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
 			"errors": translated,
 		})
 		return
@@ -106,13 +104,13 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
@@ -120,14 +118,14 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrUserAddressNotFound, customErr.ErrExceedsQuantity:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusCreated, "Thêm mới địa chỉ thành công", gin.H{
+	common.JSON(c, http.StatusCreated, "Thêm mới địa chỉ thành công", gin.H{
 		"address": mapper.ToAddressResponse(newAddress),
 	})
 }
@@ -139,7 +137,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		util.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
+		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
 			"errors": translated,
 		})
 		return
@@ -147,20 +145,20 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
 	addressIDStr := c.Param("id")
 	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -168,14 +166,14 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	if err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrExceedsQuantity, customErr.ErrUserAddressNotFound, customErr.ErrUnauthorized:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Cập nhật địa chỉ người dùng thành công", gin.H{
+	common.JSON(c, http.StatusOK, "Cập nhật địa chỉ người dùng thành công", gin.H{
 		"address": mapper.ToAddressResponse(updatedAddress),
 	})
 }
@@ -186,32 +184,32 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 
 	userAny, exists := c.Get("user")
 	if !exists {
-		util.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
 		return
 	}
 
 	user, ok := userAny.(*model.User)
 	if !ok {
-		util.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
 	}
 
 	addressIDStr := c.Param("id")
 	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
 	if err != nil {
-		util.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
 	if err := h.addressSvc.DeleteAddress(ctx, user.ID, addressID); err != nil {
 		switch err {
 		case customErr.ErrAddressNotFound, customErr.ErrUnauthorized:
-			util.JSON(c, http.StatusBadRequest, err.Error(), nil)
+			common.JSON(c, http.StatusBadRequest, err.Error(), nil)
 		default:
-			util.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		}
 		return
 	}
 
-	util.JSON(c, http.StatusOK, "Xóa địa chỉ thành công", nil)
+	common.JSON(c, http.StatusOK, "Xóa địa chỉ thành công", nil)
 }

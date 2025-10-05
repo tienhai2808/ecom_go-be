@@ -9,9 +9,9 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/security"
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
-	"github.com/tienhai2808/ecom_go/internal/util"
 )
 
 type userServiceImpl struct {
@@ -67,7 +67,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, customErr.ErrUsernameExists
 	}
 
-	hashedPassword, err := util.HashPassword(req.Password)
+	hashedPassword, err := security.HashPassword(req.Password)
 	if err != nil {
 		return nil, fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
@@ -135,7 +135,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int64, req *request
 		updateUserData["email"] = *req.Email
 	}
 	if req.Password != nil {
-		hashedPw, err := util.HashPassword(*req.Password)
+		hashedPw, err := security.HashPassword(*req.Password)
 		if err != nil {
 			return nil, err
 		}

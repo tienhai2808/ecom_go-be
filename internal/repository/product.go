@@ -6,15 +6,15 @@ import (
 )
 
 type ProductRepository interface {
-	GetAllProducts(ctx context.Context) ([]*model.Product, error)
+	FindAll(ctx context.Context) ([]*model.Product, error)
 
-	GetProductByID(ctx context.Context, id int64) (*model.Product, error)
+	FindByID(ctx context.Context, id int64) (*model.Product, error)
 
-	CreateProduct(ctx context.Context, product *model.Product) error
+	Create(ctx context.Context, product *model.Product) error
 
-	UpdateProductByID(ctx context.Context, id int64, updateData map[string]any) error
+	Update(ctx context.Context, id int64, updateData map[string]any) error
 
-	DeleteProductByID(ctx context.Context, id int64) error
+	Delete(ctx context.Context, id int64) error
 
-	DeleteManyProducts(ctx context.Context, ids []int64) (int64, error)
+	DeleteAllByID(ctx context.Context, ids []int64) (int64, error)
 }

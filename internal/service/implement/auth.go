@@ -23,8 +23,6 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"github.com/tienhai2808/ecom_go/internal/types"
-	"github.com/tienhai2808/ecom_go/internal/util"
-
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"
 )
@@ -71,7 +69,7 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 	otp := generateOtp(5)
 	registrationToken := uuid.NewString()
 
-	hashedPassword, err := util.HashPassword(req.Password)
+	hashedPassword, err := security.HashPassword(req.Password)
 	if err != nil {
 		return "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
@@ -88,15 +86,15 @@ func (s *authServiceImpl) SignUp(ctx context.Context, req request.SignUpRequest)
 		return "", fmt.Errorf("lưu dữ liệu đăng ký thất bại: %w", err)
 	}
 
-	emailMsg := types.EmailMessage{
+	emailMsg := types.SendEmailMessage{
 		To:      req.Email,
 		Subject: "Mã xác nhận Đăng ký tài khoản",
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	go func(msg types.EmailMessage) {
+	go func(msg types.SendEmailMessage) {
 		body, _ := json.Marshal(emailMsg)
-		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+		if err = rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeEmail, common.RoutingKeyEmailSend, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
 		}
 	}(emailMsg)
@@ -198,7 +196,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 		return nil, "", "", customErr.ErrUserNotFound
 	}
 
-	isCorrectPassword, err := util.VerifyPassword(user.Password, req.Password)
+	isCorrectPassword, err := security.VerifyPassword(user.Password, req.Password)
 	if err != nil || !isCorrectPassword {
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
@@ -239,15 +237,15 @@ func (s *authServiceImpl) ForgotPassword(ctx context.Context, req request.Forgot
 		return "", fmt.Errorf("lưu dữ liệu quên mật khẩu thất bại: %w", err)
 	}
 
-	emailMsg := types.EmailMessage{
+	emailMsg := types.SendEmailMessage{
 		To:      req.Email,
 		Subject: "Mã xác nhận Quên mật khẩu",
 		Body:    fmt.Sprintf(`Đây là mã OTP của bạn, nó sẽ hết hạn sau 3 phút: <p style="text-align: center"><strong style="font-size: 18px; color: #333;">%s</strong></p>`, otp),
 	}
 
-	go func(msg types.EmailMessage) {
+	go func(msg types.SendEmailMessage) {
 		body, _ := json.Marshal(emailMsg)
-		if err = rabbitmq.PublishMessage(s.rabbitChan, common.Exchange, common.RoutingKey, body); err != nil {
+		if err = rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeEmail, common.RoutingKeyEmailSend, body); err != nil {
 			log.Printf("publish email msg thất bại: %v", err)
 		}
 	}(emailMsg)
@@ -308,7 +306,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", customErr.ErrUserNotFound
 	}
 
-	hashedPassword, err := util.HashPassword(req.NewPassword)
+	hashedPassword, err := security.HashPassword(req.NewPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}
@@ -346,7 +344,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req 
 		return nil, "", "", customErr.ErrUserNotFound
 	}
 
-	isCorrectPassword, err := util.VerifyPassword(user.Password, req.OldPassword)
+	isCorrectPassword, err := security.VerifyPassword(user.Password, req.OldPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("so sánh mật khẩu thất bại: %w", err)
 	}
@@ -355,7 +353,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req 
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
 
-	hashedPassword, err := util.HashPassword(req.NewPassword)
+	hashedPassword, err := security.HashPassword(req.NewPassword)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("băm mật khẩu thất bại: %w", err)
 	}

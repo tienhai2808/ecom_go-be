@@ -53,15 +53,16 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	kmq := initialization.InitKafka(cfg)
 
-	_, err = initialization.InitCloudinary(cfg)
+	cld, err := initialization.InitCloudinary(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann, sf)
+	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann, sf, cld)
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
-	go consumers.StartSendEmailConsumer(rmq, ctn.AuthModule.SMTPService)
+	go consumers.StartSendEmailConsumer(rmq, ctn.SMTPSvc)
+	go consumers.StartUploadImageMessage(rmq, ctn.CloudinarySvc, ctn.ImageModule.ImageRepo)
 
 	r := gin.Default()
 
@@ -82,12 +83,13 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	api := r.Group(cfg.App.ApiPrefix)
 
-	router.NewUserRouter(api, cfg, ctn.UserModule.UserRepository, ctn.UserModule.UserHandler)
-	router.NewAuthRouter(api, cfg, ctn.UserModule.UserRepository, ctn.AuthModule.AuthHandler)
-	router.NewAddressRouter(api, cfg, ctn.UserModule.UserRepository, ctn.AddressModule.AddressHandler)
-	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ProductModule.ProductHandler)
-	router.NewImageRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ImageModule.ImageHandler)
-	router.NewProfileRouter(api, cfg, ctn.UserModule.UserRepository, ctn.ProfileModule.ProfileHandler)
+	router.NewUserRouter(api, cfg, ctn.UserModule.UserRepo, ctn.UserModule.UserHdl)
+	router.NewAuthRouter(api, cfg, ctn.UserModule.UserRepo, ctn.AuthModule.AuthHdl)
+	router.NewAddressRouter(api, cfg, ctn.UserModule.UserRepo, ctn.AddressModule.AddressHdl)
+	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProductModule.ProductHdl)
+	router.NewImageRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ImageModule.ImageHdl)
+	router.NewProfileRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProfileModule.ProfileHdl)
+	router.NewCategoryRouter(api, cfg, ctn.UserModule.UserRepo, ctn.CategoryModule.CategoryHdl)
 
 	addr := fmt.Sprintf(":%d", cfg.App.Port)
 

@@ -31,16 +31,12 @@ func (r *imageRepositoryImpl) GetImageByID(ctx context.Context, id string) (*mod
 	return &image, nil
 }
 
-func (r *imageRepositoryImpl) CreateImage(ctx context.Context, image *model.Image) error {
-	if err := r.db.WithContext(ctx).Create(image).Error; err != nil {
-		return err
-	}
-
-	return nil
+func (r *imageRepositoryImpl) Create(ctx context.Context, image *model.Image) error {
+	return r.db.WithContext(ctx).Create(image).Error
 }
 
-func (r *imageRepositoryImpl) UpdateDownLoadUrlByID(ctx context.Context, id string, downloadUrl string) error {
-	result := r.db.WithContext(ctx).Model(&model.Image{}).Where("id = ?", id).Update("download_url", downloadUrl)
+func (r *imageRepositoryImpl) Update(ctx context.Context, id int64, updateData map[string]any) error {
+	result := r.db.WithContext(ctx).Model(&model.Image{}).Where("id = ?", id).Updates(updateData)
 	if result.Error != nil {
 		return result.Error
 	}
