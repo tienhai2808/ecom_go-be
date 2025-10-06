@@ -1,6 +1,7 @@
 package cloudinary
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
@@ -17,11 +18,11 @@ func NewCloudinaryService(cld *cloudinary.Cloudinary) CloudinaryService {
 }
 
 func (s *cloudinaryServiceImpl) UploadBinaryFile(ctx context.Context, fileData []byte, fileName string) (*uploader.UploadResult, error) {
-	res, err := s.cld.Upload.Upload(ctx, fileData, uploader.UploadParams{
-		Folder: "ecom_go/product",
+	res, err := s.cld.Upload.Upload(ctx, bytes.NewReader(fileData), uploader.UploadParams{
+		Folder:         "ecom_go/product",
 		UniqueFilename: toBoolPnt(true),
-		PublicID: fileName,
-		Overwrite: toBoolPnt(false),
+		PublicID:       fileName,
+		Overwrite:      toBoolPnt(false),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("đăng tải binary file thất bại: %w", err)
@@ -32,7 +33,7 @@ func (s *cloudinaryServiceImpl) UploadBinaryFile(ctx context.Context, fileData [
 
 func (s *cloudinaryServiceImpl) DeleteFile(ctx context.Context, fileName, fileType string) error {
 	if _, err := s.cld.Upload.Destroy(ctx, uploader.DestroyParams{
-		PublicID: fileName,
+		PublicID:     fileName,
 		ResourceType: fileType,
 	}); err != nil {
 		return fmt.Errorf("xóa file thất bại: %w", err)
@@ -44,4 +45,3 @@ func (s *cloudinaryServiceImpl) DeleteFile(ctx context.Context, fileName, fileTy
 func toBoolPnt(b bool) *bool {
 	return &b
 }
-

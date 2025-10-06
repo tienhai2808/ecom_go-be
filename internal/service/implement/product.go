@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"mime"
-	"net/http"
 
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/tienhai2808/ecom_go/internal/common"
@@ -24,11 +22,11 @@ import (
 type productServiceImpl struct {
 	productRepo  repository.ProductRepository
 	categoryRepo repository.CategoryRepository
-	rabbitChan  *amqp091.Channel
+	rabbitChan   *amqp091.Channel
 	sfg          snowflake.SnowflakeGenerator
 }
 
-func NewProductService(productRepo repository.ProductRepository, categoryRepo repository.CategoryRepository, rabbitChan  *amqp091.Channel, sfg snowflake.SnowflakeGenerator) service.ProductService {
+func NewProductService(productRepo repository.ProductRepository, categoryRepo repository.CategoryRepository, rabbitChan *amqp091.Channel, sfg snowflake.SnowflakeGenerator) service.ProductService {
 	return &productServiceImpl{
 		productRepo,
 		categoryRepo,
@@ -80,27 +78,27 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req *request.Cre
 	slug := common.GenerateSlug(req.Name)
 
 	imgQuan := len(req.Images)
-	images := make([]*model.Image, imgQuan)
+	images := make([]*model.Image, 0, imgQuan)
 	publishCh := make(chan *types.UploadImageMessage, imgQuan)
 
 	if imgQuan > 0 {
 		for _, img := range req.Images {
-			fileName := fmt.Sprintf("%s_%d%s", slug, img.SortOrder, getFileExt(img.File))
+			fileName := fmt.Sprintf("%s_%d", slug, img.SortOrder)
 			imageID, err := s.sfg.NextID()
 			if err != nil {
 				return nil, err
 			}
 
 			newImg := &model.Image{
-				ID: imageID,
+				ID:          imageID,
 				IsThumbnail: *img.IsThumbnail,
-				SortOrder: img.SortOrder,
+				SortOrder:   img.SortOrder,
 			}
 
 			uploadReq := &types.UploadImageMessage{
-				ImageID: imageID,
+				ImageID:  imageID,
 				FileName: fileName,
-				FileData: img.File,
+				FileData: img.FileData,
 			}
 
 			publishCh <- uploadReq
@@ -126,10 +124,13 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req *request.Cre
 	newProduct.Inventory.SetStock()
 
 	if err := s.productRepo.Create(ctx, newProduct); err != nil {
+		if common.IsUniqueViolation(err) {
+			return nil, customErr.ErrProductSlugAlreadyExists
+		}
 		return nil, fmt.Errorf("tạo sản phẩm thất bại: %w", err)
 	}
 
-	go func ()  {
+	go func() {
 		for req := range publishCh {
 			body, _ := json.Marshal(req)
 			if err := rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeImage, common.RoutingKeyImageUpload, body); err != nil {
@@ -207,15 +208,4 @@ func (s *productServiceImpl) DeleteManyProducts(ctx context.Context, req request
 	}
 
 	return rowsAccepted, nil
-}
-
-func getFileExt(data []byte) string {
-	contentType := http.DetectContentType(data)
-
-	exts, _ := mime.ExtensionsByType(contentType)
-	if len(exts) > 0 {
-		return exts[0]
-	}
-
-	return ".webp"
 }

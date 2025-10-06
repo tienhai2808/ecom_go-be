@@ -1,10 +1,10 @@
 package main
 
 import (
+	"log"
+
 	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/server"
-
-	"log"
 )
 
 func main() {

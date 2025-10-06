@@ -34,5 +34,7 @@ main
 
 # Test API
 *.http
+upload
 
+# Configuration File
 config.yaml

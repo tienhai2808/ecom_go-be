@@ -8,4 +8,6 @@ import (
 
 type CategoryService interface {
 	CreateCategory(ctx context.Context, req request.CreateCategoryRequest) (*model.Category, error)
+
+	GetAllCategories(ctx context.Context) ([]*model.Category, error)
 }

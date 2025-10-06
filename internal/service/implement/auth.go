@@ -187,7 +187,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 }
 
 func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest) (*response.UserResponse, string, string, error) {
-	user, err := s.userRepo.FindByUsername(ctx, req.Username)
+	user, err := s.userRepo.FindByUsernameWithProfile(ctx, req.Username)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
@@ -292,16 +292,14 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy dữ liệu làm mới mật khẩu thất bại: %w", err)
 	}
-
 	if email == "" {
 		return nil, "", "", customErr.ErrKeyNotFound
 	}
 
-	user, err := s.userRepo.FindByEmail(ctx, email)
+	user, err := s.userRepo.FindByEmailWithProfile(ctx, email)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("lấy thông tin người dùng thất bại: %w", err)
 	}
-
 	if user == nil {
 		return nil, "", "", customErr.ErrUserNotFound
 	}

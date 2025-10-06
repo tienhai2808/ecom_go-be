@@ -13,7 +13,7 @@ type CreateProductForm struct {
 type CreateProductImageForm struct {
 	IsThumbnail *bool  `form:"is_thumbnail" validate:"required"`
 	SortOrder   int    `form:"sort_order" validate:"required,gt=0"`
-	File        []byte `form:"file" validate:"required"`
+	FileData    []byte `form:"file_data" validate:"required"`
 }
 
 type UpdateProductRequest struct {

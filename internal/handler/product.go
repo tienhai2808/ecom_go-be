@@ -101,7 +101,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	req.Description = strings.TrimSpace(c.PostForm("description"))
 
 	if isActiveStr := strings.TrimSpace(c.PostForm("is_active")); isActiveStr != "" {
-		if isActive, err := strconv.ParseBool(isActiveStr); err != nil {
+		if isActive, err := strconv.ParseBool(isActiveStr); err == nil {
 			req.IsActive = &isActive
 		}
 	}
@@ -151,7 +151,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		image := request.CreateProductImageForm{
 			IsThumbnail: &isThumbnail,
 			SortOrder:   sortOrder,
-			File:        fileBytes,
+			FileData:    fileBytes,
 		}
 
 		req.Images = append(req.Images, image)
@@ -167,7 +167,12 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	newProduct, err := h.productSvc.CreateProduct(ctx, &req)
 	if err != nil {
-		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		switch err {
+		case customErr.ErrProductSlugAlreadyExists:
+			common.JSON(c, http.StatusConflict, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 		return
 	}
 

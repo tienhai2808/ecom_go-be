@@ -15,5 +15,7 @@ func NewCategoryRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo reposit
 	category := rg.Group("/categories")
 	{
 		category.POST("", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), categoryHdl.CreateCategory)
+		
+		category.GET("", categoryHdl.GetAllCategories)
 	}
 }

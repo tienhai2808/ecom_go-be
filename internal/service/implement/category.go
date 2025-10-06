@@ -46,3 +46,12 @@ func (s *categoryServiceImpl) CreateCategory(ctx context.Context, req request.Cr
 
 	return category, nil
 }
+
+func (s *categoryServiceImpl) GetAllCategories(ctx context.Context) ([]*model.Category, error) {
+	categories, err := s.categoryRepo.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("lấy danh sách danh mục sản phẩm thất bại: %w", err)
+	}
+
+	return categories, nil
+}

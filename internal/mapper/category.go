@@ -7,10 +7,27 @@ import (
 
 func ToCategoryResponse(category *model.Category) *response.CategoryResponse {
 	return &response.CategoryResponse{
-		ID: category.ID,
-		Name: category.Name,
-		Slug: category.Slug,
+		ID:        category.ID,
+		Name:      category.Name,
+		Slug:      category.Slug,
 		CreatedAt: category.CreatedAt,
 		UpdatedAt: category.UpdatedAt,
 	}
+}
+
+func ToBaseCategoryResponse(category *model.Category) *response.BaseCategoryResponse {
+	return &response.BaseCategoryResponse{
+		ID:   category.ID,
+		Name: category.Name,
+		Slug: category.Slug,
+	}
+}
+
+func ToCategoriesResponse(ctgs []*model.Category) []*response.BaseCategoryResponse {
+	var ctgsResp []*response.BaseCategoryResponse
+	for _, ctg := range ctgs {
+		ctgsResp = append(ctgsResp, ToBaseCategoryResponse(ctg))
+	}
+
+	return ctgsResp
 }

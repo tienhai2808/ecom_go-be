@@ -21,6 +21,15 @@ func (r *categoryRepositoryImpl) Create(ctx context.Context, category *model.Cat
 	return r.db.WithContext(ctx).Create(category).Error
 }
 
+func (r *categoryRepositoryImpl) FindAll(ctx context.Context) ([]*model.Category, error) {
+	var categories []*model.Category
+	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&categories).Error; err != nil {
+		return nil, err
+	}
+
+	return categories, nil
+}
+
 func (r *categoryRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Category, error) {
 	var category model.Category
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {

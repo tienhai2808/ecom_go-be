@@ -9,7 +9,6 @@ type Product struct {
 	Price       float64   `gorm:"type:decimal(10,2);not null" json:"price"`
 	Description string    `gorm:"type:text" json:"description"`
 	IsActive    bool      `gorm:"type:boolean;not null;default:true" json:"is_active"`
-	IsDeleted   bool      `gorm:"type:boolean;not null;default:false" json:"is_deleted"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	CategoryID  int64     `gorm:"type:bigint" json:"category_id"`
