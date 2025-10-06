@@ -13,7 +13,7 @@ func ToUserResponse(user *model.User) *response.UserResponse {
 		Email:     user.Email,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
-		Profile: response.ProfileResponse{
+		Profile: &response.ProfileResponse{
 			ID:          user.Profile.ID,
 			FirstName:   user.Profile.FirstName,
 			LastName:    user.Profile.LastName,

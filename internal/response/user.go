@@ -8,7 +8,7 @@ type UserResponse struct {
 	Email     string          `json:"email"`
 	Role      string          `json:"role"`
 	CreatedAt time.Time       `json:"created_at"`
-	Profile   ProfileResponse `json:"profile"`
+	Profile   *ProfileResponse `json:"profile"`
 }
 
 type ProfileResponse struct {

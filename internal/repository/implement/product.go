@@ -28,9 +28,9 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 	return products, nil
 }
 
-func (r *productRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Product, error) {
+func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
 	var product model.Product
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&product).Error; err != nil {
+	if err := r.db.WithContext(ctx).Preload("Category").Preload("Inventory").Preload("Images").Where("id = ?", id).First(&product).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

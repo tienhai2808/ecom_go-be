@@ -8,7 +8,7 @@ import (
 type ProductRepository interface {
 	FindAll(ctx context.Context) ([]*model.Product, error)
 
-	FindByID(ctx context.Context, id int64) (*model.Product, error)
+	FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error)
 
 	Create(ctx context.Context, product *model.Product) error
 

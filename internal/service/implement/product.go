@@ -45,7 +45,7 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 }
 
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {
-	product, err := s.productRepo.FindByID(ctx, id)
+	product, err := s.productRepo.FindByIDWithDetails(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -112,7 +112,7 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req *request.Cre
 		Name:        req.Name,
 		Price:       req.Price,
 		Slug:        slug,
-		CategoryID:  category.ID,
+		Category:    category,
 		Description: req.Description,
 		Inventory: &model.Inventory{
 			ID:        inventoryID,
@@ -143,7 +143,7 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req *request.Cre
 }
 
 func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *request.UpdateProductRequest) (*model.Product, error) {
-	product, err := s.productRepo.FindByID(ctx, id)
+	product, err := s.productRepo.FindByIDWithDetails(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}
@@ -177,7 +177,7 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 		}
 	}
 
-	updatedProduct, err := s.productRepo.FindByID(ctx, id)
+	updatedProduct, err := s.productRepo.FindByIDWithDetails(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
 	}

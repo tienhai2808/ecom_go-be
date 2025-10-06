@@ -13,6 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
+	"github.com/tienhai2808/ecom_go/internal/mapper"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
 )
@@ -63,7 +64,7 @@ func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	}
 
 	common.JSON(c, http.StatusOK, "Lấy sản phẩm thành công", gin.H{
-		"product": product,
+		"product": mapper.ToProductResponse(product),
 	})
 }
 
@@ -177,7 +178,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	}
 
 	common.JSON(c, http.StatusOK, "Tạo mới sản phẩm thành công", gin.H{
-		"product": newProduct,
+		"product": mapper.ToProductResponse(newProduct),
 	})
 }
 
