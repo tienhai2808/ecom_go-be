@@ -29,8 +29,12 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
+	return r.FindByIDWithDetailsTx(ctx, r.db, id)
+}
+
+func (r *productRepositoryImpl) FindByIDWithDetailsTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Product, error) {
 	var product model.Product
-	if err := r.db.WithContext(ctx).Preload("Category").Preload("Inventory").Preload("Images").Where("id = ?", id).First(&product).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("Category").Preload("Inventory").Preload("Images").Where("id = ?", id).First(&product).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -44,17 +48,8 @@ func (r *productRepositoryImpl) Create(ctx context.Context, product *model.Produ
 	return r.db.WithContext(ctx).Create(product).Error
 }
 
-func (r *productRepositoryImpl) Update(ctx context.Context, id int64, updateData map[string]any) error {
-	result := r.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Updates(updateData)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	if result.RowsAffected == 0 {
-		return customErr.ErrProductNotFound
-	}
-
-	return nil
+func (r *productRepositoryImpl) UpdateTx(ctx context.Context, tx *gorm.DB, id int64, updateData map[string]any) error {
+	return tx.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Updates(updateData).Error
 }
 
 func (r *productRepositoryImpl) Delete(ctx context.Context, id int64) error {

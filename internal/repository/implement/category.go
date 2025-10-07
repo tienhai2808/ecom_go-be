@@ -31,8 +31,12 @@ func (r *categoryRepositoryImpl) FindAll(ctx context.Context) ([]*model.Category
 }
 
 func (r *categoryRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Category, error) {
+	return r.FindByIDTx(ctx, r.db, id)
+}
+
+func (r *categoryRepositoryImpl) FindByIDTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Category, error) {
 	var category model.Category
-	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {
+	if err := tx.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}

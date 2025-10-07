@@ -169,7 +169,7 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		return nil, "", "", fmt.Errorf("tạo người dùng thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 15*time.Minute, s.cfg.App.JWTSecret)
+	accessToken, err := security.GenerateToken(newUser.ID, string(newUser.Role), 60*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
@@ -201,7 +201,7 @@ func (s *authServiceImpl) SignIn(ctx context.Context, req request.SignInRequest)
 		return nil, "", "", customErr.ErrIncorrectPassword
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 60*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
@@ -316,7 +316,7 @@ func (s *authServiceImpl) ResetPassword(ctx context.Context, req request.ResetPa
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 60*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}
@@ -363,7 +363,7 @@ func (s *authServiceImpl) ChangePassword(ctx context.Context, userID int64, req 
 		return nil, "", "", fmt.Errorf("cập nhật mật khẩu thất bại: %w", err)
 	}
 
-	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 15*time.Minute, s.cfg.App.JWTSecret)
+	accessToken, err := security.GenerateToken(user.ID, string(user.Role), 60*time.Minute, s.cfg.App.JWTSecret)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("tạo access_token thất bại: %w", err)
 	}

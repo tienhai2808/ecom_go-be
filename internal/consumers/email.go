@@ -13,7 +13,7 @@ import (
 )
 
 func StartSendEmailConsumer(mqc *initialization.RabbitMQConn, mailer smtp.SMTPService) {
-	if err := rabbitmq.ConsumeMessage(mqc.Chann, common.QueueNameEmailSend, common.ExchangeEmail, common.RoutingKeyEmailSend, func(body []byte) error {
+	if err := rabbitmq.ConsumeMessage(mqc.Chan, common.QueueNameEmailSend, common.ExchangeEmail, common.RoutingKeyEmailSend, func(body []byte) error {
 		var emailMsg types.SendEmailMessage
 		if err := json.Unmarshal(body, &emailMsg); err != nil {
 			return fmt.Errorf("chuyển đổi tin nhắn gửi email thất bại: %w", err)

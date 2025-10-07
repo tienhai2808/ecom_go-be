@@ -79,7 +79,9 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 
 	var req request.CreateProductForm
 
-	req.Name = strings.TrimSpace(c.PostForm("name"))
+	if name := strings.TrimSpace(c.PostForm("name")); name != "" {
+		req.Name = name
+	}
 
 	if categoryIDStr := strings.TrimSpace(c.PostForm("category_id")); categoryIDStr != "" {
 		if categoryID, err := strconv.ParseInt(categoryIDStr, 10, 64); err == nil {
@@ -186,12 +188,8 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	var req request.UpdateProductRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		translated := common.HandleValidationError(err)
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidRequest.Error(), gin.H{
-			"errors": translated,
-		})
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidRequest.Error(), nil)
 		return
 	}
 
@@ -202,10 +200,151 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 
+	var req request.UpdateProductForm
+	form := c.Request.MultipartForm
+
+	if name := strings.TrimSpace(c.PostForm("name")); name != "" {
+		req.Name = &name
+	}
+
+	if categoryIDStr := strings.TrimSpace(c.PostForm("category_id")); categoryIDStr != "" {
+		if categoryID, err := strconv.ParseInt(categoryIDStr, 10, 64); err == nil {
+			req.CategoryID = &categoryID
+		}
+	}
+
+	if priceStr := strings.TrimSpace(c.PostForm("price")); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 32); err == nil {
+			req.Price = &price
+		}
+	}
+
+	if quantityStr := strings.TrimSpace(c.PostForm("quantity")); quantityStr != "" {
+		if quantity, err := strconv.Atoi(quantityStr); err == nil {
+			q := uint(quantity)
+			req.Quantity = &q
+		}
+	}
+
+	if isActiveStr := strings.TrimSpace(c.PostForm("is_active")); isActiveStr != "" {
+		if isActive, err := strconv.ParseBool(isActiveStr); err == nil {
+			req.IsActive = &isActive
+		}
+	}
+
+	deleteImgIDsStr := form.Value["delete_image_ids"]
+	deleteImgIDs := make([]int64, 0, len(deleteImgIDsStr))
+	for _, idStr := range deleteImgIDsStr {
+		id, _ := strconv.ParseInt(idStr, 10, 64)
+		deleteImgIDs = append(deleteImgIDs, id)
+	}
+
+	req.DeleteImageIDs = deleteImgIDs
+
+	req.UpdateImages = []request.UpdateProductImageForm{}
+	i := 0
+	for {
+		idKey := fmt.Sprintf("update_images[%d][id]", i)
+		isThumbnailKey := fmt.Sprintf("update_images[%d][is_thumbnail]", i)
+		sortOrderKey := fmt.Sprintf("update_images[%d][sort_order]", i)
+
+		idStr := strings.TrimSpace(c.PostForm(idKey))
+		if idStr == "" {
+			break
+		}
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+			return
+		}
+
+		isThumbnail := false
+		isThumbnailStr := strings.TrimSpace(c.PostForm(isThumbnailKey))
+		if isThumbnailStr != "" {
+			isThumbnail, _ = strconv.ParseBool(isThumbnailStr)
+		}
+
+		sorOrder := 0
+		sorOrderStr := strings.TrimSpace(c.PostForm(sortOrderKey))
+		if sorOrderStr != "" {
+			sorOrder, _ = strconv.Atoi(sorOrderStr)
+		}
+
+		updateImg := request.UpdateProductImageForm{
+			ID:          id,
+			IsThumbnail: &isThumbnail,
+			SortOrder:   &sorOrder,
+		}
+
+		req.UpdateImages = append(req.UpdateImages, updateImg)
+		i++
+	}
+
+	req.NewImages = []request.CreateProductImageForm{}
+	j := 0
+	for {
+		isThumbnailKey := fmt.Sprintf("new_images[%d][is_thumbnail]", j)
+		sortOrderKey := fmt.Sprintf("new_images[%d][sort_order]", j)
+		fileKey := fmt.Sprintf("new_images[%d][file]", j)
+
+		isThumbnailStr := strings.TrimSpace(c.PostForm(isThumbnailKey))
+		if isThumbnailStr == "" {
+			break
+		}
+
+		isThumbnail := false
+		if isThumbnailStr != "" {
+			isThumbnail, _ = strconv.ParseBool(isThumbnailStr)
+		}
+
+		sortOrder := 0
+		sortOrderStr := strings.TrimSpace(c.PostForm(sortOrderKey))
+		if sortOrderStr != "" {
+			sortOrder, _ = strconv.Atoi(sortOrderStr)
+		}
+
+		file, err := c.FormFile(fileKey)
+		if err != nil {
+			common.JSON(c, http.StatusBadRequest, fmt.Sprintf("Không tìm thấy file cho ảnh %d", j), nil)
+			return
+		}
+
+		openedFile, err := file.Open()
+		if err != nil {
+			common.JSON(c, http.StatusBadRequest, fmt.Sprintf("Không mở được file cho ảnh %d", j), nil)
+			return
+		}
+		defer openedFile.Close()
+
+		fileBytes, err := io.ReadAll(openedFile)
+		if err != nil {
+			common.JSON(c, http.StatusBadRequest, fmt.Sprintf("Đọc file cho ảnh %d thất bại", j), nil)
+			return
+		}
+
+		newImg := request.CreateProductImageForm{
+			IsThumbnail: &isThumbnail,
+			SortOrder:   sortOrder,
+			FileData:    fileBytes,
+		}
+
+		fmt.Println(isThumbnail)
+
+		req.NewImages = append(req.NewImages, newImg)
+		j++
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(req); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
 	updatedProduct, err := h.productSvc.UpdateProduct(ctx, productID, &req)
 	if err != nil {
 		switch err {
-		case customErr.ErrProductNotFound:
+		case customErr.ErrProductNotFound, customErr.ErrHasImageNotFound:
 			common.JSON(c, http.StatusNotFound, err.Error(), nil)
 		default:
 			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
@@ -214,7 +353,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	}
 
 	common.JSON(c, http.StatusOK, "Cập nhật sản phẩm thành công", gin.H{
-		"product": updatedProduct,
+		"product": mapper.ToProductResponse(updatedProduct),
 	})
 }
 

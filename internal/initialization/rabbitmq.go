@@ -9,7 +9,7 @@ import (
 
 type RabbitMQConn struct {
 	Conn  *amqp091.Connection
-	Chann *amqp091.Channel
+	Chan *amqp091.Channel
 }
 
 func InitRabbitMQ(cfg *config.Config) (*RabbitMQConn, error) {
@@ -37,6 +37,6 @@ func InitRabbitMQ(cfg *config.Config) (*RabbitMQConn, error) {
 }
 
 func (mq *RabbitMQConn) Close() {
-	_ = mq.Chann.Close()
+	_ = mq.Chan.Close()
 	_ = mq.Conn.Close()
 }

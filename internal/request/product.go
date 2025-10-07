@@ -1,5 +1,23 @@
 package request
 
+type UpdateProductForm struct {
+	Name           *string                  `json:"name" validate:"omitempty,min=2"`
+	CategoryID     *int64                   `json:"category_id" validate:"omitempty,gt=0"`
+	Price          *float64                 `json:"price" validate:"omitempty,gt=0"`
+	Quantity       *uint                    `json:"quantity" validate:"omitempty,min=0"`
+	Description    *string                  `json:"description" validate:"omitempty,min=2"`
+	IsActive       *bool                    `json:"is_active" validate:"omitempty"`
+	NewImages      []CreateProductImageForm `json:"new_images" validate:"omitempty,dive"`
+	UpdateImages   []UpdateProductImageForm        `json:"update_images" validate:"omitempty,dive"`
+	DeleteImageIDs []int64                  `json:"delete_image_ids" validate:"omitempty,dive"`
+}
+
+type UpdateProductImageForm struct {
+	ID          int64 `json:"id" validate:"required"`
+	IsThumbnail *bool `form:"is_thumbnail" validate:"omitempty"`
+	SortOrder   *int  `form:"sort_order" validate:"omitempty,gt=0"`
+}
+
 type CreateProductForm struct {
 	Name        string                   `json:"name" validate:"required,min=2"`
 	CategoryID  int64                    `json:"category_id" validate:"required,gt=0"`
@@ -14,12 +32,4 @@ type CreateProductImageForm struct {
 	IsThumbnail *bool  `form:"is_thumbnail" validate:"required"`
 	SortOrder   int    `form:"sort_order" validate:"required,gt=0"`
 	FileData    []byte `form:"file_data" validate:"required"`
-}
-
-type UpdateProductRequest struct {
-	Name        *string  `json:"name" binding:"omitempty,min=2"`
-	CategoryID  *int64   `json:"category_id" binding:"omitempty,gt=0"`
-	Price       *float64 `json:"price" binding:"omitempty,gt=0"`
-	Quantity    *uint    `json:"quantity" binding:"omitempty,min=0"`
-	Description *string  `json:"description" binding:"omitempty"`
 }

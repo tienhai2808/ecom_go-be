@@ -13,7 +13,7 @@ type ProductService interface {
 
 	CreateProduct(ctx context.Context, req *request.CreateProductForm) (*model.Product, error)
 
-	UpdateProduct(ctx context.Context, id int64, req *request.UpdateProductRequest) (*model.Product, error)
+	UpdateProduct(ctx context.Context, id int64, req *request.UpdateProductForm) (*model.Product, error)
 
 	DeleteProduct(ctx context.Context, id int64) error
 

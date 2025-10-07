@@ -58,11 +58,12 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chann, sf, cld)
+	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chan, sf, cld)
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
 	go consumers.StartSendEmailConsumer(rmq, ctn.SMTPSvc)
 	go consumers.StartUploadImageMessage(rmq, ctn.CloudinarySvc, ctn.ImageModule.ImageRepo)
+	go consumers.StartDeleteImageMessage(rmq, ctn.CloudinarySvc)
 
 	r := gin.Default()
 

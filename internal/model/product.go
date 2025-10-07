@@ -8,7 +8,7 @@ type Product struct {
 	Slug        string    `gorm:"type:varchar(255);not null;unique" json:"brand"`
 	Price       float64   `gorm:"type:decimal(10,2);not null" json:"price"`
 	Description string    `gorm:"type:text" json:"description"`
-	IsActive    bool      `gorm:"type:boolean;not null;default:true" json:"is_active"`
+	IsActive    bool      `gorm:"type:boolean;not null" json:"is_active"`
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	CategoryID  int64     `gorm:"type:bigint" json:"category_id"`

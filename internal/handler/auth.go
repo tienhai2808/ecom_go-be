@@ -79,7 +79,7 @@ func (h *AuthHandler) VerifySignUp(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 3600, "/", "", false, true)
 	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	common.JSON(c, http.StatusOK, "Đăng ký thành công", gin.H{
@@ -109,7 +109,7 @@ func (h *AuthHandler) SignIn(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 3600, "/", "", false, true)
 	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	common.JSON(c, http.StatusOK, "Đăng nhập thành công", gin.H{
@@ -155,7 +155,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	newAccessToken, err := security.GenerateToken(userID, userRole, 15*time.Minute, h.cfg.App.JWTSecret)
+	newAccessToken, err := security.GenerateToken(userID, userRole, 60*time.Minute, h.cfg.App.JWTSecret)
 	if err != nil {
 		common.JSON(c, http.StatusInternalServerError, fmt.Sprintf("tạo access token mới thất bại: %v", err), nil)
 		return
@@ -167,7 +167,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.cfg.App.AccessName, newAccessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, newAccessToken, 3600, "/", "", false, true)
 	c.SetCookie(h.cfg.App.RefreshName, newRefreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	common.JSON(c, http.StatusOK, "Làm mới token thành công", nil)
@@ -249,7 +249,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 3600, "/", "", false, true)
 	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	common.JSON(c, http.StatusOK, "Lấy lại mật khẩu thành công", gin.H{
@@ -291,7 +291,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie(h.cfg.App.AccessName, accessToken, 900, "/", "", false, true)
+	c.SetCookie(h.cfg.App.AccessName, accessToken, 3600, "/", "", false, true)
 	c.SetCookie(h.cfg.App.RefreshName, refreshToken, 604800, fmt.Sprintf("%s/auth/refresh-token", h.cfg.App.ApiPrefix), "", false, true)
 
 	common.JSON(c, http.StatusOK, "Thay đổi mật khẩu thành công", gin.H{
