@@ -30,7 +30,11 @@ func ToBaseAddressResponse(addr *model.Address) *response.BaseAddressResponse {
 }
 
 func ToAddressesResponse(addrs []*model.Address) []*response.BaseAddressResponse {
-	var addrsResp []*response.BaseAddressResponse
+	if len(addrs) == 0 {
+		return make([]*response.BaseAddressResponse, 0)
+	}
+
+	addrsResp := make([]*response.BaseAddressResponse, 0, len(addrs))
 	for _, addr := range addrs {
 		addrsResp = append(addrsResp, ToBaseAddressResponse(addr))
 	}

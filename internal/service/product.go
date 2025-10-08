@@ -17,5 +17,5 @@ type ProductService interface {
 
 	DeleteProduct(ctx context.Context, id int64) error
 
-	DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error)
+	DeleteProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error)
 }

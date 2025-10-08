@@ -179,7 +179,7 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 		return
 	}
 
-	common.JSON(c, http.StatusOK, "Tạo mới sản phẩm thành công", gin.H{
+	common.JSON(c, http.StatusCreated, "Tạo mới sản phẩm thành công", gin.H{
 		"product": mapper.ToProductResponse(newProduct),
 	})
 }
@@ -360,6 +360,7 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
+
 	productIDStr := c.Param("id")
 	productID, err := strconv.ParseInt(productIDStr, 10, 64)
 	if err != nil {
@@ -380,25 +381,28 @@ func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	common.JSON(c, http.StatusOK, "Xóa sản phẩm thành công", nil)
 }
 
-func (h *ProductHandler) DeleteManyProducts(c *gin.Context) {
+func (h *ProductHandler) DeleteProducts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.DeleteManyRequest
 
+	var req request.DeleteManyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidRequest.Error(), gin.H{
-			"errors": translated,
-		})
+		common.JSON(c, http.StatusBadRequest, translated, nil)
 		return
 	}
 
-	rowsAccepted, err := h.productSvc.DeleteManyProducts(ctx, req)
+	rowsAccepted, err := h.productSvc.DeleteProducts(ctx, req)
 	if err != nil {
-		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		switch err {
+		case customErr.ErrHasProductNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
 		return
 	}
 
-	message := fmt.Sprintf("Xóa thành công %d người dùng", rowsAccepted)
+	message := fmt.Sprintf("Xóa thành công %d sản phẩm", rowsAccepted)
 	common.JSON(c, http.StatusOK, message, nil)
 }

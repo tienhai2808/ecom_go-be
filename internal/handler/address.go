@@ -10,9 +10,9 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/mapper"
-	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 	"github.com/tienhai2808/ecom_go/internal/service"
+	"github.com/tienhai2808/ecom_go/internal/types"
 )
 
 type AddressHandler struct {
@@ -33,7 +33,7 @@ func (h *AddressHandler) GetMyAddresses(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
@@ -60,7 +60,7 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
@@ -92,8 +92,8 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 func (h *AddressHandler) CreateAddress(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.AddAddressRequest
 
+	var req request.AddAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
@@ -108,7 +108,7 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
@@ -133,8 +133,8 @@ func (h *AddressHandler) CreateAddress(c *gin.Context) {
 func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.UpdateAddressRequest
 
+	var req request.UpdateAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		common.JSON(c, http.StatusBadRequest, "Dữ liệu gửi lên không hợp lệ", gin.H{
@@ -149,7 +149,7 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return
@@ -188,7 +188,7 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 		return
 	}
 
-	user, ok := userAny.(*model.User)
+	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
 		return

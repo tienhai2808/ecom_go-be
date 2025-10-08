@@ -17,7 +17,6 @@ type Container struct {
 	AuthModule     *AuthModule
 	AddressModule  *AddressModule
 	ProductModule  *ProductModule
-	ImageModule    *ImageModule
 	ProfileModule  *ProfileModule
 	CategoryModule *CategoryModule
 	SMTPSvc        smtp.SMTPService
@@ -32,7 +31,6 @@ func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan
 	authModule := NewAuthContainer(rdb, cfg, db, rabbitChan, cSfg)
 	addressModule := NewAddressContainer(db, cSfg)
 	productModule := NewProductContainer(db, rabbitChan, cSfg)
-	imageModule := NewImageContainer(db, cfg)
 	profileModule := NewProfileContainer(db)
 	categoryModule := NewCategoryContainer(db, cSfg)
 
@@ -41,7 +39,6 @@ func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan
 		authModule,
 		addressModule,
 		productModule,
-		imageModule,
 		profileModule,
 		categoryModule,
 		smtp,

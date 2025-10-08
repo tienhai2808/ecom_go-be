@@ -54,7 +54,11 @@ func ToUserData(user *model.User) *types.UserData {
 }
 
 func ToUsersResponse(usrs []*model.User) []*response.BaseUserResponse {
-	var usrsResp []*response.BaseUserResponse
+	if len(usrs) == 0 {
+		return make([]*response.BaseUserResponse, 0)
+	}
+
+	usrsResp := make([]*response.BaseUserResponse, 0, len(usrs))
 	for _, usr := range usrs {
 		usrsResp = append(usrsResp, ToBaseUserResponse(usr))
 	}

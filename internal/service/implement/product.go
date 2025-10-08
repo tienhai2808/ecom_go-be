@@ -295,7 +295,7 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 					ID:          imageID,
 					IsThumbnail: *img.IsThumbnail,
 					SortOrder:   img.SortOrder,
-					ProductID: product.ID,
+					ProductID:   product.ID,
 				}
 
 				uploadReq := &types.UploadImageMessage{
@@ -340,6 +340,14 @@ func (s *productServiceImpl) UpdateProduct(ctx context.Context, id int64, req *r
 }
 
 func (s *productServiceImpl) DeleteProduct(ctx context.Context, id int64) error {
+	product, err := s.productRepo.FindByIDWithImages(ctx, id)
+	if err != nil {
+		return fmt.Errorf("lấy thông tin sản phẩm thất bại: %w", err)
+	}
+	if product == nil {
+		return customErr.ErrProductNotFound
+	}
+
 	if err := s.productRepo.Delete(ctx, id); err != nil {
 		if errors.Is(err, customErr.ErrProductNotFound) {
 			return err
@@ -347,15 +355,67 @@ func (s *productServiceImpl) DeleteProduct(ctx context.Context, id int64) error 
 		return fmt.Errorf("xóa sản phẩm thất bại: %w", err)
 	}
 
+	if len(product.Images) > 0 {
+		publishChan := make(chan string, len(product.Images))
+		for _, img := range product.Images {
+			if strings.TrimSpace(img.PublicID) != "" {
+				publishChan <- img.PublicID
+			}
+		}
+		close(publishChan)
+
+		go func() {
+			for req := range publishChan {
+				body := []byte(req)
+				if err := rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeImage, common.RoutingKeyImageDelete, body); err != nil {
+					log.Printf("đẩy tin nhắn xóa ảnh thất bại: %v", err)
+				}
+			}
+		}()
+	}
+
 	return nil
 }
 
-func (s *productServiceImpl) DeleteManyProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error) {
-	productIDs := req.IDs
-	rowsAccepted, err := s.productRepo.DeleteAllByID(ctx, productIDs)
+func (s *productServiceImpl) DeleteProducts(ctx context.Context, req request.DeleteManyRequest) (int64, error) {
+	products, err := s.productRepo.FindAllByIDWithImages(ctx, req.IDs)
+	if err != nil {
+		return 0, fmt.Errorf("lấy danh sách sản phẩm cần xóa thất bại: %w", err)
+	}
+	if len(req.IDs) != len(products) {
+		return 0, customErr.ErrHasProductNotFound
+	}
+
+	rowsAccepted, err := s.productRepo.DeleteAllByID(ctx, req.IDs)
 	if err != nil {
 		return 0, fmt.Errorf("xóa danh sách sản phẩm thât bại: %w", err)
 	}
+
+	imgPublicIDs := []string{}
+	seen := make(map[string]bool)
+	for _, product := range products {
+		for _, img := range product.Images {
+			if strings.TrimSpace(img.PublicID) != "" && !seen[img.PublicID] {
+				seen[img.PublicID] = true
+				imgPublicIDs = append(imgPublicIDs, img.PublicID)
+			}
+		}
+	}
+
+	publishChan := make(chan string, len(imgPublicIDs))
+	for _, publicID := range imgPublicIDs {
+		publishChan <- publicID
+	}
+	close(publishChan)
+
+	go func ()  {
+		for req := range publishChan {
+			body := []byte(req)
+			if err := rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeImage, common.RoutingKeyImageDelete, body); err != nil {
+				log.Printf("đẩy tin nhắn xóa ảnh thất bại: %v", err)
+			}
+		}
+	}()
 
 	return rowsAccepted, nil
 }

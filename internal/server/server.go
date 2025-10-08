@@ -62,7 +62,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
 	go consumers.StartSendEmailConsumer(rmq, ctn.SMTPSvc)
-	go consumers.StartUploadImageMessage(rmq, ctn.CloudinarySvc, ctn.ImageModule.ImageRepo)
+	go consumers.StartUploadImageMessage(rmq, ctn.CloudinarySvc, ctn.ProductModule.ImageRepo)
 	go consumers.StartDeleteImageMessage(rmq, ctn.CloudinarySvc)
 
 	r := gin.Default()
@@ -88,7 +88,6 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	router.NewAuthRouter(api, cfg, ctn.UserModule.UserRepo, ctn.AuthModule.AuthHdl)
 	router.NewAddressRouter(api, cfg, ctn.UserModule.UserRepo, ctn.AddressModule.AddressHdl)
 	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProductModule.ProductHdl)
-	router.NewImageRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ImageModule.ImageHdl)
 	router.NewProfileRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProfileModule.ProfileHdl)
 	router.NewCategoryRouter(api, cfg, ctn.UserModule.UserRepo, ctn.CategoryModule.CategoryHdl)
 

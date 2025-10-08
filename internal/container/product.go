@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/tienhai2808/ecom_go/internal/handler"
+	"github.com/tienhai2808/ecom_go/internal/repository"
 	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
 	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
@@ -11,6 +12,7 @@ import (
 
 type ProductModule struct {
 	ProductHdl *handler.ProductHandler
+	ImageRepo  repository.ImageRepository
 }
 
 func NewProductContainer(db *gorm.DB, rabbitChan *amqp091.Channel, sfg snowflake.SnowflakeGenerator) *ProductModule {
@@ -21,5 +23,8 @@ func NewProductContainer(db *gorm.DB, rabbitChan *amqp091.Channel, sfg snowflake
 	productSvc := serviceImpl.NewProductService(productRepo, categoryRepo, inventoryRepo, imageRepo, db, rabbitChan, sfg)
 	productHdl := handler.NewProductHandler(productSvc)
 
-	return &ProductModule{productHdl}
+	return &ProductModule{
+		productHdl,
+		imageRepo,
+	}
 }

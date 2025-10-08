@@ -21,7 +21,7 @@ func NewProductRepository(db *gorm.DB) repository.ProductRepository {
 
 func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, error) {
 	var products []*model.Product
-	if err := r.db.WithContext(ctx).Order("created_at DESC").Find(&products).Error; err != nil {
+	if err := r.db.WithContext(ctx).Find(&products).Error; err != nil {
 		return nil, err
 	}
 
@@ -29,19 +29,24 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
-	return r.FindByIDWithDetailsTx(ctx, r.db, id)
+	return findByIDBase(ctx, r.db, id, "Category", "Inventory", "Images")
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetailsTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Product, error) {
-	var product model.Product
-	if err := tx.WithContext(ctx).Preload("Category").Preload("Inventory").Preload("Images").Where("id = ?", id).First(&product).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
+	return findByIDBase(ctx, tx, id, "Category", "Inventory", "Images")
+}
+
+func (r *productRepositoryImpl) FindByIDWithImages(ctx context.Context, id int64) (*model.Product, error) {
+	return findByIDBase(ctx, r.db, id, "Images")
+}
+
+func (r *productRepositoryImpl) FindAllByIDWithImages(ctx context.Context, ids []int64) ([]*model.Product, error) {
+	var products []*model.Product
+	if err := r.db.WithContext(ctx).Preload("Images").Where("id IN ?", ids).Find(&products).Error; err != nil {
 		return nil, err
 	}
 
-	return &product, nil
+	return products, nil
 }
 
 func (r *productRepositoryImpl) Create(ctx context.Context, product *model.Product) error {
@@ -72,4 +77,22 @@ func (r *productRepositoryImpl) DeleteAllByID(ctx context.Context, ids []int64) 
 	}
 
 	return result.RowsAffected, nil
+}
+
+func findByIDBase(ctx context.Context, tx *gorm.DB, id int64, preloads ...string) (*model.Product, error) {
+	var product model.Product
+
+	query := tx.WithContext(ctx)
+	for _, preload := range preloads {
+		query = query.Preload(preload)
+	}
+
+	if err := query.Where("id = ?", id).First(&product).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &product, nil
 }

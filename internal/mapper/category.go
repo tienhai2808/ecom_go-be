@@ -24,7 +24,11 @@ func ToBaseCategoryResponse(category *model.Category) *response.BaseCategoryResp
 }
 
 func ToCategoriesResponse(ctgs []*model.Category) []*response.BaseCategoryResponse {
-	var ctgsResp []*response.BaseCategoryResponse
+	if len(ctgs) == 0 {
+		return make([]*response.BaseCategoryResponse, 0)
+	}
+
+	ctgsResp := make([]*response.BaseCategoryResponse, 0, len(ctgs))
 	for _, ctg := range ctgs {
 		ctgsResp = append(ctgsResp, ToBaseCategoryResponse(ctg))
 	}
