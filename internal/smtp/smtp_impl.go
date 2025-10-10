@@ -3,10 +3,12 @@ package smtp
 import (
 	"bytes"
 	"fmt"
-	"github.com/tienhai2808/ecom_go/internal/config"
 	"html/template"
 	"log"
 	"net/smtp"
+
+	"github.com/tienhai2808/ecom_go/internal/config"
+	"github.com/tienhai2808/ecom_go/internal/types"
 )
 
 type smtpServiceImpl struct {
@@ -33,11 +35,7 @@ func NewSMTPService(cfg *config.Config) SMTPService {
 func (s *smtpServiceImpl) SendEmail(to, subject, htmlBody string) error {
 	addr := fmt.Sprintf("%s:%s", s.cfg.SMTP.Host, s.cfg.SMTP.Port)
 
-	data := struct {
-		Subject string
-		Body    template.HTML
-		AppName string
-	}{
+	data := types.EmailTemplateData{
 		Subject: subject,
 		Body:    template.HTML(htmlBody),
 		AppName: s.cfg.App.Name,

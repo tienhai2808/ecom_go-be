@@ -41,6 +41,10 @@ type Config struct {
 		Brokers []string `yaml:"brokers"`
 	} `yaml:"kafka"`
 
+	Elasticsearch struct {
+		Addresses []string `yaml:"addresses"`
+	} `yaml:"elasticsearch"`
+
 	SMTP struct {
 		Host string `yaml:"host"`
 		Port string `yaml:"port"`

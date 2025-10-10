@@ -9,16 +9,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/consumers"
 	"github.com/tienhai2808/ecom_go/internal/container"
 	"github.com/tienhai2808/ecom_go/internal/initialization"
 	"github.com/tienhai2808/ecom_go/internal/kafka"
 	"github.com/tienhai2808/ecom_go/internal/router"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
 type Server struct {
@@ -52,6 +51,11 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	}
 
 	kmq := initialization.InitKafka(cfg)
+
+	_, err = initialization.InitElasticsearch(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	cld, err := initialization.InitCloudinary(cfg)
 	if err != nil {

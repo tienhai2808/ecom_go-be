@@ -24,7 +24,7 @@ func ConsumeMessage(ch *amqp091.Channel, queueName, exchange, routingKey string,
 		return err
 	}
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		go func(workerID int) {
 			for msg := range msgs {
 				processWithRetry(msg.Body, handler, workerID)
