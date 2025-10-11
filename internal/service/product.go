@@ -9,6 +9,8 @@ import (
 type ProductService interface {
 	GetAllProducts(ctx context.Context) ([]*model.Product, error)
 
+	SearchProduct(ctx context.Context, query string) ([]map[string]any, error)
+
 	GetProductByID(ctx context.Context, id int64) (*model.Product, error)
 
 	CreateProduct(ctx context.Context, req *request.CreateProductForm) (*model.Product, error)

@@ -52,7 +52,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	kmq := initialization.InitKafka(cfg)
 
-	_, err = initialization.InitElasticsearch(cfg)
+	es, err := initialization.InitElasticsearch(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chan, sf, cld)
+	ctn := container.NewContainer(db.Gorm, rdb, cfg, rmq.Chan, sf, cld, es)
 
 	go kafka.ConsumeMessages(context.Background(), kmq.Reader, kafka.MessageHandler)
 	go consumers.StartSendEmailConsumer(rmq, ctn.SMTPSvc)

@@ -25,5 +25,7 @@ func NewProductRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo reposito
 		product.DELETE("/:id", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.DeleteProduct)
 
 		product.DELETE("", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.DeleteProducts)
+
+		product.GET("/search", productHdl.SearchProduct)
 	}
 }

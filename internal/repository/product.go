@@ -10,6 +10,8 @@ import (
 type ProductRepository interface {
 	FindAll(ctx context.Context) ([]*model.Product, error)
 
+	Search(ctx context.Context, keyword string) ([]map[string]any, error)
+
 	FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error)
 
 	FindByIDWithImages(ctx context.Context, id int64) (*model.Product, error)

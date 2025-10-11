@@ -41,6 +41,27 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 	})
 }
 
+func (h *ProductHandler) SearchProduct(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	query := c.Query("q")
+	if query == "" {
+		common.JSON(c, http.StatusBadRequest, "yêu cầu query cho tìm kiếm", nil)
+		return
+	}
+
+	products, err := h.productSvc.SearchProduct(ctx, query)
+	if err != nil {
+		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Tìm kiếm sản phẩm thành công", gin.H{
+		"product_documents": products,
+	})
+}
+
 func (h *ProductHandler) GetProductByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()

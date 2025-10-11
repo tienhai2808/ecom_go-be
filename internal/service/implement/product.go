@@ -52,6 +52,15 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 	return products, nil
 }
 
+func (s *productServiceImpl) SearchProduct(ctx context.Context, query string) ([]map[string]any, error) {
+	productDocs, err := s.productRepo.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return productDocs, nil
+}
+
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {
 	product, err := s.productRepo.FindByIDWithDetails(ctx, id)
 	if err != nil {

@@ -2,21 +2,29 @@ package implement
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
-
-	"errors"
-
 	"gorm.io/gorm"
 )
 
 type productRepositoryImpl struct {
 	db *gorm.DB
+	es *elasticsearch.TypedClient
 }
 
-func NewProductRepository(db *gorm.DB) repository.ProductRepository {
-	return &productRepositoryImpl{db}
+func NewProductRepository(db *gorm.DB, es *elasticsearch.TypedClient) repository.ProductRepository {
+	return &productRepositoryImpl{
+		db,
+		es,
+	}
 }
 
 func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, error) {
@@ -26,6 +34,29 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 	}
 
 	return products, nil
+}
+
+func (r *productRepositoryImpl) Search(ctx context.Context, keyword string) ([]map[string]any, error) {
+	res, err := r.es.Search().Index("mysql_server.ecom_go.products").Request(&search.Request{
+		Query: &types.Query{
+			MultiMatch: &types.MultiMatchQuery{
+				Query: keyword,
+				Fields: []string{"name^3", "description"},
+	}}}).Do(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("tìm kiếm thất bại: %w", err)
+	}
+
+	results := []map[string]any{}
+	for _, hit := range res.Hits.Hits {
+		var doc map[string]any
+		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
+			return nil, fmt.Errorf("lỗi giải mã document: %w", err)
+		}
+		results = append(results, doc)
+	}
+
+	return results, nil
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {

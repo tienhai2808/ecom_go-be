@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
@@ -15,8 +16,8 @@ type ProductModule struct {
 	ImageRepo  repository.ImageRepository
 }
 
-func NewProductContainer(db *gorm.DB, rabbitChan *amqp091.Channel, sfg snowflake.SnowflakeGenerator) *ProductModule {
-	productRepo := repoImpl.NewProductRepository(db)
+func NewProductContainer(db *gorm.DB, rabbitChan *amqp091.Channel, sfg snowflake.SnowflakeGenerator, es *elasticsearch.TypedClient) *ProductModule {
+	productRepo := repoImpl.NewProductRepository(db, es)
 	categoryRepo := repoImpl.NewCategoryRepository(db)
 	inventoryRepo := repoImpl.NewInventoryRepository(db)
 	imageRepo := repoImpl.NewImageRepository(db)
