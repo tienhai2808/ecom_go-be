@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/request"
 )
@@ -9,7 +10,7 @@ import (
 type ProductService interface {
 	GetAllProducts(ctx context.Context) ([]*model.Product, error)
 
-	SearchProduct(ctx context.Context, query string) ([]map[string]any, error)
+	SearchProduct(ctx context.Context, query string) ([]*model.Product, error)
 
 	GetProductByID(ctx context.Context, id int64) (*model.Product, error)
 

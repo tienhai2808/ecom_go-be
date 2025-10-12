@@ -58,7 +58,7 @@ func (h *ProductHandler) SearchProduct(c *gin.Context) {
 	}
 
 	common.JSON(c, http.StatusOK, "Tìm kiếm sản phẩm thành công", gin.H{
-		"product_documents": products,
+		"products": mapper.ToBaseProductsResponse(products),
 	})
 }
 

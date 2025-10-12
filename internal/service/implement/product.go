@@ -52,13 +52,18 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Produ
 	return products, nil
 }
 
-func (s *productServiceImpl) SearchProduct(ctx context.Context, query string) ([]map[string]any, error) {
-	productDocs, err := s.productRepo.Search(ctx, query)
+func (s *productServiceImpl) SearchProduct(ctx context.Context, query string) ([]*model.Product, error) {
+	ids, err := s.productRepo.Search(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return productDocs, nil
+	products, err := s.productRepo.FindAllByIDWithImages(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin danh sách sản phẩm thất bại: %w", err)
+	}
+
+	return products, nil
 }
 
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {

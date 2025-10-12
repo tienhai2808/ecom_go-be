@@ -21,6 +21,30 @@ func ToProductResponse(product *model.Product) *response.ProductResponse {
 	}
 }
 
+func ToBaseProductResponse(product *model.Product) *response.BaseProductResponse {
+	return &response.BaseProductResponse{
+		ID: product.ID,
+		Name: product.Name,
+		Slug: product.Slug,
+		Price: product.Price,
+		IsActive: product.IsActive,
+		Thumbnail: product.Images[0].Url,
+	}
+}
+
+func ToBaseProductsResponse(prds []*model.Product) []*response.BaseProductResponse {
+	if len(prds) == 0 {
+		return make([]*response.BaseProductResponse, 0)
+	}
+
+	prdsResp := make([]*response.BaseProductResponse, 0, len(prds)) 
+	for _, prd := range prds {
+		prdsResp = append(prdsResp, ToBaseProductResponse(prd))
+	}
+
+	return prdsResp
+}
+
 func ToInventoryResponse(inv *model.Inventory) *response.InventoryResponse {
 	return &response.InventoryResponse{
 		ID:        inv.ID,

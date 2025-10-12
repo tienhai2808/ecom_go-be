@@ -3,14 +3,14 @@ package response
 import "time"
 
 type ProductResponse struct {
-	ID          int64                `json:"id"`
-	Name        string               `json:"name"`
-	Slug        string               `json:"slug"`
-	Price       float64              `json:"price"`
-	Description string               `json:"description"`
-	IsActive    bool                 `json:"is_active"`
-	CreatedAt   time.Time            `json:"created_at"`
-	UpdatedAt   time.Time            `json:"updated_at"`
+	ID          int64                 `json:"id"`
+	Name        string                `json:"name"`
+	Slug        string                `json:"slug"`
+	Price       float64               `json:"price"`
+	Description string                `json:"description"`
+	IsActive    bool                  `json:"is_active"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
 	Category    *BaseCategoryResponse `json:"category"`
 	Inventory   *InventoryResponse    `json:"inventory"`
 	Images      []*ImageResponse      `json:"images"`
@@ -32,4 +32,10 @@ type InventoryResponse struct {
 }
 
 type BaseProductResponse struct {
+	ID        int64   `json:"id"`
+	Name      string  `json:"name"`
+	Slug      string  `json:"slug"`
+	Price     float64 `json:"price"`
+	IsActive  bool    `json:"is_active"`
+	Thumbnail string  `json:"thumbnail"`
 }

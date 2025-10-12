@@ -16,7 +16,7 @@ func NewProductRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo reposito
 	{
 		product.GET("", productHdl.GetAllProducts)
 
-		product.GET("/:id", productHdl.GetProductByID)
+		product.GET("/:id", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.GetProductByID)
 
 		product.POST("", security.RequireAuth(accessName, secretKey, userRepo), security.RequireAdmin(), productHdl.CreateProduct)
 

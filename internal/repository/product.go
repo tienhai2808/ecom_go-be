@@ -10,7 +10,7 @@ import (
 type ProductRepository interface {
 	FindAll(ctx context.Context) ([]*model.Product, error)
 
-	Search(ctx context.Context, keyword string) ([]map[string]any, error)
+	Search(ctx context.Context, keyword string) ([]int64, error)
 
 	FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error)
 
@@ -19,6 +19,8 @@ type ProductRepository interface {
 	FindByIDWithDetailsTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Product, error)
 
 	FindAllByIDWithImages(ctx context.Context, ids []int64) ([]*model.Product, error)
+
+	FindAllByIDWithThumbnail(ctx context.Context, ids []int64) ([]*model.Product, error)
 
 	Create(ctx context.Context, product *model.Product) error
 

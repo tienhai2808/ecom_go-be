@@ -36,27 +36,29 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 	return products, nil
 }
 
-func (r *productRepositoryImpl) Search(ctx context.Context, keyword string) ([]map[string]any, error) {
+func (r *productRepositoryImpl) Search(ctx context.Context, keyword string) ([]int64, error) {
 	res, err := r.es.Search().Index("mysql_server.ecom_go.products").Request(&search.Request{
 		Query: &types.Query{
 			MultiMatch: &types.MultiMatchQuery{
-				Query: keyword,
+				Query:  keyword,
 				Fields: []string{"name^3", "description"},
-	}}}).Do(ctx)
+			}}}).Do(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("tìm kiếm thất bại: %w", err)
 	}
 
-	results := []map[string]any{}
+	productIDs := make([]int64, 0, len(res.Hits.Hits))
 	for _, hit := range res.Hits.Hits {
-		var doc map[string]any
-		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
+		var productWithID struct {
+			ID int64 `json:"id"`
+		}
+		if err := json.Unmarshal(hit.Source_, &productWithID); err != nil {
 			return nil, fmt.Errorf("lỗi giải mã document: %w", err)
 		}
-		results = append(results, doc)
+		productIDs = append(productIDs, productWithID.ID)
 	}
 
-	return results, nil
+	return productIDs, nil
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
@@ -74,6 +76,15 @@ func (r *productRepositoryImpl) FindByIDWithImages(ctx context.Context, id int64
 func (r *productRepositoryImpl) FindAllByIDWithImages(ctx context.Context, ids []int64) ([]*model.Product, error) {
 	var products []*model.Product
 	if err := r.db.WithContext(ctx).Preload("Images").Where("id IN ?", ids).Find(&products).Error; err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+func (r *productRepositoryImpl) FindAllByIDWithThumbnail(ctx context.Context, ids []int64) ([]*model.Product, error) {
+	var products []*model.Product
+	if err := r.db.WithContext(ctx).Preload("Images").Scopes(getThumbnail).Where("id IN ?", ids).Find(&products).Error; err != nil {
 		return nil, err
 	}
 
@@ -126,4 +137,8 @@ func findByIDBase(ctx context.Context, tx *gorm.DB, id int64, preloads ...string
 	}
 
 	return &product, nil
+}
+
+func getThumbnail(db *gorm.DB) *gorm.DB {
+	return db.Where("is_thumbnail = true")
 }
