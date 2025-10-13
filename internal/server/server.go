@@ -94,6 +94,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	router.NewProductRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProductModule.ProductHdl)
 	router.NewProfileRouter(api, cfg, ctn.UserModule.UserRepo, ctn.ProfileModule.ProfileHdl)
 	router.NewCategoryRouter(api, cfg, ctn.UserModule.UserRepo, ctn.CategoryModule.CategoryHdl)
+	router.NewCartRouter(api, cfg, ctn.UserModule.UserRepo, ctn.CartModule.CartHdl)
 
 	addr := fmt.Sprintf(":%d", cfg.App.Port)
 

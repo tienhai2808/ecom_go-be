@@ -20,6 +20,7 @@ type Container struct {
 	ProductModule  *ProductModule
 	ProfileModule  *ProfileModule
 	CategoryModule *CategoryModule
+	CartModule     *CartModule
 	SMTPSvc        smtp.SMTPService
 	CloudinarySvc  customCld.CloudinaryService
 }
@@ -34,6 +35,7 @@ func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan
 	productModule := NewProductContainer(db, rabbitChan, cSfg, es)
 	profileModule := NewProfileContainer(db)
 	categoryModule := NewCategoryContainer(db, cSfg)
+	cartModule := NewCartModule(db, cSfg, es)
 
 	return &Container{
 		userModule,
@@ -42,6 +44,7 @@ func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan
 		productModule,
 		profileModule,
 		categoryModule,
+		cartModule,
 		smtp,
 		cCld,
 	}

@@ -154,6 +154,10 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 	if err != nil {
 		return nil, "", "", err
 	}
+	cartID, err := s.sfg.NextID()
+	if err != nil {
+		return nil, "", "", err
+	}
 
 	newUser := &model.User{
 		ID:       userID,
@@ -162,6 +166,11 @@ func (s *authServiceImpl) VerifySignUp(ctx context.Context, req request.VerifySi
 		Password: regData.Password,
 		Profile: &model.Profile{
 			ID: profileID,
+		},
+		Cart: &model.Cart{
+			ID: cartID,
+			TotalPrice: 0,
+			TotalQuantity: 0,
 		},
 	}
 

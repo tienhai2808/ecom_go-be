@@ -33,8 +33,8 @@ func NewAuthHandler(authSvc service.AuthService, userSvc service.UserService, cf
 func (h *AuthHandler) SignUp(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.SignUpRequest
 
+	var req request.SignUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		common.JSON(c, http.StatusBadRequest, translated, nil)
@@ -60,8 +60,8 @@ func (h *AuthHandler) SignUp(c *gin.Context) {
 func (h *AuthHandler) VerifySignUp(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.VerifySignUpRequest
 
+	var req request.VerifySignUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		common.JSON(c, http.StatusBadRequest, translated, nil)
@@ -90,8 +90,8 @@ func (h *AuthHandler) VerifySignUp(c *gin.Context) {
 func (h *AuthHandler) SignIn(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	var req request.SignInRequest
 
+	var req request.SignInRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
 		common.JSON(c, http.StatusBadRequest, translated, nil)

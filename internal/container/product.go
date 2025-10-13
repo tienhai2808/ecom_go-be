@@ -6,7 +6,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
-	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
+	svcImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"gorm.io/gorm"
 )
@@ -21,7 +21,7 @@ func NewProductContainer(db *gorm.DB, rabbitChan *amqp091.Channel, sfg snowflake
 	categoryRepo := repoImpl.NewCategoryRepository(db)
 	inventoryRepo := repoImpl.NewInventoryRepository(db)
 	imageRepo := repoImpl.NewImageRepository(db)
-	productSvc := serviceImpl.NewProductService(productRepo, categoryRepo, inventoryRepo, imageRepo, db, rabbitChan, sfg)
+	productSvc := svcImpl.NewProductService(productRepo, categoryRepo, inventoryRepo, imageRepo, db, rabbitChan, sfg)
 	productHdl := handler.NewProductHandler(productSvc)
 
 	return &ProductModule{

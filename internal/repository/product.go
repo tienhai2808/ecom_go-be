@@ -16,6 +16,8 @@ type ProductRepository interface {
 
 	FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error)
 
+	FindByID(ctx context.Context, id int64) (*model.Product, error)
+
 	FindByIDWithImages(ctx context.Context, id int64) (*model.Product, error)
 
 	FindByIDWithDetailsTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Product, error)

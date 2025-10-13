@@ -99,6 +99,10 @@ func (r *productRepositoryImpl) Search(ctx context.Context, query request.Produc
 	}, nil
 }
 
+func (r *productRepositoryImpl) FindByID(ctx context.Context, id int64) (*model.Product, error) {
+	return findByIDBase(ctx, r.db, id)
+}
+
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
 	return findByIDBase(ctx, r.db, id, "Category", "Inventory", "Images")
 }

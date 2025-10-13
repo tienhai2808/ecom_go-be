@@ -40,6 +40,14 @@ type BaseProductResponse struct {
 	Thumbnail string  `json:"thumbnail"`
 }
 
+type SimpleProductResponse struct {
+	ID        int64                 `json:"id"`
+	Name      string                `json:"name"`
+	Slug      string                `json:"slug"`
+	Category  *BaseCategoryResponse `json:"category"`
+	Thumbnail string                `json:"thumbnail"`
+}
+
 type ProductListResponse struct {
 	Products []*BaseProductResponse `json:"products"`
 	Meta     *MetaResponse          `json:"meta"`

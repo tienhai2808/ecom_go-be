@@ -56,12 +56,12 @@ func (s *productServiceImpl) GetAllProducts(ctx context.Context, query request.P
 	}
 
 	meta := &response.MetaResponse{
-		Total: result.Total,
-		Page: result.Page,
-		Limit: result.Limit,
+		Total:      result.Total,
+		Page:       result.Page,
+		Limit:      result.Limit,
 		TotalPages: result.TotalPages,
-		HasPrev: result.HasPrev,
-		HasNext: result.HasNext,
+		HasPrev:    result.HasPrev,
+		HasNext:    result.HasNext,
 	}
 
 	return products, meta, nil
@@ -135,7 +135,7 @@ func (s *productServiceImpl) CreateProduct(ctx context.Context, req *request.Cre
 		Name:        req.Name,
 		Price:       req.Price,
 		Slug:        slug,
-		Category:    category,
+		CategoryID:  category.ID,
 		Description: req.Description,
 		Inventory: &model.Inventory{
 			ID:        inventoryID,

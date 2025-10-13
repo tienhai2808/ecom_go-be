@@ -5,7 +5,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"github.com/tienhai2808/ecom_go/internal/handler"
 	repoImpl "github.com/tienhai2808/ecom_go/internal/repository/implement"
-	serviceImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
+	svcImpl "github.com/tienhai2808/ecom_go/internal/service/implement"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -19,8 +19,8 @@ func NewAuthContainer(rdb *redis.Client, cfg *config.Config, db *gorm.DB, rabbit
 	authRepo := repoImpl.NewAuthRepository(rdb, cfg)
 	userRepo := repoImpl.NewUserRepository(db)
 	profileRepo := repoImpl.NewProfileRepository(db)
-	authSvc := serviceImpl.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, cfg, sfg)
-	userSvc := serviceImpl.NewUserService(userRepo, profileRepo, sfg)
+	authSvc := svcImpl.NewAuthService(userRepo, authRepo, profileRepo, rabbitChan, cfg, sfg)
+	userSvc := svcImpl.NewUserService(userRepo, profileRepo, sfg)
 	authHandler := handler.NewAuthHandler(authSvc, userSvc, cfg)
 
 	return &AuthModule{authHandler}

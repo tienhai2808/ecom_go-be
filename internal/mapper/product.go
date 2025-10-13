@@ -32,6 +32,16 @@ func ToBaseProductResponse(product *model.Product) *response.BaseProductResponse
 	}
 }
 
+func ToSimpleProductResponse(product *model.Product) *response.SimpleProductResponse {
+	return &response.SimpleProductResponse{
+		ID: product.ID,
+		Name: product.Name,
+		Slug: product.Slug,
+		Category: ToBaseCategoryResponse(product.Category),
+		Thumbnail: product.Images[0].Url,
+	}
+}
+
 func ToBaseProductsResponse(prds []*model.Product) []*response.BaseProductResponse {
 	if len(prds) == 0 {
 		return make([]*response.BaseProductResponse, 0)

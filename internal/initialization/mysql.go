@@ -3,14 +3,14 @@ package initialization
 import (
 	"database/sql"
 	"fmt"
+	
 	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/model"
-
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-var allModels = []interface{}{
+var allModels = []any{
 	&model.User{},
 	&model.Profile{},
 	&model.Address{},
@@ -19,6 +19,8 @@ var allModels = []interface{}{
 	&model.Product{},
 	&model.Image{},
 	&model.Inventory{},
+	&model.Cart{},
+	&model.CartItem{},
 }
 
 type DB struct {
