@@ -9,9 +9,12 @@ import (
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	internalType "github.com/tienhai2808/ecom_go/internal/types"
 	"gorm.io/gorm"
 )
 
@@ -36,29 +39,64 @@ func (r *productRepositoryImpl) FindAll(ctx context.Context) ([]*model.Product, 
 	return products, nil
 }
 
-func (r *productRepositoryImpl) Search(ctx context.Context, keyword string) ([]int64, error) {
-	res, err := r.es.Search().Index("mysql_server.ecom_go.products").Request(&search.Request{
-		Query: &types.Query{
-			MultiMatch: &types.MultiMatchQuery{
-				Query:  keyword,
-				Fields: []string{"name^3", "description"},
-			}}}).Do(ctx)
+func (r *productRepositoryImpl) Search(ctx context.Context, query request.ProductPaginationQuery) (*internalType.ProductSearchResult, error) {
+	if query.Page == 0 {
+		query.Page = 1
+	}
+	if query.Limit == 0 {
+		query.Limit = 10
+	}
+
+	from := int((query.Page - 1) * query.Limit)
+	size := int(query.Limit)
+
+	esQuery := buildQuery(query)
+	sort := buildSort(query)
+
+	req := &search.Request{
+		Query: esQuery,
+		From:  &from,
+		Size:  &size,
+		Sort:  sort,
+	}
+
+	res, err := r.es.Search().
+		Index("mysql_server.ecom_go.products").
+		Request(req).
+		Do(ctx)
+
 	if err != nil {
 		return nil, fmt.Errorf("tìm kiếm thất bại: %w", err)
 	}
 
 	productIDs := make([]int64, 0, len(res.Hits.Hits))
 	for _, hit := range res.Hits.Hits {
-		var productWithID struct {
-			ID int64 `json:"id"`
+		var doc struct {
+			Payload struct {
+				After struct {
+					ID int64 `json:"id"`
+				} `json:"after"`
+			} `json:"payload"`
 		}
-		if err := json.Unmarshal(hit.Source_, &productWithID); err != nil {
+
+		if err := json.Unmarshal(hit.Source_, &doc); err != nil {
 			return nil, fmt.Errorf("lỗi giải mã document: %w", err)
 		}
-		productIDs = append(productIDs, productWithID.ID)
+		productIDs = append(productIDs, doc.Payload.After.ID)
 	}
 
-	return productIDs, nil
+	total := res.Hits.Total.Value
+	totalPages := (total + int64(query.Limit) - 1) / int64(query.Limit)
+
+	return &internalType.ProductSearchResult{
+		IDs:        productIDs,
+		Total:      total,
+		Page:       query.Page,
+		Limit:      query.Limit,
+		TotalPages: totalPages,
+		HasPrev:    query.Page > 1,
+		HasNext:    int64(query.Page) < totalPages,
+	}, nil
 }
 
 func (r *productRepositoryImpl) FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error) {
@@ -141,4 +179,100 @@ func findByIDBase(ctx context.Context, tx *gorm.DB, id int64, preloads ...string
 
 func getThumbnail(db *gorm.DB) *gorm.DB {
 	return db.Where("is_thumbnail = true")
+}
+
+func buildQuery(query request.ProductPaginationQuery) *types.Query {
+	var mustQueries []types.Query
+
+	if query.Search != "" {
+		mustQueries = append(mustQueries, types.Query{
+			MultiMatch: &types.MultiMatchQuery{
+				Query:  query.Search,
+				Fields: []string{"payload.after.name^3", "payload.after.description"},
+			},
+		})
+	}
+
+	if query.IsActive != nil {
+		activeValue := 0
+		if *query.IsActive {
+			activeValue = 1
+		}
+		mustQueries = append(mustQueries, types.Query{
+			Term: map[string]types.TermQuery{
+				"payload.after.is_active": {Value: activeValue},
+			},
+		})
+	}
+
+	if query.CategoryID != 0 {
+		mustQueries = append(mustQueries, types.Query{
+			Term: map[string]types.TermQuery{
+				"payload.after.category_id": {Value: query.CategoryID},
+			},
+		})
+	}
+
+	if len(mustQueries) == 0 {
+		return &types.Query{
+			MatchAll: &types.MatchAllQuery{},
+		}
+	}
+
+	if len(mustQueries) == 1 {
+		return &mustQueries[0]
+	}
+
+	return &types.Query{
+		Bool: &types.BoolQuery{
+			Must: mustQueries,
+		},
+	}
+}
+
+func buildSort(query request.ProductPaginationQuery) []types.SortCombinations {
+	if query.Sort == "" {
+		if query.Search != "" {
+			return []types.SortCombinations{
+				types.SortOptions{
+					SortOptions: map[string]types.FieldSort{
+						"_score": {Order: &sortorder.Desc},
+					},
+				},
+			}
+		}
+
+		return []types.SortCombinations{
+			types.SortOptions{
+				SortOptions: map[string]types.FieldSort{
+					"payload.after.created_at": {Order: &sortorder.Desc},
+				},
+			},
+		}
+	}
+
+	order := sortorder.Asc
+	if query.Order == "desc" {
+		order = sortorder.Desc
+	}
+
+	sortField := ""
+	switch query.Sort {
+	case "name":
+		sortField = "payload.after.name.keyword"
+	case "price":
+		sortField = "payload.after.price"
+	case "created_at":
+		sortField = "payload.after.created_at"
+	case "updated_at":
+		sortField = "payload.after.updated_at"
+	}
+
+	return []types.SortCombinations{
+		types.SortOptions{
+			SortOptions: map[string]types.FieldSort{
+				sortField: {Order: &order},
+			},
+		},
+	}
 }

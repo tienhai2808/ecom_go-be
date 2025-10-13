@@ -15,6 +15,7 @@ import (
 	"github.com/tienhai2808/ecom_go/internal/rabbitmq"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/response"
 	"github.com/tienhai2808/ecom_go/internal/service"
 	"github.com/tienhai2808/ecom_go/internal/snowflake"
 	"github.com/tienhai2808/ecom_go/internal/types"
@@ -43,27 +44,27 @@ func NewProductService(productRepo repository.ProductRepository, categoryRepo re
 	}
 }
 
-func (s *productServiceImpl) GetAllProducts(ctx context.Context) ([]*model.Product, error) {
-	products, err := s.productRepo.FindAll(ctx)
+func (s *productServiceImpl) GetAllProducts(ctx context.Context, query request.ProductPaginationQuery) ([]*model.Product, *response.MetaResponse, error) {
+	result, err := s.productRepo.Search(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("lấy tất cả sản phẩm thất bại: %w", err)
+		return nil, nil, err
 	}
 
-	return products, nil
-}
-
-func (s *productServiceImpl) SearchProduct(ctx context.Context, query string) ([]*model.Product, error) {
-	ids, err := s.productRepo.Search(ctx, query)
+	products, err := s.productRepo.FindAllByIDWithImages(ctx, result.IDs)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("lấy thông tin danh sách sản phẩm thất bại: %w", err)
 	}
 
-	products, err := s.productRepo.FindAllByIDWithImages(ctx, ids)
-	if err != nil {
-		return nil, fmt.Errorf("lấy thông tin danh sách sản phẩm thất bại: %w", err)
+	meta := &response.MetaResponse{
+		Total: result.Total,
+		Page: result.Page,
+		Limit: result.Limit,
+		TotalPages: result.TotalPages,
+		HasPrev: result.HasPrev,
+		HasNext: result.HasNext,
 	}
 
-	return products, nil
+	return products, meta, nil
 }
 
 func (s *productServiceImpl) GetProductByID(ctx context.Context, id int64) (*model.Product, error) {
@@ -422,7 +423,7 @@ func (s *productServiceImpl) DeleteProducts(ctx context.Context, req request.Del
 	}
 	close(publishChan)
 
-	go func ()  {
+	go func() {
 		for req := range publishChan {
 			body := []byte(req)
 			if err := rabbitmq.PublishMessage(s.rabbitChan, common.ExchangeImage, common.RoutingKeyImageDelete, body); err != nil {

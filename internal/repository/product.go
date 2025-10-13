@@ -4,13 +4,15 @@ import (
 	"context"
 
 	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/request"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"gorm.io/gorm"
 )
 
 type ProductRepository interface {
 	FindAll(ctx context.Context) ([]*model.Product, error)
 
-	Search(ctx context.Context, keyword string) ([]int64, error)
+	Search(ctx context.Context, query request.ProductPaginationQuery) (*types.ProductSearchResult, error)
 
 	FindByIDWithDetails(ctx context.Context, id int64) (*model.Product, error)
 

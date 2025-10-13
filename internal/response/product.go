@@ -39,3 +39,8 @@ type BaseProductResponse struct {
 	IsActive  bool    `json:"is_active"`
 	Thumbnail string  `json:"thumbnail"`
 }
+
+type ProductListResponse struct {
+	Products []*BaseProductResponse `json:"products"`
+	Meta     *MetaResponse          `json:"meta"`
+}

@@ -30,35 +30,21 @@ func (h *ProductHandler) GetAllProducts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	products, err := h.productSvc.GetAllProducts(ctx)
+	var query request.ProductPaginationQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
+	products, meta, err := h.productSvc.GetAllProducts(ctx, query)
 	if err != nil {
 		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
 
 	common.JSON(c, http.StatusOK, "lấy danh sách sản phẩm thành công", gin.H{
-		"products": products,
-	})
-}
-
-func (h *ProductHandler) SearchProduct(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-	defer cancel()
-
-	query := c.Query("q")
-	if query == "" {
-		common.JSON(c, http.StatusBadRequest, "yêu cầu query cho tìm kiếm", nil)
-		return
-	}
-
-	products, err := h.productSvc.SearchProduct(ctx, query)
-	if err != nil {
-		common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
-		return
-	}
-
-	common.JSON(c, http.StatusOK, "Tìm kiếm sản phẩm thành công", gin.H{
-		"products": mapper.ToBaseProductsResponse(products),
+		"products": mapper.ToProductListResponse(products, meta),
 	})
 }
 

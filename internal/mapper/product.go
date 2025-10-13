@@ -45,6 +45,13 @@ func ToBaseProductsResponse(prds []*model.Product) []*response.BaseProductRespon
 	return prdsResp
 }
 
+func ToProductListResponse(prds []*model.Product, meta *response.MetaResponse) *response.ProductListResponse {
+	return &response.ProductListResponse{
+		Products: ToBaseProductsResponse(prds),
+		Meta: meta,
+	}
+}
+
 func ToInventoryResponse(inv *model.Inventory) *response.InventoryResponse {
 	return &response.InventoryResponse{
 		ID:        inv.ID,
