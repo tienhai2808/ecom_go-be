@@ -29,6 +29,18 @@ func NewCartService(cartRepo repository.CartRepository, productRepo repository.P
 	}
 }
 
+func (s *cartServiceImpl) GetMyCart(ctx context.Context, userID int64) (*model.Cart, error) {
+	cart, err := s.cartRepo.FindCartByUserIDWithDetails(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin giỏ hàng thất bại: %w", err)
+	}
+	if cart == nil {
+		return nil, customErr.ErrCartNotFound
+	}
+
+	return cart, nil
+}
+
 func (s *cartServiceImpl) AddCartItem(ctx context.Context, userID int64, req request.AddCartItemRequest) (*model.Cart, error) {
 	cart, err := s.cartRepo.FindCartByUserID(ctx, userID)
 	if err != nil {
@@ -132,4 +144,61 @@ func (s *cartServiceImpl) AddCartItem(ctx context.Context, userID int64, req req
 	}
 
 	return cart, nil
+}
+
+func (s *cartServiceImpl) UpdateCartItem(ctx context.Context, userID, cartItemID int64, quantity uint) (*model.Cart, error) {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		cart, err := s.cartRepo.FindCartByUserIDTx(ctx, tx, userID)
+		if err != nil {
+			return fmt.Errorf("lấy thông tin giỏ hàng thất bại: %w", err)
+		}
+		if cart == nil {
+			return customErr.ErrCartNotFound
+		}
+
+		cartItem, err := s.cartRepo.FindCartItemByIDTx(ctx, tx, cartItemID)
+		if err != nil {
+			return fmt.Errorf("lấy thông tin mặt hàng trong giỏ hàng thất bại: %w", err)
+		}
+		if cartItem == nil {
+			return customErr.ErrCartItemNotFound
+		}
+
+		if cartItem.CartID != cart.ID {
+			return customErr.ErrCartItemNotFound
+		}
+
+		newTotalPrice := cartItem.UnitPrice * float64(quantity)
+		updateData := map[string]any{
+			"quantity":       quantity,
+			"total_price": newTotalPrice,
+		}
+		if err := s.cartRepo.UpdateCartItemTx(ctx, tx, cartItemID, updateData); err != nil {
+			return fmt.Errorf("cập nhật mặt hàng trong giỏ hàng thất bại: %w", err)
+		}
+
+		totalPriceCart := cart.TotalPrice - cartItem.TotalPrice + cartItem.UnitPrice * float64(quantity)
+		totalQuantityCart := cart.TotalQuantity - cartItem.Quantity + quantity
+		updateData = map[string]any{
+			"total_price":    totalPriceCart,
+			"total_quantity": totalQuantityCart,
+		}
+		if err = s.cartRepo.UpdateCartTx(ctx, tx, cart.ID, updateData); err != nil {
+			return fmt.Errorf("cập nhật giỏ hàng thất bại: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	updatedCart, err := s.cartRepo.FindCartByUserIDWithDetails(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin giỏ hàng thất bại: %w", err)
+	}
+	if updatedCart == nil {
+		return nil, customErr.ErrCartNotFound
+	}
+
+	return updatedCart, nil
 }

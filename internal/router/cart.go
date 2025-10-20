@@ -15,5 +15,9 @@ func NewCartRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo repository.
 	cart := rg.Group("/carts", security.RequireAuth(accessName, secretKey, userRepo))
 	{
 		cart.POST("/items", cartHdl.AddCartItem)
+
+		cart.PUT("/items/:id", cartHdl.UpdateCartItem)
+
+		cart.GET("", cartHdl.GetMyCart)
 	}
 }

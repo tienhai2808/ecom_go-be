@@ -8,5 +8,9 @@ import (
 )
 
 type CartService interface {
+	GetMyCart(ctx context.Context, userID int64) (*model.Cart, error)
+
 	AddCartItem(ctx context.Context, userID int64, req request.AddCartItemRequest) (*model.Cart, error)
+  
+	UpdateCartItem(ctx context.Context, userID, cartItemID int64, quantity uint) (*model.Cart, error)
 }

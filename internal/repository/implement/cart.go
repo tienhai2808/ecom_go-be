@@ -29,6 +29,35 @@ func (r *cartRepositoryImpl) FindCartByUserID(ctx context.Context, userID int64)
 	return &cart, nil
 }
 
+func (r *cartRepositoryImpl) FindCartByUserIDWithDetails(ctx context.Context, userID int64) (*model.Cart, error) {
+	var cart model.Cart
+	if err := r.db.WithContext(ctx).
+		Preload("CartItems").
+		Preload("CartItems.Product").
+		Preload("CartItems.Product.Category").
+		Preload("CartItems.Product.Images", "is_thumbnail = true").
+		Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &cart, nil
+}
+
+func (r *cartRepositoryImpl) FindCartByUserIDTx(ctx context.Context, tx *gorm.DB, userID int64) (*model.Cart, error) {
+	var cart model.Cart
+	if err := tx.WithContext(ctx).Where("user_id = ?", userID).First(&cart).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &cart, nil
+}
+
 func (r *cartRepositoryImpl) FindCartByIDWithDetails(ctx context.Context, cartID int64) (*model.Cart, error) {
 	var cart model.Cart
 	if err := r.db.WithContext(ctx).
@@ -72,4 +101,16 @@ func (r *cartRepositoryImpl) UpdateCartTx(ctx context.Context, tx *gorm.DB, cart
 
 func (r *cartRepositoryImpl) UpdateCartItemTx(ctx context.Context, tx *gorm.DB, cartItemID int64, updateData map[string]any) error {
 	return tx.WithContext(ctx).Model(&model.CartItem{}).Where("id = ?", cartItemID).Updates(updateData).Error
+}
+
+func (r *cartRepositoryImpl) FindCartItemByIDTx(ctx context.Context, tx *gorm.DB, cartItemID int64) (*model.CartItem, error) {
+	var cartItem model.CartItem
+	if err := r.db.WithContext(ctx).Where("id = ?", cartItemID).First(&cartItem).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &cartItem, nil
 }

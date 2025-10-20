@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,38 @@ type CartHandler struct {
 
 func NewCartHandler(cartSvc service.CartService) *CartHandler {
 	return &CartHandler{cartSvc}
+}
+
+func (h *CartHandler) GetMyCart(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	userAny, exists := c.Get("user")
+	if !exists {
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		return
+	}
+
+	user, ok := userAny.(*types.UserData)
+	if !ok {
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		return
+	}
+
+	cart, err := h.cartSvc.GetMyCart(ctx, user.ID)
+	if err != nil {
+		switch err {
+		case customErr.ErrCartNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Lấy giỏ hàng thành công", gin.H{
+		"cart": mapper.ToCartResponse(cart),
+	})
 }
 
 func (h *CartHandler) AddCartItem(c *gin.Context) {
@@ -57,6 +90,52 @@ func (h *CartHandler) AddCartItem(c *gin.Context) {
 	}
 
 	common.JSON(c, http.StatusOK, "Thêm sản phẩm vào giỏ hàng thành công", gin.H{
+		"cart": mapper.ToCartResponse(cart),
+	})
+}
+
+func (h *CartHandler) UpdateCartItem(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	userAny, exists := c.Get("user")
+	if !exists {
+		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
+		return
+	}
+
+	user, ok := userAny.(*types.UserData)
+	if !ok {
+		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
+		return
+	}
+
+	cartItemIDStr := c.Param("id")
+	cartItemID, err := strconv.ParseInt(cartItemIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
+	var req request.UpdateCartItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
+	cart, err := h.cartSvc.UpdateCartItem(ctx, user.ID, cartItemID, req.Quantity)
+	if err != nil {
+		switch err {
+		case customErr.ErrCartNotFound, customErr.ErrCartItemNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Cập nhật giỏ hàng thành công", gin.H{
 		"cart": mapper.ToCartResponse(cart),
 	})
 }

@@ -10,6 +10,10 @@ import (
 type CartRepository interface {
 	FindCartByUserID(ctx context.Context, userID int64) (*model.Cart, error)
 
+	FindCartByUserIDWithDetails(ctx context.Context, userID int64) (*model.Cart, error)
+
+	FindCartByUserIDTx(ctx context.Context, tx *gorm.DB, userID int64) (*model.Cart, error)
+
 	FindCartItemByCartIDAndProductIDTx(ctx context.Context, tx *gorm.DB, cartID, productID int64) (*model.CartItem, error)
 
 	CreateCartItemTx(ctx context.Context, tx *gorm.DB, cartItem *model.CartItem) error
@@ -21,4 +25,6 @@ type CartRepository interface {
 	UpdateCartItemTx(ctx context.Context, tx *gorm.DB, cartItemID int64, updateData map[string]any) error
 
 	FindCartByIDWithDetails(ctx context.Context, cartID int64) (*model.Cart, error)
+
+	FindCartItemByIDTx(ctx context.Context, tx *gorm.DB, cartItemID int64) (*model.CartItem, error)
 }
