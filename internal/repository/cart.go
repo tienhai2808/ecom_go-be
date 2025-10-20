@@ -27,4 +27,6 @@ type CartRepository interface {
 	FindCartByIDWithDetails(ctx context.Context, cartID int64) (*model.Cart, error)
 
 	FindCartItemByIDTx(ctx context.Context, tx *gorm.DB, cartItemID int64) (*model.CartItem, error)
+
+	DeleteCartItemTx(ctx context.Context, tx *gorm.DB, cartItemID int64) error
 }

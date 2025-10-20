@@ -170,16 +170,68 @@ func (s *cartServiceImpl) UpdateCartItem(ctx context.Context, userID, cartItemID
 
 		newTotalPrice := cartItem.UnitPrice * float64(quantity)
 		updateData := map[string]any{
-			"quantity":       quantity,
+			"quantity":    quantity,
 			"total_price": newTotalPrice,
 		}
 		if err := s.cartRepo.UpdateCartItemTx(ctx, tx, cartItemID, updateData); err != nil {
 			return fmt.Errorf("cập nhật mặt hàng trong giỏ hàng thất bại: %w", err)
 		}
 
-		totalPriceCart := cart.TotalPrice - cartItem.TotalPrice + cartItem.UnitPrice * float64(quantity)
+		totalPriceCart := cart.TotalPrice - cartItem.TotalPrice + cartItem.UnitPrice*float64(quantity)
 		totalQuantityCart := cart.TotalQuantity - cartItem.Quantity + quantity
 		updateData = map[string]any{
+			"total_price":    totalPriceCart,
+			"total_quantity": totalQuantityCart,
+		}
+		if err = s.cartRepo.UpdateCartTx(ctx, tx, cart.ID, updateData); err != nil {
+			return fmt.Errorf("cập nhật giỏ hàng thất bại: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	updatedCart, err := s.cartRepo.FindCartByUserIDWithDetails(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin giỏ hàng thất bại: %w", err)
+	}
+	if updatedCart == nil {
+		return nil, customErr.ErrCartNotFound
+	}
+
+	return updatedCart, nil
+}
+
+func (s *cartServiceImpl) DeleteCartItem(ctx context.Context, userID, cartItemID int64) (*model.Cart, error) {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		cart, err := s.cartRepo.FindCartByUserIDTx(ctx, tx, userID)
+		if err != nil {
+			return fmt.Errorf("lấy thông tin giỏ hàng thất bại: %w", err)
+		}
+		if cart == nil {
+			return customErr.ErrCartNotFound
+		}
+
+		cartItem, err := s.cartRepo.FindCartItemByIDTx(ctx, tx, cartItemID)
+		if err != nil {
+			return fmt.Errorf("lấy thông tin mặt hàng trong giỏ hàng thất bại: %w", err)
+		}
+		if cartItem == nil {
+			return customErr.ErrCartItemNotFound
+		}
+
+		if cartItem.CartID != cart.ID {
+			return customErr.ErrCartItemNotFound
+		}
+
+		if err = s.cartRepo.DeleteCartItemTx(ctx, tx, cartItemID); err != nil {
+			return fmt.Errorf("xóa mặt hàng khỏi giỏ hàng thất bại: %w", err)
+		}
+
+		totalPriceCart := cart.TotalPrice - cartItem.TotalPrice
+		totalQuantityCart := cart.TotalQuantity - cartItem.Quantity
+		updateData := map[string]any{
 			"total_price":    totalPriceCart,
 			"total_quantity": totalQuantityCart,
 		}

@@ -13,4 +13,6 @@ type CartService interface {
 	AddCartItem(ctx context.Context, userID int64, req request.AddCartItemRequest) (*model.Cart, error)
   
 	UpdateCartItem(ctx context.Context, userID, cartItemID int64, quantity uint) (*model.Cart, error)
+
+	DeleteCartItem(ctx context.Context, userID, cartItemID int64) (*model.Cart, error)
 }

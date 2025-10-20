@@ -114,3 +114,7 @@ func (r *cartRepositoryImpl) FindCartItemByIDTx(ctx context.Context, tx *gorm.DB
 
 	return &cartItem, nil
 }
+
+func (r *cartRepositoryImpl) DeleteCartItemTx(ctx context.Context, tx *gorm.DB, cartItemID int64) error {
+	return tx.WithContext(ctx).Where("id = ?", cartItemID).Delete(&model.CartItem{}).Error
+}
