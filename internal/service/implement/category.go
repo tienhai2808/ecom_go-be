@@ -2,6 +2,7 @@ package implement
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/tienhai2808/ecom_go/internal/common"
@@ -54,4 +55,39 @@ func (s *categoryServiceImpl) GetAllCategories(ctx context.Context) ([]*model.Ca
 	}
 
 	return categories, nil
+}
+
+func (s *categoryServiceImpl) UpdateCategory(ctx context.Context, id int64, req request.UpdateCategoryRequest) (*model.Category, error) {
+	category, err := s.categoryRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin danh mục sản phẩm thất bại: %w", err)
+	}
+	if category == nil {
+		return nil, customErr.ErrCategoryNotFound
+	}
+
+	updateData := map[string]any{
+		"name": req.Name,
+		"slug": common.GenerateSlug(req.Name),
+	}
+
+	if err := s.categoryRepo.Update(ctx, id, updateData); err != nil {
+		if common.IsUniqueViolation(err) {
+			return nil, customErr.ErrCategorySlugAlreadyExists
+		}
+		if errors.Is(err, customErr.ErrCategoryNotFound) {
+			return nil, customErr.ErrCategoryNotFound
+		}
+		return nil, fmt.Errorf("cập nhật danh mục sản phẩm thất bại: %w", err)
+	}
+
+	category, err = s.categoryRepo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("lấy thông tin danh mục sản phẩm thất bại: %w", err)
+	}
+	if category == nil {
+		return nil, customErr.ErrCategoryNotFound
+	}
+
+	return category, nil
 }

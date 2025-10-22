@@ -27,6 +27,13 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
+	profileIDStr := c.Param("id")
+	profileID, err := strconv.ParseInt(profileIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
 	var req request.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
@@ -43,13 +50,6 @@ func (h *ProfileHandler) UpdateProfile(c *gin.Context) {
 	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	profileIDStr := c.Param("id")
-	profileID, err := strconv.ParseInt(profileIDStr, 10, 64)
-	if err != nil {
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 

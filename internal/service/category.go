@@ -10,4 +10,6 @@ type CategoryService interface {
 	CreateCategory(ctx context.Context, req request.CreateCategoryRequest) (*model.Category, error)
 
 	GetAllCategories(ctx context.Context) ([]*model.Category, error)
+
+	UpdateCategory(ctx context.Context, id int64, req request.UpdateCategoryRequest) (*model.Category, error)
 }

@@ -54,6 +54,13 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
+	addressIDStr := c.Param("id")
+	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
 	userAny, exists := c.Get("user")
 	if !exists {
 		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
@@ -63,13 +70,6 @@ func (h *AddressHandler) GetAddressDetails(c *gin.Context) {
 	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	addressIDStr := c.Param("id")
-	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
-	if err != nil {
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -134,6 +134,13 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
+	addressIDStr := c.Param("id")
+	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
 	var req request.UpdateAddressRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		translated := common.HandleValidationError(err)
@@ -152,13 +159,6 @@ func (h *AddressHandler) UpdateAddress(c *gin.Context) {
 	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	addressIDStr := c.Param("id")
-	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
-	if err != nil {
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 
@@ -182,6 +182,13 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
+	addressIDStr := c.Param("id")
+	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
 	userAny, exists := c.Get("user")
 	if !exists {
 		common.JSON(c, http.StatusUnauthorized, "Không có thông tin người dùng", nil)
@@ -191,13 +198,6 @@ func (h *AddressHandler) DeleteAddress(c *gin.Context) {
 	user, ok := userAny.(*types.UserData)
 	if !ok {
 		common.JSON(c, http.StatusInternalServerError, "Không thể chuyển đổi thông tin người dùng", nil)
-		return
-	}
-
-	addressIDStr := c.Param("id")
-	addressID, err := strconv.ParseInt(addressIDStr, 10, 64)
-	if err != nil {
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
 		return
 	}
 

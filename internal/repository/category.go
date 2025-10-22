@@ -15,4 +15,6 @@ type CategoryRepository interface {
 	FindByID(ctx context.Context, id int64) (*model.Category, error)
 
 	FindByIDTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Category, error)
+
+	Update(ctx context.Context, id int64, updateData map[string]any) error
 }

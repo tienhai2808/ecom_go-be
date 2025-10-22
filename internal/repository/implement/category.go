@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/tienhai2808/ecom_go/internal/model"
+	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/repository"
 	"gorm.io/gorm"
 )
@@ -44,4 +45,16 @@ func (r *categoryRepositoryImpl) FindByIDTx(ctx context.Context, tx *gorm.DB, id
 	}
 
 	return &category, nil
+}
+
+func (r *categoryRepositoryImpl) Update(ctx context.Context, id int64, updateData map[string]any) error {
+	result := r.db.WithContext(ctx).Model(&model.Category{}).Where("id = ?", id).Updates(updateData)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return customErr.ErrCategoryNotFound
+	}
+
+	return nil
 }

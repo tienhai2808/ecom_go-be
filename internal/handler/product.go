@@ -195,15 +195,15 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
-		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidRequest.Error(), nil)
-		return
-	}
-
 	productIDStr := c.Param("id")
 	productID, err := strconv.ParseInt(productIDStr, 10, 64)
 	if err != nil {
 		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidRequest.Error(), nil)
 		return
 	}
 
