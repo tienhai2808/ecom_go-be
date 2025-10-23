@@ -12,4 +12,8 @@ type CategoryService interface {
 	GetAllCategories(ctx context.Context) ([]*model.Category, error)
 
 	UpdateCategory(ctx context.Context, id int64, req request.UpdateCategoryRequest) (*model.Category, error)
+
+	DeleteCategory(ctx context.Context, id int64) error
+
+	DeleteCategories(ctx context.Context, req request.DeleteManyRequest) (int64, error)
 }

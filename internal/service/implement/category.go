@@ -71,7 +71,7 @@ func (s *categoryServiceImpl) UpdateCategory(ctx context.Context, id int64, req 
 		"slug": common.GenerateSlug(req.Name),
 	}
 
-	if err := s.categoryRepo.Update(ctx, id, updateData); err != nil {
+	if err = s.categoryRepo.Update(ctx, id, updateData); err != nil {
 		if common.IsUniqueViolation(err) {
 			return nil, customErr.ErrCategorySlugAlreadyExists
 		}
@@ -90,4 +90,40 @@ func (s *categoryServiceImpl) UpdateCategory(ctx context.Context, id int64, req 
 	}
 
 	return category, nil
+}
+
+func (s *categoryServiceImpl) DeleteCategory(ctx context.Context, id int64) error {
+	category, err := s.categoryRepo.FindByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("lấy thông tin danh mục sản phẩm thất bại: %w", err)
+	}
+	if category == nil {
+		return customErr.ErrCategoryNotFound
+	}
+
+	if err = s.categoryRepo.Delete(ctx, id); err != nil {
+		if errors.Is(err, customErr.ErrCategoryNotFound) {
+			return err
+		}
+		return fmt.Errorf("xóa danh mục sản phẩm thất bại: %w", err)
+	}
+
+	return nil
+}
+
+func (s *categoryServiceImpl) DeleteCategories(ctx context.Context, req request.DeleteManyRequest) (int64, error) {
+	categories, err := s.categoryRepo.FindAllByID(ctx, req.IDs)
+	if err != nil {
+		return 0, fmt.Errorf("lấy danh sách danh mục sản phẩm thât bại: %w", err)
+	}
+	if len(categories) != len(req.IDs) {
+		return 0, customErr.ErrHasCategoryNotFound
+	}
+
+	rowsAccepted, err := s.categoryRepo.DeleteAllByID(ctx, req.IDs)
+	if err != nil {
+		return 0, fmt.Errorf("xóa danh sách danh mục sản phẩm thất bại: %w", err)
+	}
+
+	return rowsAccepted, nil
 }

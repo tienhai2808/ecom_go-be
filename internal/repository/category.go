@@ -14,7 +14,13 @@ type CategoryRepository interface {
 	
 	FindByID(ctx context.Context, id int64) (*model.Category, error)
 
+	FindAllByID(ctx context.Context, ids []int64) ([]*model.Category, error)
+
 	FindByIDTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Category, error)
 
 	Update(ctx context.Context, id int64, updateData map[string]any) error
+
+	Delete(ctx context.Context, id int64) error
+
+	DeleteAllByID(ctx context.Context, ids []int64) (int64, error)
 }

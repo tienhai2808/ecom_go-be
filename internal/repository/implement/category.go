@@ -35,6 +35,15 @@ func (r *categoryRepositoryImpl) FindByID(ctx context.Context, id int64) (*model
 	return r.FindByIDTx(ctx, r.db, id)
 }
 
+func (r *categoryRepositoryImpl) FindAllByID(ctx context.Context, ids []int64) ([]*model.Category, error) {
+	var categories []*model.Category
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&categories). Error; err != nil {
+		return nil, err
+	}
+
+	return categories, nil
+}
+
 func (r *categoryRepositoryImpl) FindByIDTx(ctx context.Context, tx *gorm.DB, id int64) (*model.Category, error) {
 	var category model.Category
 	if err := tx.WithContext(ctx).Where("id = ?", id).First(&category).Error; err != nil {
@@ -57,4 +66,25 @@ func (r *categoryRepositoryImpl) Update(ctx context.Context, id int64, updateDat
 	}
 
 	return nil
+}
+
+func (r *categoryRepositoryImpl) Delete(ctx context.Context, id int64) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Category{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return customErr.ErrCategoryNotFound
+	}
+
+	return nil
+}
+
+func (r *categoryRepositoryImpl) DeleteAllByID(ctx context.Context, ids []int64) (int64, error) {
+	result := r.db.WithContext(ctx).Where("id IN ?", ids).Delete(&model.Category{})
+	if result.Error != nil {
+		return 0, result.Error
+	}
+
+	return result.RowsAffected, nil
 }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -98,4 +99,54 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 	common.JSON(c, http.StatusOK, "Cập nhật danh mục sản phẩm thành công", gin.H{
 		"category": mapper.ToCategoryResponse(category),
 	})
+}
+
+func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	categoryIDStr := c.Param("id")
+	categoryID, err := strconv.ParseInt(categoryIDStr, 10, 64)
+	if err != nil {
+		common.JSON(c, http.StatusBadRequest, customErr.ErrInvalidID.Error(), nil)
+		return
+	}
+
+	if err := h.categorySvc.DeleteCategory(ctx, categoryID); err != nil {
+		switch err {
+		case customErr.ErrCategoryNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Xóa danh mục sản phẩm thành công", nil)
+}
+
+func (h *CategoryHandler) DeleteCategories(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	var req request.DeleteManyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
+	rowsAccepted, err := h.categorySvc.DeleteCategories(ctx, req)
+	if err != nil {
+		switch err {
+		case customErr.ErrHasCategoryNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	message := fmt.Sprintf("Xóa thành công %d danh mục sản phẩm", rowsAccepted)
+	common.JSON(c, http.StatusOK, message, nil)
 }
