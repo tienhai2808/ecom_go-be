@@ -35,7 +35,7 @@ func NewContainer(db *gorm.DB, rdb *redis.Client, cfg *config.Config, rabbitChan
 	productModule := NewProductContainer(db, rabbitChan, cSfg, es)
 	profileModule := NewProfileContainer(db)
 	categoryModule := NewCategoryContainer(db, cSfg)
-	cartModule := NewCartModule(db, cSfg, es)
+	cartModule := NewCartModule(db, cSfg, es, cfg, rdb)
 
 	return &Container{
 		userModule,

@@ -13,7 +13,9 @@ type Product struct {
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 	CategoryID  int64     `gorm:"type:bigint" json:"category_id"`
 
-	Category  *Category  `gorm:"foreignKey:CategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"category"`
-	Images    []*Image   `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"images"`
-	Inventory *Inventory `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE;OnDelete:CASCADE" json:"inventory"`
+	Category  *Category    `gorm:"foreignKey:CategoryID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL" json:"category"`
+	Images    []*Image     `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"images"`
+	Inventory *Inventory   `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE;OnDelete:CASCADE" json:"inventory"`
+	CartItems []*CartItem  `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"cart_items"`
+	Orders    []*OrderItem `gorm:"foreignKey:ProductID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"order_items"`
 }

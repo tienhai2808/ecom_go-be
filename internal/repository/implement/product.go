@@ -133,6 +133,15 @@ func (r *productRepositoryImpl) FindAllByIDWithThumbnail(ctx context.Context, id
 	return products, nil
 }
 
+func (r *productRepositoryImpl) FindAllByIDWithCategoryAndThumbnail(ctx context.Context, ids []int64) ([]*model.Product, error) {
+	var products []*model.Product
+	if err := r.db.WithContext(ctx).Preload("Category").Preload("Images", "is_thumbnail = true").Where("id IN ?", ids).Find(&products).Error; err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
 func (r *productRepositoryImpl) Create(ctx context.Context, product *model.Product) error {
 	return r.db.WithContext(ctx).Create(product).Error
 }

@@ -26,6 +26,8 @@ type ProductRepository interface {
 
 	FindAllByIDWithThumbnail(ctx context.Context, ids []int64) ([]*model.Product, error)
 
+	FindAllByIDWithCategoryAndThumbnail(ctx context.Context, ids []int64) ([]*model.Product, error)
+
 	Create(ctx context.Context, product *model.Product) error
 
 	UpdateTx(ctx context.Context, tx *gorm.DB, id int64, updateData map[string]any) error

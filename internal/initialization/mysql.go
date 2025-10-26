@@ -21,6 +21,8 @@ var allModels = []any{
 	&model.Inventory{},
 	&model.Cart{},
 	&model.CartItem{},
+	&model.Order{},
+	&model.OrderItem{},
 }
 
 type DB struct {

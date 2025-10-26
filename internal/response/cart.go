@@ -14,3 +14,16 @@ type CartItemResponse struct {
 	TotalPrice float64                `json:"total_price"`
 	Product    *SimpleProductResponse `json:"product"`
 }
+
+type GuestCartResponse struct {
+	TotalQuantity uint                     `json:"total_quantity"`
+	TotalPrice    float64                  `json:"total_price"`
+	CartItems     []*GuestCartItemResponse `json:"cart_items"`
+}
+
+type GuestCartItemResponse struct {
+	UnitPrice  float64                `json:"unit_price"`
+	Quantity   uint                   `json:"quantity"`
+	TotalPrice float64                `json:"total_price"`
+	Product    *SimpleProductResponse `json:"product"`
+}

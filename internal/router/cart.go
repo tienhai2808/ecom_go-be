@@ -10,6 +10,7 @@ import (
 
 func NewCartRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo repository.UserRepository, cartHdl *handler.CartHandler) {
 	accessName := cfg.App.AccessName
+	guestName := cfg.App.GuestName
 	secretKey := cfg.App.JWTSecret
 
 	cart := rg.Group("/carts", security.RequireAuth(accessName, secretKey, userRepo))
@@ -21,5 +22,12 @@ func NewCartRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo repository.
 		cart.GET("", cartHdl.GetMyCart)
 
 		cart.DELETE("/items/:id", cartHdl.DeleteCartItem)
+	}
+
+	guest := rg.Group("/guests/carts", security.RequireGuestToken(guestName, secretKey))
+	{
+		guest.POST("/items", cartHdl.GuestAddCartItem)
+
+		guest.GET("", cartHdl.GetGuestCart)
 	}
 }

@@ -27,7 +27,7 @@ func NewAuthRepository(rdb *redis.Client, cfg *config.Config) repository.AuthRep
 func (r *authRepositoryImpl) AddRegistrationData(ctx context.Context, token string, data types.RegistrationData, ttl time.Duration) error {
 	regData, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
+		return fmt.Errorf("mã hóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
 	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
@@ -56,7 +56,7 @@ func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token stri
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
+		return nil, fmt.Errorf("lấy dữ liệu từ redis thất bại: %w", err)
 	}
 
 	var regData types.RegistrationData
@@ -70,7 +70,7 @@ func (r *authRepositoryImpl) GetRegistrationData(ctx context.Context, token stri
 func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token string, data types.RegistrationData, ttl time.Duration) error {
 	regDataJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("không thể mã hóa dữ liệu đăng ký: %w", err)
+		return fmt.Errorf("mã hóa dữ liệu đăng ký thất bại: %w", err)
 	}
 
 	redisKey := fmt.Sprintf("%s:signup:%s", r.cfg.App.Name, token)
@@ -84,7 +84,7 @@ func (r *authRepositoryImpl) UpdateRegistrationData(ctx context.Context, token s
 func (r *authRepositoryImpl) AddForgotPasswordData(ctx context.Context, token string, data types.ForgotPasswordData, ttl time.Duration) error {
 	forgDataJSON, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("không thể mã hóa dữ liệu quên mật khẩu: %w", err)
+		return fmt.Errorf("mã hóa dữ liệu quên mật khẩu thất bại: %w", err)
 	}
 
 	redisKey := fmt.Sprintf("%s:forgot-password:%s", r.cfg.App.Name, token)
@@ -103,7 +103,7 @@ func (r *authRepositoryImpl) GetForgotPasswordData(ctx context.Context, token st
 	if err == redis.Nil {
 		return nil, nil
 	} else if err != nil {
-		return nil, fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
+		return nil, fmt.Errorf("lấy dữ liệu từ redis thất bại: %w", err)
 	}
 
 	var forgData types.ForgotPasswordData
@@ -131,7 +131,7 @@ func (r *authRepositoryImpl) GetResetPasswordData(ctx context.Context, token str
 	if err == redis.Nil {
 		return "", nil
 	} else if err != nil {
-		return "", fmt.Errorf("lỗi lấy dữ liệu từ redis: %w", err)
+		return "", fmt.Errorf("lấy dữ liệu từ redis thất bại: %w", err)
 	}
 
 	return email, nil

@@ -1,9 +1,12 @@
 package security
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/tienhai2808/ecom_go/internal/common"
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 	"github.com/tienhai2808/ecom_go/internal/mapper"
@@ -27,7 +30,7 @@ func RequireAuth(accessName, secretKey string, userRepo repository.UserRepositor
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ApiResponse{
 				StatusCode: http.StatusUnauthorized,
-				Message:    err.Error(),
+				Message:    customErr.ErrInvalidToken.Error(),
 			})
 			return
 		}
@@ -36,7 +39,7 @@ func RequireAuth(accessName, secretKey string, userRepo repository.UserRepositor
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ApiResponse{
 				StatusCode: http.StatusUnauthorized,
-				Message:    err.Error(),
+				Message:    customErr.ErrInvalidToken.Error(),
 			})
 			return
 		}
@@ -45,7 +48,7 @@ func RequireAuth(accessName, secretKey string, userRepo repository.UserRepositor
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, response.ApiResponse{
 				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
+				Message:    customErr.ErrUserNotFound.Error(),
 			})
 			return
 		}
@@ -104,6 +107,50 @@ func RequireAdmin() gin.HandlerFunc {
 	}
 }
 
+func RequireGuestToken(guestName, secretKey string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenStr, err := c.Cookie(guestName)
+		if tokenStr == "" || err != nil {
+			guestID := uuid.NewString()
+
+			tokenStr, err = GenerateGuestToken(guestID, 7*24*time.Hour, secretKey)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, response.ApiResponse{
+					StatusCode: http.StatusInternalServerError,
+					Message:    fmt.Sprintf("tạo guest_token thất bại: %v", err),
+				})
+				return
+			}
+
+			c.SetCookie(guestName, tokenStr, 604800, "/", "", false, true)
+
+			c.Set("guest_id", guestID)
+			c.Next()
+		}
+
+		claims, err := ParseToken(tokenStr, secretKey)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, response.ApiResponse{
+				StatusCode: http.StatusBadRequest,
+				Message:    customErr.ErrInvalidToken.Error(),
+			})
+			return
+		}
+
+		guestID, err := ExtractGuestToken(claims)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, response.ApiResponse{
+				StatusCode: http.StatusBadRequest,
+				Message:    customErr.ErrInvalidToken.Error(),
+			})
+			return
+		}
+
+		c.Set("guest_id", guestID)
+		c.Next()
+	}
+}
+
 func RequireRefreshToken(refreshName, secretKey string, userRepo repository.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie(refreshName)
@@ -119,7 +166,7 @@ func RequireRefreshToken(refreshName, secretKey string, userRepo repository.User
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ApiResponse{
 				StatusCode: http.StatusUnauthorized,
-				Message:    err.Error(),
+				Message:    customErr.ErrInvalidToken.Error(),
 			})
 			return
 		}
@@ -128,7 +175,7 @@ func RequireRefreshToken(refreshName, secretKey string, userRepo repository.User
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, response.ApiResponse{
 				StatusCode: http.StatusUnauthorized,
-				Message:    err.Error(),
+				Message:    customErr.ErrInvalidToken.Error(),
 			})
 			return
 		}
@@ -137,7 +184,7 @@ func RequireRefreshToken(refreshName, secretKey string, userRepo repository.User
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, response.ApiResponse{
 				StatusCode: http.StatusInternalServerError,
-				Message:    err.Error(),
+				Message:    customErr.ErrUserNotFound.Error(),
 			})
 			return
 		}

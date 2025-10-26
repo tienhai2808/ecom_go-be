@@ -2,19 +2,64 @@ package implement
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"time"
 
+	"github.com/redis/go-redis/v9"
+	"github.com/tienhai2808/ecom_go/internal/config"
 	"github.com/tienhai2808/ecom_go/internal/model"
 	"github.com/tienhai2808/ecom_go/internal/repository"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"gorm.io/gorm"
 )
 
 type cartRepositoryImpl struct {
-	db *gorm.DB
+	db  *gorm.DB
+	rdb *redis.Client
+	cfg *config.Config
 }
 
-func NewCartRepository(db *gorm.DB) repository.CartRepository {
-	return &cartRepositoryImpl{db}
+func NewCartRepository(db *gorm.DB, rdb *redis.Client, cfg *config.Config) repository.CartRepository {
+	return &cartRepositoryImpl{
+		db,
+		rdb,
+		cfg,
+	}
+}
+
+func (r *cartRepositoryImpl) GetGuestCartData(ctx context.Context, token string) (*types.CartData, error) {
+	redisKey := fmt.Sprintf("%s:guest-cart:%s", r.cfg.App.Name, token)
+
+	cartDataJSON, err := r.rdb.Get(ctx, redisKey).Result()
+	if err == redis.Nil {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("lấy dữ liệu từ redis thất bại: %w", err)
+	}
+
+	var cartData types.CartData
+	if err = json.Unmarshal([]byte(cartDataJSON), &cartData); err != nil {
+		return nil, fmt.Errorf("giải mã dữ liệu giỏ hàng thất bại: %w", err)
+	}
+
+	return &cartData, nil
+}
+
+func (r *cartRepositoryImpl) AddCartData(ctx context.Context, token string, data types.CartData, ttl time.Duration) error {
+	cartDataJSON, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("mã hóa dữ liệu giỏ hàng thất bại: %w", err)
+	}
+
+	redisKey := fmt.Sprintf("%s:guest-cart:%s", r.cfg.App.Name, token)
+
+	if err = r.rdb.Set(ctx, redisKey, cartDataJSON, ttl).Err(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *cartRepositoryImpl) FindCartByUserID(ctx context.Context, userID int64) (*model.Cart, error) {

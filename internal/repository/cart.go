@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/tienhai2808/ecom_go/internal/model"
+	"github.com/tienhai2808/ecom_go/internal/types"
 	"gorm.io/gorm"
 )
 
@@ -29,4 +31,8 @@ type CartRepository interface {
 	FindCartItemByIDTx(ctx context.Context, tx *gorm.DB, cartItemID int64) (*model.CartItem, error)
 
 	DeleteCartItemTx(ctx context.Context, tx *gorm.DB, cartItemID int64) error
+
+	GetGuestCartData(ctx context.Context, token string) (*types.CartData, error)
+
+	AddCartData(ctx context.Context, token string, data types.CartData, ttl time.Duration) error
 }

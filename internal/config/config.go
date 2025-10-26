@@ -15,6 +15,7 @@ type Config struct {
 		JWTSecret   string `yaml:"jwt_secret"`
 		AccessName  string `yaml:"access_name"`
 		RefreshName string `yaml:"refresh_name"`
+		GuestName   string `yaml:"guest_name"`
 		ApiPrefix   string `yaml:"api_prefix"`
 	} `yaml:"app"`
 

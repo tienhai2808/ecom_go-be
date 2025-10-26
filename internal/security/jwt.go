@@ -8,6 +8,17 @@ import (
 	customErr "github.com/tienhai2808/ecom_go/internal/errors"
 )
 
+func GenerateGuestToken(guestID string, ttl time.Duration, secret string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": guestID,
+		"exp": time.Now().Add(ttl).Unix(),
+		"iat": time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
+}
+
 func GenerateToken(userID int64, userRole string, ttl time.Duration, secret string) (string, error) {
 	claims := jwt.MapClaims{
 		"sub":  userID,
@@ -18,6 +29,15 @@ func GenerateToken(userID int64, userRole string, ttl time.Duration, secret stri
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
+}
+
+func ExtractGuestToken(claims jwt.MapClaims) (string, error) {
+	guestID, ok := claims["sub"].(string)
+	if !ok {
+		return "", customErr.ErrGuestIdNotFound
+	}
+	
+	return guestID, nil
 }
 
 func ParseToken(tokenStr, secretKey string) (jwt.MapClaims, error) {

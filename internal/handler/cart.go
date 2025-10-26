@@ -178,3 +178,62 @@ func (h *CartHandler) DeleteCartItem(c *gin.Context) {
 		"cart": mapper.ToCartResponse(cart),
 	})
 }
+
+func (h *CartHandler) GuestAddCartItem(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	guestID := c.GetString("guest_id")
+	if guestID == "" {
+		common.JSON(c, http.StatusBadRequest, "Không có thông tin khách hàng", nil)
+		return
+	}
+
+	var req request.AddCartItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		translated := common.HandleValidationError(err)
+		common.JSON(c, http.StatusBadRequest, translated, nil)
+		return
+	}
+
+	convertedCart, err := h.cartSvc.GuestAddCartItem(ctx, guestID, req)
+	if err != nil {
+		switch err {
+		case customErr.ErrProductNotFound, customErr.ErrHasProductNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Thêm sản phẩm vào giỏ hàng thành công", gin.H{
+		"cart": convertedCart,
+	})
+}
+
+func (h *CartHandler) GetGuestCart(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	guestID := c.GetString("guest_id")
+	if guestID == "" {
+		common.JSON(c, http.StatusBadRequest, "Không có thông tin khách hàng", nil)
+		return
+	}
+
+	convertedCart, err := h.cartSvc.GetGuestCart(ctx, guestID)
+	if err != nil {
+		switch err {
+		case customErr.ErrProductNotFound, customErr.ErrHasProductNotFound:
+			common.JSON(c, http.StatusNotFound, err.Error(), nil)
+		default:
+			common.JSON(c, http.StatusInternalServerError, err.Error(), nil)
+		}
+		return
+	}
+
+	common.JSON(c, http.StatusOK, "Lấy thông tin giỏ hàng thành công", gin.H{
+		"cart": convertedCart,
+	})
+}

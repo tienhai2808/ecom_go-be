@@ -10,4 +10,6 @@ var (
 	ErrInvalidID = errors.New("ID không hợp lệ")
 
 	ErrInvalidRequest = errors.New("yêu cầu không hợp lệ")
+
+	ErrGuestIdNotFound = errors.New("không tìm thấy guest_id")
 )
