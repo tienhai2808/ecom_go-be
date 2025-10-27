@@ -11,7 +11,7 @@ import (
 func InitRedis(cfg *config.Config) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: cfg.Redis.Addr,
-		DB:   1,
+		DB:   0,
 	})
 
 	if err := rdb.Ping(context.Background()).Err(); err != nil {

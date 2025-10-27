@@ -29,5 +29,9 @@ func NewCartRouter(rg *gin.RouterGroup, cfg *config.Config, userRepo repository.
 		guest.POST("/items", cartHdl.GuestAddCartItem)
 
 		guest.GET("", cartHdl.GetGuestCart)
+
+		guest.PUT("/items/:product_id", cartHdl.GuestUpdateCartItem)
+
+		guest.DELETE("/items/:product_id", cartHdl.GuestDeleteCartItem)
 	}
 }

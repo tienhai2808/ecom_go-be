@@ -20,4 +20,8 @@ type CartService interface {
 	GuestAddCartItem(ctx context.Context, guestID string, req request.AddCartItemRequest) (*response.GuestCartResponse, error)
 
 	GetGuestCart(ctx context.Context, guestID string) (*response.GuestCartResponse, error)
+
+	GuestUpdateCartItem(ctx context.Context, guestID string, productID int64, quantity uint) (*response.GuestCartResponse, error)
+
+	GuestDeleteCartItem(ctx context.Context, guestID string, productID int64) (*response.GuestCartResponse, error)
 }

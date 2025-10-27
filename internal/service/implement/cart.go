@@ -285,6 +285,10 @@ func (s *cartServiceImpl) GuestAddCartItem(ctx context.Context, guestID string, 
 		if cart.Items[i].ProductID == product.ID {
 			cart.Items[i].Quantity += req.Quantity
 			cart.Items[i].TotalPrice = cart.Items[i].UnitPrice * float64(cart.Items[i].Quantity)
+
+			cart.TotalQuantity += req.Quantity
+			cart.TotalPrice += cart.Items[i].UnitPrice * float64(req.Quantity)
+
 			found = true
 			break
 		}
@@ -298,16 +302,10 @@ func (s *cartServiceImpl) GuestAddCartItem(ctx context.Context, guestID string, 
 			TotalPrice: product.Price * float64(req.Quantity),
 		}
 		cart.Items = append(cart.Items, newItem)
-	}
 
-	var totalPrice float64
-	var totalQty uint
-	for _, item := range cart.Items {
-		totalPrice += item.TotalPrice
-		totalQty += item.Quantity
+		cart.TotalQuantity += req.Quantity
+		cart.TotalPrice += newItem.UnitPrice * float64(newItem.Quantity)
 	}
-	cart.TotalPrice = totalPrice
-	cart.TotalQuantity = totalQty
 
 	if err = s.cartRepo.AddCartData(ctx, guestID, *cart, 7*24*time.Hour); err != nil {
 		return nil, err
@@ -331,30 +329,7 @@ func (s *cartServiceImpl) GuestAddCartItem(ctx context.Context, guestID string, 
 		productMap[p.ID] = p
 	}
 
-	cartItemsResp := make([]*response.GuestCartItemResponse, 0, len(cart.Items))
-	for _, item := range cart.Items {
-		p := productMap[item.ProductID]
-
-		var prodResp *response.SimpleProductResponse
-		if p != nil {
-			prodResp = mapper.ToSimpleProductResponse(p)
-		}
-
-		cartItemsResp = append(cartItemsResp, &response.GuestCartItemResponse{
-			UnitPrice:  item.UnitPrice,
-			Quantity:   item.Quantity,
-			TotalPrice: item.TotalPrice,
-			Product:    prodResp,
-		})
-	}
-
-	resp := &response.GuestCartResponse{
-		TotalQuantity: cart.TotalQuantity,
-		TotalPrice:    cart.TotalPrice,
-		CartItems:     cartItemsResp,
-	}
-
-	return resp, nil
+	return toGuestCartResponse(cart, productMap), nil
 }
 
 func (s *cartServiceImpl) GetGuestCart(ctx context.Context, guestID string) (*response.GuestCartResponse, error) {
@@ -400,6 +375,122 @@ func (s *cartServiceImpl) GetGuestCart(ctx context.Context, guestID string) (*re
 		productMap[p.ID] = p
 	}
 
+	return toGuestCartResponse(cart, productMap), nil
+}
+
+func (s *cartServiceImpl) GuestUpdateCartItem(ctx context.Context, guestID string, productID int64, quantity uint) (*response.GuestCartResponse, error) {
+	cart, err := s.cartRepo.GetGuestCartData(ctx, guestID)
+	if err != nil {
+		return nil, err
+	}
+	if cart == nil {
+		return nil, customErr.ErrCartNotFound
+	}
+
+	found := false
+	for i := range cart.Items {
+		if cart.Items[i].ProductID == productID {
+			oldQty := cart.Items[i].Quantity
+			oldTotal := cart.Items[i].TotalPrice
+
+			cart.Items[i].Quantity = quantity
+			cart.Items[i].TotalPrice = cart.Items[i].UnitPrice * float64(quantity)
+
+			diffQty := int(quantity) - int(oldQty)
+			diffTotal := cart.Items[i].TotalPrice - oldTotal
+
+			newTotalQty := int(cart.TotalQuantity) + diffQty
+			cart.TotalQuantity = uint(newTotalQty)
+			cart.TotalPrice += diffTotal
+
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, customErr.ErrCartItemNotFound
+	}
+
+	if err = s.cartRepo.AddCartData(ctx, guestID, *cart, 7*24*time.Hour); err != nil {
+		return nil, err
+	}
+
+	productIDs := make([]int64, 0, len(cart.Items))
+	for _, item := range cart.Items {
+		productIDs = append(productIDs, item.ProductID)
+	}
+
+	products, err := s.productRepo.FindAllByIDWithCategoryAndThumbnail(ctx, productIDs)
+	if err != nil {
+		return nil, fmt.Errorf("lây thông tin sản phẩm trong giỏ hàng thất bại: %w", err)
+	}
+	if len(productIDs) != len(products) {
+		return nil, customErr.ErrHasProductNotFound
+	}
+
+	productMap := make(map[int64]*model.Product, len(products))
+	for _, p := range products {
+		productMap[p.ID] = p
+	}
+
+	return toGuestCartResponse(cart, productMap), nil
+}
+
+func (s *cartServiceImpl) GuestDeleteCartItem(ctx context.Context, guestID string, productID int64) (*response.GuestCartResponse, error) {
+	cart, err := s.cartRepo.GetGuestCartData(ctx, guestID)
+	if err != nil {
+		return nil, err
+	}
+	if cart == nil {
+		return nil, customErr.ErrCartNotFound
+	}
+
+	found := false
+	newItems := make([]types.CartItemData, 0, len(cart.Items))
+	for _, item := range cart.Items {
+		if item.ProductID == productID {
+			cart.TotalQuantity -= item.Quantity
+			cart.TotalPrice -= item.TotalPrice
+
+			found = true
+			continue
+		}
+		newItems = append(newItems, item)
+	}
+
+	if !found {
+		return nil, customErr.ErrCartItemNotFound
+	}
+
+	cart.Items = newItems
+
+	if err = s.cartRepo.AddCartData(ctx, guestID, *cart, 7*24*time.Hour); err != nil {
+		return nil, err
+	}
+
+	productIDs := make([]int64, 0, len(cart.Items))
+	for _, item := range cart.Items {
+		productIDs = append(productIDs, item.ProductID)
+	}
+
+	products, err := s.productRepo.FindAllByIDWithCategoryAndThumbnail(ctx, productIDs)
+	if err != nil {
+		return nil, fmt.Errorf("lây thông tin sản phẩm trong giỏ hàng thất bại: %w", err)
+	}
+	if len(productIDs) != len(products) {
+		return nil, customErr.ErrHasProductNotFound
+	}
+
+	productMap := make(map[int64]*model.Product, len(products))
+	for _, p := range products {
+		productMap[p.ID] = p
+	}
+
+	return toGuestCartResponse(cart, productMap), nil
+}
+
+func toGuestCartResponse(cart *types.CartData, productMap map[int64]*model.Product) *response.GuestCartResponse {
 	cartItemsResp := make([]*response.GuestCartItemResponse, 0, len(cart.Items))
 	for _, item := range cart.Items {
 		p := productMap[item.ProductID]
@@ -417,11 +508,9 @@ func (s *cartServiceImpl) GetGuestCart(ctx context.Context, guestID string) (*re
 		})
 	}
 
-	resp := &response.GuestCartResponse{
+	return &response.GuestCartResponse{
 		TotalQuantity: cart.TotalQuantity,
 		TotalPrice:    cart.TotalPrice,
 		CartItems:     cartItemsResp,
 	}
-
-	return resp, nil
 }
